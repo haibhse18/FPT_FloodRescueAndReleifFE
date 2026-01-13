@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Openmap.vn Demo Map</title>
+    <meta
+      property="og:description"
+      content="Initialize a map in an HTML element with OpenmapVN GL."
+    />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@openmapvn/openmapvn-gl@1.0.0/dist/maplibre-gl.css"
+    />
+    <script src="https://unpkg.com/@openmapvn/openmapvn-gl@1.0.0/dist/maplibre-gl.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body,
+      #map {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      const map = new maplibregl.Map({
+        container: "map",
+        style:
+          "https://maptiles.openmap.vn/styles/day-v1/style.json?apikey=KUOQz09yeIAoRN3F6LUmgxITAbvaRTvK",
+        center: [21.03024, 105.85237],
+        zoom: 15,
+        maplibreLogo: true,
+      });
+    </script>
+  </body>
+</html>

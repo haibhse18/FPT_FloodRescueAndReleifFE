@@ -182,7 +182,10 @@ export default function CitizenHomePage() {
                             <span className="text-2xl">☰</span>
                         </button>
                         <h2 className="text-lg font-bold text-white">Cứu hộ Lũ lụt</h2>
-                        <button className="w-10 h-10 flex items-center justify-center">
+                        <button
+                            onClick={() => document.getElementById('location-map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                            className="w-10 h-10 flex items-center justify-center hover:scale-110 transition-transform"
+                        >
                             <span className="text-primary text-2xl">📍</span>
                         </button>
                     </div>
@@ -202,7 +205,10 @@ export default function CitizenHomePage() {
                             </span>
                             HỆ THỐNG TRỰC TUYẾN
                         </div>
-                        <button className="px-4 py-2 rounded-lg bg-white/5 text-white hover:bg-white/10 transition">
+                        <button
+                            onClick={() => document.getElementById('location-map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                            className="px-4 py-2 rounded-lg bg-white/5 text-white hover:bg-white/10 transition hover:scale-105"
+                        >
                             <span className="text-xl">📍</span>
                         </button>
                     </div>
@@ -277,7 +283,7 @@ export default function CitizenHomePage() {
 
                                 {/* Small Map Display - Below Location Info */}
                                 {coordinates && (
-                                    <div className="mt-4 h-48 rounded-xl overflow-hidden">
+                                    <div id="location-map" className="mt-4 h-48 rounded-xl overflow-hidden scroll-mt-20">
                                         <LeafletMap
                                             latitude={coordinates.lat}
                                             longitude={coordinates.lon}

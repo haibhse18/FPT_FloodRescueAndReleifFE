@@ -18,6 +18,47 @@ export default function CitizenHomePage() {
     const [currentLocation, setCurrentLocation] = useState("Đang tải vị trí...");
     const [coordinates, setCoordinates] = useState<{ lat: number; lon: number } | null>(null);
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+    const [showRescueModal, setShowRescueModal] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedQuickAction, setSelectedQuickAction] = useState<string | null>(null);
+    const [rescueRequest, setRescueRequest] = useState({
+        dangerType: "",
+        description: "",
+        numberOfPeople: 1,
+        urgencyLevel: "high",
+    });
+
+    // Quick action templates
+    const quickRescueActions = [
+        {
+            id: "flood",
+            icon: "🌊",
+            label: "Ngập lụt",
+            description: "Nước dâng cao, cần di chuyển khẩn cấp",
+            color: "from-blue-500/20 to-cyan-500/10 border-blue-500/30"
+        },
+        {
+            id: "trapped",
+            icon: "🏚️",
+            label: "Bị kẹt",
+            description: "Bị mắc kẹt, không thể thoát ra",
+            color: "from-orange-500/20 to-yellow-500/10 border-orange-500/30"
+        },
+        {
+            id: "injury",
+            icon: "🤕",
+            label: "Bị thương",
+            description: "Có người bị thương cần cấp cứu",
+            color: "from-red-500/20 to-pink-500/10 border-red-500/30"
+        },
+        {
+            id: "landslide",
+            icon: "⛰️",
+            label: "Sạt lở",
+            description: "Đất đá sạt lở, nguy hiểm cao",
+            color: "from-amber-500/20 to-orange-500/10 border-amber-500/30"
+        }
+    ];
 
     // Lấy vị trí hiện tại khi component mount
     useEffect(() => {
@@ -121,6 +162,68 @@ export default function CitizenHomePage() {
         { icon: "🔔", label: "THÔNG BÁO", active: false },
         { icon: "👤", label: "CÁ NHÂN", active: false },
     ];
+
+    // Hàm xử lý gửi yêu cầu cứu hộ
+    const handleRescueRequest = async () => {
+        if (!coordinates) {
+            alert("Vui lòng bật GPS để gửi yêu cầu cứu hộ!");
+            return;
+        }
+
+        if (!selectedQuickAction && !rescueRequest.dangerType) {
+            alert("Vui lòng chọn loại tình huống!");
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            // TODO: Gọi API backend để lưu rescue request
+            const requestData = {
+                ...rescueRequest,
+                location: currentLocation,
+                coordinates: coordinates,
+                timestamp: new Date().toISOString(),
+                status: "pending",
+            };
+
+            console.log("Đang gửi yêu cầu cứu hộ:", requestData);
+
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            alert("✅ Yêu cầu cứu hộ đã được gửi thành công! Đội cứu hộ sẽ đến ngay!");
+            setShowRescueModal(false);
+            setRescueRequest({
+                dangerType: "",
+                description: "",
+                numberOfPeople: 1,
+                urgencyLevel: "high",
+            });
+        } catch (error) {
+            console.error("Lỗi khi gửi yêu cầu:", error);
+            alert("❌ Có lỗi xảy ra. Vui lòng thử lại!");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Hàm mở modal với quick action
+    const openRescueModal = (quickActionId?: string) => {
+        if (quickActionId) {
+            setSelectedQuickAction(quickActionId);
+            const action = quickRescueActions.find(a => a.id === quickActionId);
+            if (action) {
+                setRescueRequest({
+                    dangerType: quickActionId,
+                    description: action.description,
+                    numberOfPeople: 1,
+                    urgencyLevel: "high",
+                });
+            }
+        }
+        setShowRescueModal(true);
+    };
 
     return (
         <div className="min-h-screen bg-secondary flex flex-col lg:flex-row">
@@ -243,7 +346,10 @@ export default function CitizenHomePage() {
 
                                 {/* Emergency Button */}
                                 <div className="flex-1 flex items-center justify-center py-8 lg:py-12">
-                                    <button className="group relative flex flex-col items-center justify-center w-64 h-64 lg:w-80 lg:h-80 rounded-full bg-red-600 text-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_40px_rgba(220,38,38,0.4)]">
+                                    <button
+                                        onClick={() => openRescueModal()}
+                                        className="group relative flex flex-col items-center justify-center w-64 h-64 lg:w-80 lg:h-80 rounded-full bg-red-600 text-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_40px_rgba(220,38,38,0.4)]" aria-label="Nút cứu hộ khẩn cấp"
+                                    >
                                         <div className="absolute inset-0 rounded-full border-4 border-red-300/60 scale-110 animate-pulse"></div>
                                         <span className="text-7xl lg:text-8xl mb-3">🚨</span>
                                         <span className="text-2xl lg:text-3xl font-black tracking-tight text-center px-6 leading-none">
@@ -282,15 +388,24 @@ export default function CitizenHomePage() {
                                 </div>
 
                                 {/* Small Map Display - Below Location Info */}
-                                {coordinates && (
-                                    <div id="location-map" className="mt-4 h-48 rounded-xl overflow-hidden scroll-mt-20">
-                                        <LeafletMap
-                                            latitude={coordinates.lat}
-                                            longitude={coordinates.lon}
-                                            address={currentLocation}
-                                        />
-                                    </div>
-                                )}
+                                <div id="location-map" className="mt-4 rounded-xl overflow-hidden scroll-mt-20 bg-white/5 border border-white/10 relative z-0">
+                                    {coordinates ? (
+                                        <div className="h-48 w-full relative z-0">
+                                            <LeafletMap
+                                                latitude={coordinates.lat}
+                                                longitude={coordinates.lon}
+                                                address={currentLocation}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="h-48 flex items-center justify-center">
+                                            <div className="text-center">
+                                                <span className="text-4xl mb-2 block">📍</span>
+                                                <p className="text-gray-400 text-sm">Đang lấy vị trí GPS...</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Right Column - Quick Actions */}
@@ -369,6 +484,183 @@ export default function CitizenHomePage() {
                     </div>
                 </nav>
             </div>
+
+            {/* Rescue Request Modal */}
+            {showRescueModal && (
+                <div className="fixed inset-0 z-[100] flex items-end lg:items-center justify-center p-0 lg:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-secondary border-t lg:border border-white/20 rounded-t-3xl lg:rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom lg:slide-in-from-bottom-0 duration-300">
+                        {/* Header - Fixed */}
+                        <div className="flex-shrink-0 bg-secondary/98 backdrop-blur-xl border-b border-white/10 p-5 shadow-lg rounded-t-3xl lg:rounded-t-2xl">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center shadow-inner">
+                                        <span className="text-2xl">🚨</span>
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-black text-white">Yêu cầu cứu hộ</h2>
+                                        <p className="text-xs text-gray-400">Chọn tình huống và gửi ngay</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setShowRescueModal(false);
+                                        setSelectedQuickAction(null);
+                                    }}
+                                    className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+                                >
+                                    <span className="text-xl text-gray-400">✕</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Scrollable Content */}
+                        <div className="flex-1 overflow-y-auto overscroll-contain"
+                            style={{
+                                scrollbarWidth: 'thin',
+                                scrollbarColor: 'rgba(255, 119, 0, 0.3) transparent'
+                            }}
+                        >
+
+                            {/* Quick Actions */}
+                            <div className="p-5 space-y-4">
+                                <div>
+                                    <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                        <span>⚡</span>
+                                        Chọn tình huống khẩn cấp
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {quickRescueActions.map((action) => (
+                                            <button
+                                                key={action.id}
+                                                onClick={() => {
+                                                    setSelectedQuickAction(action.id);
+                                                    setRescueRequest({
+                                                        dangerType: action.id,
+                                                        description: action.description,
+                                                        numberOfPeople: 1,
+                                                        urgencyLevel: "high",
+                                                    });
+                                                }}
+                                                className={`relative p-4 rounded-xl border-2 transition-all ${selectedQuickAction === action.id
+                                                    ? `bg-gradient-to-br ${action.color} border-transparent shadow-lg scale-[1.02]`
+                                                    : "bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/10"
+                                                    }`}
+                                            >
+                                                <div className="text-center">
+                                                    <span className="text-4xl mb-2 block">{action.icon}</span>
+                                                    <p className="text-sm font-bold text-white mb-1">{action.label}</p>
+                                                    <p className="text-xs text-gray-400 line-clamp-2">{action.description}</p>
+                                                </div>
+                                                {selectedQuickAction === action.id && (
+                                                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                                                        <span className="text-white text-xs">✓</span>
+                                                    </div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Additional Details (Optional) */}
+                                {selectedQuickAction && (
+                                    <div className="animate-in slide-in-from-top duration-200">
+                                        <label className="block text-sm font-bold text-white mb-2">
+                                            📝 Thêm thông tin chi tiết (không bắt buộc)
+                                        </label>
+                                        <textarea
+                                            value={rescueRequest.description}
+                                            onChange={(e) => setRescueRequest({ ...rescueRequest, description: e.target.value })}
+                                            placeholder="VD: Nước ngập cao 1.5m, có 2 người già cần di chuyển..."
+                                            rows={3}
+                                            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition resize-none text-sm"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Number of People */}
+                                {selectedQuickAction && (
+                                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-2xl">👥</span>
+                                            <div>
+                                                <p className="text-sm font-bold text-white">Số người cần cứu hộ</p>
+                                                <p className="text-xs text-gray-400">Bao gồm cả bạn</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setRescueRequest({ ...rescueRequest, numberOfPeople: Math.max(1, rescueRequest.numberOfPeople - 1) })}
+                                                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white font-bold transition"
+                                            >
+                                                −
+                                            </button>
+                                            <span className="text-xl font-bold text-white w-10 text-center">{rescueRequest.numberOfPeople}</span>
+                                            <button
+                                                onClick={() => setRescueRequest({ ...rescueRequest, numberOfPeople: Math.min(50, rescueRequest.numberOfPeople + 1) })}
+                                                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white font-bold transition"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Location Info */}
+                                {selectedQuickAction && (
+                                    <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                                        <div className="flex items-start gap-3">
+                                            <span className="text-2xl">📍</span>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-bold text-blue-400 mb-1">Vị trí sẽ được gửi tự động</p>
+                                                <p className="text-sm text-gray-300">{currentLocation}</p>
+                                                {coordinates && (
+                                                    <p className="text-xs text-gray-500 mt-1 font-mono">
+                                                        {coordinates.lat.toFixed(6)}, {coordinates.lon.toFixed(6)}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Footer - Fixed */}
+                        {selectedQuickAction && (
+                            <div className="flex-shrink-0 bg-secondary/98 backdrop-blur-xl border-t border-white/10 p-5 shadow-[0_-4px_12px_rgba(0,0,0,0.3)] rounded-b-3xl lg:rounded-b-2xl">
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => {
+                                            setShowRescueModal(false);
+                                            setSelectedQuickAction(null);
+                                        }}
+                                        className="flex-1 px-6 py-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all duration-200 hover:scale-[1.02] active:scale-95"
+                                    >
+                                        Hủy
+                                    </button>
+                                    <button
+                                        onClick={handleRescueRequest}
+                                        disabled={isSubmitting}
+                                        className="flex-[2] px-6 py-4 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                                    >
+                                        {isSubmitting ? (
+                                            <>
+                                                <span className="animate-spin">⏳</span>
+                                                <span>Đang gửi...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="text-xl">🚨</span>
+                                                <span>GỬI NGAY</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

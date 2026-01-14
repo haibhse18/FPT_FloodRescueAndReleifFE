@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -11,9 +11,13 @@ interface LeafletMapProps {
 }
 
 export default function LeafletMap({ latitude, longitude, address }: LeafletMapProps) {
+    const mapRef = useRef<HTMLDivElement>(null);
+
     useEffect(() => {
+        if (!mapRef.current) return;
+
         // Khởi tạo map
-        const map = L.map("minimap").setView([latitude, longitude], 15);
+        const map = L.map(mapRef.current).setView([latitude, longitude], 15);
 
         const apiKey = process.env.NEXT_PUBLIC_OPENMAP_API_KEY || "KUOQz09yeIAoRN3F6LUmgxITAbvaRTvK";
 
@@ -55,8 +59,8 @@ export default function LeafletMap({ latitude, longitude, address }: LeafletMapP
 
     return (
         <div
-            id="minimap"
-            className="w-full h-full rounded-xl"
+            ref={mapRef}
+            className="w-full h-full rounded-xl relative z-0"
             style={{ minHeight: '192px', height: '100%' }}
         />
     );

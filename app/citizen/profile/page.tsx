@@ -4,15 +4,47 @@ import { useState } from 'react'
 
 export default function ProfilePage() {
   const [open, setOpen] = useState(false)
+  const [avatar, setAvatar] = useState<string | null>(null)
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const url = URL.createObjectURL(file)
+    setAvatar(url)
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 pb-24">
       {/* HEADER */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-b-3xl shadow-lg">
         <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center text-3xl shadow-md">
-            👤
-          </div>
+          {/* AVATAR */}
+          <label className="relative cursor-pointer active:scale-95 transition">
+            <div className="w-20 h-20 rounded-full bg-white overflow-hidden flex items-center justify-center shadow-md">
+              {avatar ? (
+                <img
+                  src={avatar}
+                  alt="avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-3xl">👤</span>
+              )}
+            </div>
+
+            {/* camera icon */}
+            <div className="absolute bottom-0 right-0 bg-blue-600 text-white text-xs px-2 py-1 rounded-full shadow">
+              📷
+            </div>
+
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleAvatarChange}
+            />
+          </label>
 
           <div className="text-white">
             <p className="text-lg font-semibold">Nguyễn Văn A</p>
@@ -50,7 +82,6 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      {/* MODAL */}
       {open && <EditProfileModal onClose={() => setOpen(false)} />}
     </div>
   )
@@ -61,13 +92,11 @@ export default function ProfilePage() {
 function EditProfileModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50">
-      {/* overlay */}
       <div
         onClick={onClose}
         className="absolute inset-0 bg-black/40"
       />
 
-      {/* modal */}
       <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 animate-slideUp">
         <h2 className="text-lg font-semibold mb-4">
           ✏️ Chỉnh sửa hồ sơ
@@ -93,13 +122,7 @@ function EditProfileModal({ onClose }: { onClose: () => void }) {
 
 /* ================= UI PARTS ================= */
 
-function Card({
-  title,
-  children,
-}: {
-  title: string
-  children: React.ReactNode
-}) {
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
       <p className="font-semibold text-sm">{title}</p>
@@ -108,13 +131,7 @@ function Card({
   )
 }
 
-function Info({
-  label,
-  value,
-}: {
-  label: string
-  value: string
-}) {
+function Info({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between text-sm">
       <span className="text-gray-500">{label}</span>
@@ -123,13 +140,7 @@ function Info({
   )
 }
 
-function Input({
-  label,
-  placeholder,
-}: {
-  label: string
-  placeholder: string
-}) {
+function Input({ label, placeholder }: { label: string; placeholder: string }) {
   return (
     <div>
       <label className="text-xs text-gray-500">{label}</label>

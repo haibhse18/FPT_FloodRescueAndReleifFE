@@ -1,79 +1,142 @@
+'use client'
+
+import { useState } from 'react'
+
 export default function ProfilePage() {
+  const [open, setOpen] = useState(false)
+
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center">
-      <div className="w-full max-w-md bg-white">
-        {/* HEADER */}
-        <div className="bg-blue-600 text-white px-4 py-4 rounded-b-3xl shadow">
-          <h1 className="text-lg font-bold">👤 Hồ sơ cá nhân</h1>
-          <p className="text-sm opacity-90">
-            Thông tin giúp hỗ trợ nhanh khi có thiên tai
-          </p>
-        </div>
-
-        {/* CONTENT */}
-        <div className="p-4 space-y-6">
-          {/* AVATAR */}
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-24 h-24 rounded-full bg-gray-300" />
-            <button className="text-blue-600 text-sm font-semibold">
-              Thay ảnh đại diện
-            </button>
+    <div className="min-h-screen bg-gray-100 pb-24">
+      {/* HEADER */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-b-3xl shadow-lg">
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center text-3xl shadow-md">
+            👤
           </div>
 
-          {/* FORM */}
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-semibold">Họ và tên</label>
-              <input
-                type="text"
-                defaultValue="Nguyễn Văn A"
-                className="mt-1 w-full rounded-xl border border-gray-300 p-3 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-semibold">Số điện thoại</label>
-              <input
-                type="tel"
-                defaultValue="0909 123 456"
-                className="mt-1 w-full rounded-xl border border-gray-300 p-3 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-semibold">Địa chỉ hiện tại</label>
-              <input
-                type="text"
-                defaultValue="Phường 3, Quận 8, TP.HCM"
-                className="mt-1 w-full rounded-xl border border-gray-300 p-3 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-semibold">
-                Ghi chú y tế (người già, trẻ em, bệnh nền)
-              </label>
-              <textarea
-                placeholder="Có người già 80 tuổi, cần hỗ trợ di chuyển..."
-                className="mt-1 w-full rounded-xl border border-gray-300 p-3 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-blue-400"
-                rows={3}
-              />
-            </div>
+          <div className="text-white">
+            <p className="text-lg font-semibold">Nguyễn Văn A</p>
+            <p className="text-sm opacity-90">Cư dân – Phường An Khánh</p>
           </div>
-
-          {/* SAVE BUTTON */}
-          <button
-            className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-base
-                             active:scale-[0.97] transition shadow-lg"
-          >
-            LƯU THÔNG TIN
-          </button>
         </div>
       </div>
+
+      {/* BODY */}
+      <div className="px-4 mt-6 space-y-4 max-w-md mx-auto">
+        <Card title="📋 Thông tin cá nhân">
+          <Info label="📞 Số điện thoại" value="0909 000 000" />
+          <Info label="🏠 Địa chỉ" value="Quận Ninh Kiều, Cần Thơ" />
+          <Info label="👥 Số người trong nhà" value="4 người" />
+        </Card>
+
+        <Card title="⚠️ Tình trạng hiện tại">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span>
+            <span className="text-sm font-medium text-green-700">
+              An toàn – chưa cần hỗ trợ
+            </span>
+          </div>
+        </Card>
+
+        <button
+          onClick={() => setOpen(true)}
+          className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold active:scale-95 transition"
+        >
+          ✏️ Chỉnh sửa hồ sơ
+        </button>
+
+        <button className="w-full bg-white text-red-600 border border-red-300 py-3 rounded-xl font-semibold active:scale-95 transition">
+          🚨 Báo cáo khẩn cấp
+        </button>
+      </div>
+
+      {/* MODAL */}
+      {open && <EditProfileModal onClose={() => setOpen(false)} />}
     </div>
-  );
+  )
+}
+
+/* ================= MODAL ================= */
+
+function EditProfileModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50">
+      {/* overlay */}
+      <div
+        onClick={onClose}
+        className="absolute inset-0 bg-black/40"
+      />
+
+      {/* modal */}
+      <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 animate-slideUp">
+        <h2 className="text-lg font-semibold mb-4">
+          ✏️ Chỉnh sửa hồ sơ
+        </h2>
+
+        <div className="space-y-3">
+          <Input label="Họ và tên" placeholder="Nguyễn Văn A" />
+          <Input label="Số điện thoại" placeholder="0909 000 000" />
+          <Input label="Địa chỉ" placeholder="Quận Ninh Kiều, Cần Thơ" />
+          <Input label="Số người trong nhà" placeholder="4" />
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-full mt-6 bg-blue-600 text-white py-3 rounded-xl font-semibold active:scale-95 transition"
+        >
+          💾 Lưu thay đổi
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* ================= UI PARTS ================= */
+
+function Card({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
+      <p className="font-semibold text-sm">{title}</p>
+      {children}
+    </div>
+  )
+}
+
+function Info({
+  label,
+  value,
+}: {
+  label: string
+  value: string
+}) {
+  return (
+    <div className="flex justify-between text-sm">
+      <span className="text-gray-500">{label}</span>
+      <span className="font-medium text-gray-800">{value}</span>
+    </div>
+  )
+}
+
+function Input({
+  label,
+  placeholder,
+}: {
+  label: string
+  placeholder: string
+}) {
+  return (
+    <div>
+      <label className="text-xs text-gray-500">{label}</label>
+      <input
+        placeholder={placeholder}
+        className="w-full mt-1 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+  )
 }

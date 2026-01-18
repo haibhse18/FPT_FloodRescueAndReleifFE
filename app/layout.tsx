@@ -1,3 +1,5 @@
+import "leaflet/dist/leaflet.css";
+
 import "./globals.css";
 
 export default function CitizenLayout({

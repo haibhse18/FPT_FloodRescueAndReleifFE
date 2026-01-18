@@ -1,3 +1,5 @@
+import FloodMap from "@/app/components/FloodMap";
+
 export default function ReportPage() {
   return (
     <div className="p-4 pb-20 max-w-md mx-auto space-y-4">
@@ -19,8 +21,9 @@ export default function ReportPage() {
       />
 
       {/* MAP UI */}
-      <div className="h-40 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500 text-sm">
-        🗺️ Bản đồ vị trí (UI)
+      <div className="bg-gray-100 rounded-2xl p-3">
+        <p className="text-sm font-semibold mb-2">🗺️ Bản đồ khu vực</p>
+        <FloodMap />
       </div>
 
       <button className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold">

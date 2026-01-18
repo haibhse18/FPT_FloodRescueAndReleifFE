@@ -60,6 +60,7 @@ export default function ReportPage() {
             <p className="text-sm font-semibold mb-2">📍 Vị trí hiện tại</p>
             <div className="h-40 bg-gray-200 rounded-2xl flex items-center justify-center text-gray-500 text-sm">
               🗺️ Bản đồ vị trí (UI)
+              
             </div>
           </div>
 

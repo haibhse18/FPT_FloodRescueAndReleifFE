@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Button from "@/app/components/ui/Button";
 
 export default function Home() {
     return (
@@ -12,18 +12,12 @@ export default function Home() {
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
-                    <Link
-                        href="/login"
-                        className="w-full sm:w-auto px-8 py-3 bg-primary hover:bg-orange-600 text-white font-semibold rounded-lg transition duration-200 shadow-md hover:shadow-lg"
-                    >
+                    <Button href="/login" variant="primary" size="lg">
                         Đăng Nhập
-                    </Link>
-                    <Link
-                        href="/register"
-                        className="w-full sm:w-auto px-8 py-3 bg-white hover:bg-gray-100 text-secondary font-semibold rounded-lg transition duration-200 shadow-md hover:shadow-lg"
-                    >
+                    </Button>
+                    <Button href="/register" variant="secondary" size="lg">
                         Đăng Ký
-                    </Link>
+                    </Button>
                 </div>
             </div>
         </main>

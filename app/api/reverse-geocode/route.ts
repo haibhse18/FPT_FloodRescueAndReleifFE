@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
     try {
         // Thử gọi API Openmap.vn trước
         const openmapResponse = await fetch(
-            `https://api.openmap.vn/api/reverse?lat=${lat}&lng=${lng}&key=${apiKey}`,
+            `https://mapapis.openmap.vn/v1/geocode/reverse?format=google&latlng=${lat},${lng}&apikey=${apiKey}`,
+
             {
                 method: 'GET',
                 headers: {
@@ -32,11 +33,12 @@ export async function GET(request: NextRequest) {
             return NextResponse.json(data);
         }
 
-        // Fallback: Sử dụng OpenStreetMap Nominatim (miễn phí)
-        console.log('Openmap API failed, using OpenStreetMap Nominatim fallback');
+        
+        console.log('Openmap API failed');
 
         const nominatimResponse = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=vi`,
+            `https://mapapis.openmap.vn/v1/geocode/reverse?format=google&latlng=${lat},${lng}&apikey=${apiKey}`,
+
             {
                 method: 'GET',
                 headers: {

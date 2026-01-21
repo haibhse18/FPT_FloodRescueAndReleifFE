@@ -3,15 +3,15 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-
-// Dynamic import cho LeafletMap để tránh SSR issues
-const LeafletMap = dynamic(() => import("@/app/components/LeafletMap"), {
-    ssr: false,
-    loading: () => (
-        <div className="w-full h-full bg-white/5 border border-white/10 rounded-xl flex items-center justify-center">
-            <p className="text-gray-400">Đang tải bản đồ...</p>
-        </div>
-    ),
+import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
+// Dynamic import cho OPENMAP để tránh SSR issues
+const OpenMap = dynamic(() => import("@/app/components/OpenMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-white/5 border border-white/10 rounded-xl flex items-center justify-center">
+      <p className="text-gray-400">Đang tải bản đồ...</p>
+    </div>
+  ),
 });
 
 export default function CitizenHomePage() {
@@ -92,43 +92,28 @@ export default function CitizenHomePage() {
     };
 
     // Hàm gọi API Openmap.vn để chuyển đổi tọa độ thành địa chỉ
-    const getAddressFromOpenMap = async (lat: number, lon: number) => {
+    const getAddressFromOpenMap = async (lat: number, lng: number) => {
         try {
-            // Gọi API route của Next.js thay vì gọi trực tiếp (tránh CORS)
-            const response = await fetch(
-                `/api/reverse-geocode?lat=${lat}&lng=${lon}`,
-                {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                }
+            const res = await fetch(
+                `/api/reverse-geocode?lat=${lat}&lng=${lng}`
             );
 
-            if (response.ok) {
-                const data = await response.json();
+            if (!res.ok) throw new Error("Failed");
 
-                // Xử lý dữ liệu từ API Openmap.vn
-                if (data && data.address) {
-                    const address = data.address;
-                    // Tạo địa chỉ đầy đủ
-                    const locationParts = [
-                        address.ward,
-                        address.district,
-                        address.city || address.province
-                    ].filter(Boolean);
+            const data = await res.json();
 
-                    setCurrentLocation(locationParts.join(", ") || "Việt Nam");
-                } else {
-                    setCurrentLocation(`Tọa độ: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
-                }
+            const result = data?.results?.[0];
+
+            if (result) {
+                setCurrentLocation(
+                result.formatted_address || result.address
+            );
             } else {
-                // Nếu API lỗi, hiển thị tọa độ
-                setCurrentLocation(`Tọa độ: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+                setCurrentLocation(`Tọa độ: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
             }
-        } catch (error) {
-            console.error("Error fetching address from Openmap:", error);
-            setCurrentLocation(`Tọa độ: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+        } catch (err) {
+            console.error(err);
+            setCurrentLocation(`Tọa độ: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
         }
     };
 
@@ -391,7 +376,7 @@ export default function CitizenHomePage() {
                                 <div id="location-map" className="mt-4 rounded-xl overflow-hidden scroll-mt-20 bg-white/5 border border-white/10 relative z-0">
                                     {coordinates ? (
                                         <div className="h-48 w-full relative z-0">
-                                            <LeafletMap
+                                            <OpenMap
                                                 latitude={coordinates.lat}
                                                 longitude={coordinates.lon}
                                                 address={currentLocation}

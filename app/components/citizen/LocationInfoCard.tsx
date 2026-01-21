@@ -1,14 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-
-const LeafletMap = dynamic(() => import("@/app/components/LeafletMap"), {
-    ssr: false,
-    loading: () => (
-        <div className="w-full h-full bg-white/5 border border-white/10 rounded-xl flex items-center justify-center">
-            <p className="text-gray-400">Đang tải bản đồ...</p>
-        </div>
-    ),
+const OpenMap = dynamic(() => import("@/app/components/OpenMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-white/5 border border-white/10 rounded-xl flex items-center justify-center">
+      <p className="text-gray-400">Đang tải bản đồ...</p>
+    </div>
+  ),
 });
 
 interface LocationInfoCardProps {
@@ -59,7 +58,7 @@ export default function LocationInfoCard({
             <div id="location-map" className="mt-4 rounded-xl overflow-hidden scroll-mt-20 bg-white/5 border border-white/10 relative z-0">
                 {coordinates ? (
                     <div className="h-48 w-full relative z-0">
-                        <LeafletMap
+                        <OpenMap
                             latitude={coordinates.lat}
                             longitude={coordinates.lon}
                             address={location}

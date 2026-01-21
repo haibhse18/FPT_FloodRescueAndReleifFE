@@ -14,7 +14,7 @@ export default function LocationMap({ latitude, longitude, address }: LocationMa
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<maplibregl.Map | null>(null);
     const marker = useRef<maplibregl.Marker | null>(null);
-    const apiKey = process.env.NEXT_PUBLIC_OPENMAP_API_KEY || "KUOQz09yeIAoRN3F6LUmgxITAbvaRTvK";
+    const apiKey = process.env.NEXT_PUBLIC_OPENMAP_API_KEY ;
 
     useEffect(() => {
         if (!mapContainer.current) return;

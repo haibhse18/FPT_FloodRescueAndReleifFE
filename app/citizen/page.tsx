@@ -6,12 +6,12 @@ import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 // Dynamic import cho OPENMAP để tránh SSR issues
 const OpenMap = dynamic(() => import("@/app/components/OpenMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full bg-white/5 border border-white/10 rounded-xl flex items-center justify-center">
-      <p className="text-gray-400">Đang tải bản đồ...</p>
-    </div>
-  ),
+    ssr: false,
+    loading: () => (
+        <div className="w-full h-full bg-white/5 border border-white/10 rounded-xl flex items-center justify-center">
+            <p className="text-gray-400">Đang tải bản đồ...</p>
+        </div>
+    ),
 });
 
 export default function CitizenHomePage() {
@@ -106,8 +106,8 @@ export default function CitizenHomePage() {
 
             if (result) {
                 setCurrentLocation(
-                result.formatted_address || result.address
-            );
+                    result.formatted_address || result.address
+                );
             } else {
                 setCurrentLocation(`Tọa độ: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
             }
@@ -139,13 +139,6 @@ export default function CitizenHomePage() {
             color: "blue",
             href: "/citizen/safety-guide",
         },
-    ];
-
-    const navItems = [
-        { icon: "🏠", label: "TRANG CHỦ", active: true },
-        { icon: "📜", label: "LỊCH SỬ", active: false },
-        { icon: "🔔", label: "THÔNG BÁO", active: false },
-        { icon: "👤", label: "CÁ NHÂN", active: false },
     ];
 
     // Hàm xử lý gửi yêu cầu cứu hộ
@@ -222,28 +215,28 @@ export default function CitizenHomePage() {
                 <nav className="flex-1 p-4">
                     <ul className="space-y-2">
                         <li>
-                            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-primary text-white font-semibold">
+                            <Link href="/citizen" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-primary text-white font-semibold">
                                 <span className="text-xl">🏠</span>
                                 <span>Trang chủ</span>
-                            </button>
+                            </Link>
                         </li>
                         <li>
-                            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
+                            <Link href="/citizen/history" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
                                 <span className="text-xl">📜</span>
                                 <span>Lịch sử</span>
-                            </button>
+                            </Link>
                         </li>
                         <li>
-                            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
+                            <Link href="/citizen/notifications" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
                                 <span className="text-xl">🔔</span>
                                 <span>Thông báo</span>
-                            </button>
+                            </Link>
                         </li>
                         <li>
-                            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
+                            <Link href="/citizen/profile" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
                                 <span className="text-xl">👤</span>
                                 <span>Cá nhân</span>
-                            </button>
+                            </Link>
                         </li>
                     </ul>
                 </nav>
@@ -456,16 +449,22 @@ export default function CitizenHomePage() {
                 {/* Mobile Bottom Navigation */}
                 <nav className="lg:hidden sticky bottom-0 bg-secondary/90 backdrop-blur-lg border-t border-white/10 pb-6 pt-2">
                     <div className="flex justify-around items-center">
-                        {navItems.map((item, index) => (
-                            <button
-                                key={index}
-                                className={`flex flex-col items-center gap-1 ${item.active ? "text-primary" : "text-gray-400"
-                                    }`}
-                            >
-                                <span className="text-2xl">{item.icon}</span>
-                                <span className="text-[10px] font-bold">{item.label}</span>
-                            </button>
-                        ))}
+                        <Link href="/citizen" className="flex flex-col items-center gap-1 text-primary">
+                            <span className="text-2xl">🏠</span>
+                            <span className="text-[10px] font-bold">TRANG CHỦ</span>
+                        </Link>
+                        <Link href="/citizen/history" className="flex flex-col items-center gap-1 text-gray-400">
+                            <span className="text-2xl">📜</span>
+                            <span className="text-[10px] font-bold">LỊCH SỬ</span>
+                        </Link>
+                        <Link href="/citizen/notifications" className="flex flex-col items-center gap-1 text-gray-400">
+                            <span className="text-2xl">🔔</span>
+                            <span className="text-[10px] font-bold">THÔNG BÁO</span>
+                        </Link>
+                        <Link href="/citizen/profile" className="flex flex-col items-center gap-1 text-gray-400">
+                            <span className="text-2xl">👤</span>
+                            <span className="text-[10px] font-bold">CÁ NHÂN</span>
+                        </Link>
                     </div>
                 </nav>
             </div>

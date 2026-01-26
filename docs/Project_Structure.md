@@ -1,152 +1,120 @@
-# Frontend Folder Structure (React + Next.js + Clean Architecture)
+# Structure.md
 
-## Overview
-
-* **Framework**: Next.js (App Router)
-* **Architecture**: Clean Architecture (Routing / Business / Infrastructure)
-* **Principle**:
-
-  * `app/` chỉ dùng cho routing & layout
-  * Business logic nằm trong `features/`
-  * Module hóa theo **domain nghiệp vụ cứu hộ**
+Đây là phiên bản đơn giản của cấu trúc dự án Next.js theo hướng module-based + Clean Architecture, áp dụng trực tiếp với các module và pages bạn cung cấp.
 
 ---
 
-## 1. Routing Layer – `app/`
+## 1. Cấu trúc tổng quan
 
-```txt
-src/app/
-├── (auth)/                       # Đăng nhập / xác thực
-│   ├── login/page.tsx
-│   └── layout.tsx
-│
-├── (citizen)/                    # Người dân
-│   ├── request/page.tsx          # Gửi yêu cầu cứu hộ
-│   ├── tracking/[id]/page.tsx    # Theo dõi trạng thái
-│   └── layout.tsx
-│
-├── (coordinator)/                # Điều phối cứu hộ
-│   ├── dashboard/page.tsx
-│   ├── requests/page.tsx
-│   ├── missions/page.tsx
-│   └── layout.tsx
-│
-├── (team)/                       # Đội cứu hộ
-│   ├── missions/page.tsx
-│   ├── report/[id]/page.tsx
-│   └── layout.tsx
-│
-├── (manager)/                    # Quản lý tài nguyên
-│   ├── resources/page.tsx
-│   ├── supplies/page.tsx
-│   ├── inventory/page.tsx
-│   └── layout.tsx
-│
-├── (admin)/                      # Quản trị hệ thống
-│   ├── users/page.tsx
-│   ├── configs/page.tsx
-│   ├── reports/page.tsx
-│   └── layout.tsx
-│
-└── api/                          # Route Handlers (nếu cần)
 ```
-
-> ❗ `page.tsx` **không chứa business logic, không gọi API trực tiếp**
-
----
-
-## 2. Business Logic Layer – `features/`
-
-### Module structure (áp dụng cho mọi domain)
-
-```txt
-features/<module>/
-├── components/        # UI riêng module
-├── services/          # Business rules
-├── repositories/      # Giao tiếp API
-├── hooks/             # Hook đặc thù module
-├── actions.ts         # Server Actions
-├── mapper.ts          # DTO ↔ ViewModel
-├── types.ts           # Types riêng module
-└── index.ts
-```
-
-### Core Modules
-
-```txt
-features/
-├── auth/              # Login, session, role
-├── users/             # User & Role
-├── requests/          # Yêu cầu cứu hộ (Citizen, Coordinator)
-├── missions/          # Nhiệm vụ cứu hộ
-├── teams/             # Đội cứu hộ & vị trí
-├── resources/         # Vehicle & Equipment
-├── supplies/          # Hàng cứu trợ
-├── inventory/         # Kho
-├── reports/           # Thống kê, báo cáo
-├── notifications/     # Thông báo
-└── map/               # Bản đồ (OpenMap / OSM)
+src/
+├── app/                  # Next.js App Router (routing + layouts only)
+│   ├── (auth)/
+│   ├── (citizen)/
+│   ├── (coordinator)/
+│   ├── (team)/
+│   ├── (manager)/
+│   └── (admin)/
+│
+├── modules/              # Business modules (Clean Architecture)
+│   ├── auth/
+│   ├── users/
+│   ├── requests/
+│   ├── missions/
+│   ├── teams/
+│   ├── resources/
+│   ├── supplies/
+│   ├── inventory/
+│   ├── reports/
+│   ├── notifications/
+│   └── map/
+│
+├── shared/               # shared UI, hooks, types, utils
+│   ├── ui/
+│   ├── hooks/
+│   ├── types/
+│   └── utils/
+│
+├── services/             # app-wide infra (apiClient, authSession, websocket)
+└── store/                # global state (Redux Toolkit / Zustand / ...)
 ```
 
 ---
 
-## 3. Shared UI Layer – `components/`
+## 2. Cấu trúc module (mẫu - `modules/requests`)
 
-```txt
-components/
-├── ui/                # Atomic components (shadcn/ui)
-│   ├── button.tsx
-│   ├── modal.tsx
-│   └── table.tsx
+```
+modules/requests/
+├── domain/               # entity, value objects, repository interface
+│   ├── request.entity.ts
+│   └── request.repository.ts
 │
-└── shared/            # Component dùng chung
-    ├── Navbar.tsx
-    ├── Sidebar.tsx
-    ├── RoleGuard.tsx
-    └── PageHeader.tsx
+├── application/          # use-cases (thuần business logic)
+│   ├── createRequest.usecase.ts
+│   └── getRequestDetail.usecase.ts
+│
+├── infrastructure/      # adapters: api calls, repository implementations
+│   ├── request.api.ts
+│   └── request.repository.impl.ts
+│
+└── presentation/         # UI components, hooks, page-level components
+    ├── components/
+    ├── hooks/
+    └── pages/
+        ├── CitizenRequestPage.tsx
+        └── TrackingPage.tsx
 ```
+
+**Nguyên tắc:**
+
+* `domain` không phụ thuộc framework.
+* `application` chỉ gọi interfaces từ `domain`.
+* `infrastructure` implement các interface đó.
+* `presentation` chứa React components và hooks; pages trong `app/` chỉ import và render các component ở đây.
 
 ---
 
-## 4. Infrastructure Layer – `lib/`
+## 3. Mapping pages → module (ví dụ đơn giản)
 
-```txt
-lib/
-├── http.ts            # Axios / Fetch wrapper
-├── auth.ts            # Token, session, role check
-├── permissions.ts     # Role → Permission map
-├── map.ts             # Map provider config
-├── env.ts
-└── utils.ts
-```
+* `app/(citizen)/request/page.tsx` → `modules/requests/presentation/pages/CitizenRequestPage.tsx`
+* `app/(citizen)/tracking/[id]/page.tsx` → `modules/requests/presentation/pages/TrackingPage.tsx`
+* `app/(coordinator)/requests/page.tsx` → `modules/requests/presentation/pages/CoordinatorRequestsPage.tsx`
+* `app/(coordinator)/missions/page.tsx` → `modules/missions/presentation/pages/CoordinatorMissionsPage.tsx`
+* `app/(team)/missions/page.tsx` → `modules/missions/presentation/pages/TeamMissionsPage.tsx`
+* `app/(team)/report/[id]/page.tsx` → `modules/reports/presentation/pages/TeamReportPage.tsx`
+* `app/(manager)/inventory/page.tsx` → `modules/inventory/presentation/pages/InventoryPage.tsx`
+* `app/(admin)/users/page.tsx` → `modules/users/presentation/pages/AdminUsersPage.tsx`
 
----
-
-## 5. Cross-cutting Layers
-
-```txt
-hooks/
-├── useAuth.ts
-├── usePermission.ts
-├── useDebounce.ts
-
-constants/
-├── roles.ts
-├── status.ts
-├── priority.ts
-├── menu.ts
-
-types/
-├── user.ts
-├── api.ts
-├── pagination.ts
-```
+**Pattern cho `app` page:**
+`app/.../page.tsx` chỉ làm wrapper và import component từ `modules/*/presentation/pages`.
 
 ---
 
-## Notes (Best Practices)
+## 4. Auth & Role
 
-* Mỗi **feature = 1 domain nghiệp vụ**
-* Không gộp logic theo role trong component
-* Map được tách module riêng để dễ mock & thay provider
-* Sẵn sàng scale cho đồ án SE hoặc production
+* `modules/auth` chứa session entity, use-cases (login/logout/checkPermission), adapter cho API.
+* `modules/auth/presentation/guards` chứa guards (CitizenGuard, CoordinatorGuard, AdminGuard).
+* Dùng guards trong `app/(role)/layout.tsx` để bảo vệ route groups.
+
+---
+
+## 5. Map (OSM) - module dùng chung
+
+* `modules/map` cung cấp:
+
+  * `presentation/components/RescueMap.tsx` (tái sử dụng)
+  * `application` use-cases cho tracking
+  * `infrastructure/osm.adapter.ts` (wrappers cho OSM/OpenMap)
+* Các module `missions`, `teams`, `requests` import component + hook từ `modules/map`.
+
+---
+
+## 6. Ghi chú ngắn
+
+* `app/` không chứa business logic. Chỉ route/layout/wrappers.
+* Test focus: viết unit test cho `application` (use-cases) và integration test cho `infrastructure`.
+* Tổ chức state: ưu tiên server-state (React Server Components/React Query) cho dữ liệu fetch; dùng `store/` cho client-only UI state hoặc data cần chia sẻ realtime.
+
+---
+
+Phiên bản này đơn giản, đủ để bắt đầu implement. Nếu cần, tôi có thể tạo skeleton repo cho 1 module cụ thể (ví dụ `requests`).

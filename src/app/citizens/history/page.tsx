@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import API from "@/lib/services/api";
+import MobileHeader from "@/app/components/layout/MobileHeader";
+import MobileBottomNav from "@/app/components/layout/MobileBottomNav";
+import DesktopHeader from "@/app/components/layout/DesktopHeader";
+import DesktopSidebar from "@/app/components/layout/DesktopSidebar";
 
 interface RescueHistory {
     id: string;
@@ -18,9 +23,29 @@ interface RescueHistory {
 
 export default function HistoryPage() {
     const [filter, setFilter] = useState<"all" | "completed" | "pending" | "cancelled">("all");
+    const [historyData, setHistoryData] = useState<RescueHistory[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Mock data
-    const historyData: RescueHistory[] = [
+    // Fetch history from API
+    useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                setIsLoading(true);
+                const data = await API.citizen.getHistory() as RescueHistory[];
+                setHistoryData(data);
+            } catch (error) {
+                console.error("Lỗi khi tải lịch sử:", error);
+                // Fallback to mock data on error
+                setHistoryData(mockHistoryData);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchHistory();
+    }, []);
+
+    // Mock data fallback
+    const mockHistoryData: RescueHistory[] = [
         {
             id: "REQ001",
             type: "Ngập lụt",
@@ -96,77 +121,18 @@ export default function HistoryPage() {
 
     return (
         <div className="min-h-screen bg-secondary flex flex-col lg:flex-row">
-            {/* Desktop Sidebar */}
-            <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-white/5 border-r border-white/10">
-                <div className="p-6 border-b border-white/10">
-                    <h1 className="text-2xl font-bold text-white">Cứu hộ Lũ lụt</h1>
-                    <p className="text-sm text-gray-400 mt-1">FPT Flood Rescue</p>
-                </div>
-
-                <nav className="flex-1 p-4">
-                    <ul className="space-y-2">
-                        <li>
-                            <Link href="/citizen" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
-                                <span className="text-xl">🏠</span>
-                                <span>Trang chủ</span>
-                            </Link>
-                        </li>
-                        <li>
-                            <Link href="/citizen/history" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-primary text-white font-semibold">
-                                <span className="text-xl">📜</span>
-                                <span>Lịch sử</span>
-                            </Link>
-                        </li>
-                        <li>
-                            <Link href="/citizen/notifications" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
-                                <span className="text-xl">🔔</span>
-                                <span>Thông báo</span>
-                            </Link>
-                        </li>
-                        <li>
-                            <Link href="/citizen/profile" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
-                                <span className="text-xl">👤</span>
-                                <span>Cá nhân</span>
-                            </Link>
-                        </li>
-                    </ul>
-                </nav>
-
-                <div className="p-4 border-t border-white/10">
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
-                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
-                            U
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-sm font-semibold text-white">User Account</p>
-                            <p className="text-xs text-gray-400">Citizen</p>
-                        </div>
-                    </div>
-                </div>
-            </aside>
+            <DesktopSidebar userName="User Account" userRole="Citizen" />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col">
-                {/* Mobile Header */}
-                <header className="lg:hidden sticky top-0 z-50 bg-secondary/80 backdrop-blur-md border-b border-white/10">
-                    <div className="flex items-center justify-between p-4">
-                        <Link href="/citizen" className="w-10 h-10 flex items-center justify-center text-white">
-                            <span className="text-2xl">←</span>
-                        </Link>
-                        <h2 className="text-lg font-bold text-white">Lịch sử</h2>
-                        <div className="w-10 h-10"></div>
-                    </div>
-                </header>
+            <div className="flex-1 flex flex-col lg:ml-64">
+                <MobileHeader onLocationClick={() => { }} />
 
-                {/* Desktop Header */}
-                <header className="hidden lg:flex items-center justify-between p-6 border-b border-white/10">
-                    <div>
-                        <h2 className="text-2xl font-bold text-white">Lịch sử yêu cầu</h2>
-                        <p className="text-gray-400 text-sm mt-1">Xem lại tất cả các yêu cầu cứu hộ của bạn</p>
-                    </div>
-                </header>
+                <DesktopHeader
+                    title="Lịch sử yêu cầu"
+                    subtitle="Xem lại tất cả các yêu cầu cứu hộ của bạn"
+                />
 
-                <main className="flex-1 overflow-y-auto">
+                <main className="flex-1 overflow-y-auto pt-[73px] lg:pt-[89px] pb-24 lg:pb-0">
                     <div className="max-w-4xl mx-auto p-4 lg:p-8">
                         {/* Statistics Cards */}
                         <div className="grid grid-cols-3 gap-3 lg:gap-4 mb-6">
@@ -205,8 +171,8 @@ export default function HistoryPage() {
                                     key={tab.value}
                                     onClick={() => setFilter(tab.value as typeof filter)}
                                     className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition ${filter === tab.value
-                                            ? "bg-primary text-white"
-                                            : "bg-white/5 text-gray-400 hover:bg-white/10"
+                                        ? "bg-primary text-white"
+                                        : "bg-white/5 text-gray-400 hover:bg-white/10"
                                         }`}
                                 >
                                     {tab.label} ({tab.count})
@@ -216,7 +182,23 @@ export default function HistoryPage() {
 
                         {/* History List */}
                         <div className="space-y-4">
-                            {filteredData.length === 0 ? (
+                            {isLoading ? (
+                                // Loading skeleton
+                                <div className="space-y-4">
+                                    {[1, 2, 3].map((i) => (
+                                        <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-5 animate-pulse">
+                                            <div className="flex items-start gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-white/10"></div>
+                                                <div className="flex-1 space-y-2">
+                                                    <div className="h-4 bg-white/10 rounded w-1/3"></div>
+                                                    <div className="h-3 bg-white/10 rounded w-2/3"></div>
+                                                    <div className="h-3 bg-white/10 rounded w-1/2"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : filteredData.length === 0 ? (
                                 <div className="text-center py-12">
                                     <div className="text-6xl mb-4">📭</div>
                                     <p className="text-gray-400 text-lg">Chưa có lịch sử nào</p>
@@ -292,27 +274,15 @@ export default function HistoryPage() {
                     </div>
                 </main>
 
-                {/* Mobile Bottom Navigation */}
-                <nav className="lg:hidden sticky bottom-0 bg-secondary/90 backdrop-blur-lg border-t border-white/10 pb-6 pt-2">
-                    <div className="flex justify-around items-center">
-                        <Link href="/citizen" className="flex flex-col items-center gap-1 text-gray-400">
-                            <span className="text-2xl">🏠</span>
-                            <span className="text-[10px] font-bold">TRANG CHỦ</span>
-                        </Link>
-                        <Link href="/citizen/history" className="flex flex-col items-center gap-1 text-primary">
-                            <span className="text-2xl">📜</span>
-                            <span className="text-[10px] font-bold">LỊCH SỬ</span>
-                        </Link>
-                        <Link href="/citizen/notifications" className="flex flex-col items-center gap-1 text-gray-400">
-                            <span className="text-2xl">🔔</span>
-                            <span className="text-[10px] font-bold">THÔNG BÁO</span>
-                        </Link>
-                        <Link href="/citizen/profile" className="flex flex-col items-center gap-1 text-gray-400">
-                            <span className="text-2xl">👤</span>
-                            <span className="text-[10px] font-bold">CÁ NHÂN</span>
-                        </Link>
-                    </div>
-                </nav>
+                <MobileBottomNav
+                    items={[
+                        { icon: "🏠", label: "TRANG CHỦ", href: "/citizens" },
+                        { icon: "📜", label: "LỊCH SỬ", href: "/citizens/history" },
+                        { icon: "🔔", label: "THÔNG BÁO", href: "/citizens/notifications" },
+                        { icon: "👤", label: "CÁ NHÂN", href: "/citizens/profile" },
+                    ]}
+                    currentPath="/citizens/history"
+                />
             </div>
         </div>
     );

@@ -4,6 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
+import SuccessPopup from "@/app/components/ui/SuccessPopup";
+import API from "@/lib/services/api";
+import MobileHeader from "@/app/components/layout/MobileHeader";
+import MobileBottomNav from "@/app/components/layout/MobileBottomNav";
+import DesktopHeader from "@/app/components/layout/DesktopHeader";
+import DesktopSidebar from "@/app/components/layout/DesktopSidebar";
 // Dynamic import cho OPENMAP để tránh SSR issues
 const OpenMap = dynamic(() => import("@/app/components/OpenMap"), {
     ssr: false,
@@ -27,6 +33,9 @@ export default function CitizenHomePage() {
         numberOfPeople: 1,
         urgencyLevel: "high",
     });
+    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+    const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
 
     // Quick action templates
     const quickRescueActions = [
@@ -123,23 +132,56 @@ export default function CitizenHomePage() {
             title: "Cứu trợ thực phẩm",
             description: "Yêu cầu cơm, nước uống khẩn cấp",
             color: "orange",
-            href: "/citizen/request-food",
+            href: "/citizens/request-food",
         },
         {
-            icon: "⚠️",
-            title: "Báo cáo nguy hiểm",
-            description: "Sạt lở, nước dâng cao, điện hở",
+            icon: "📋",
+            title: "Theo dõi yêu cầu cứu hộ",
+            description: "Xem trạng thái và lịch sử yêu cầu",
             color: "red",
-            href: "/citizen/report-danger",
+            href: "/citizens/history",
         },
         {
             icon: "🛡️",
             title: "Hướng dẫn an toàn",
             description: "Kỹ năng sinh tồn khi có lũ",
             color: "blue",
-            href: "/citizen/safety-guide",
+            href: "/citizens/safety-guide",
         },
     ];
+
+    // Hàm upload hình ảnh lên Cloudinary
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        if (uploadedImages.length + files.length > 5) {
+            alert("Chỉ được tải tối đa 5 hình ảnh!");
+            return;
+        }
+
+        setIsUploadingImage(true);
+
+        try {
+            const fileArray = Array.from(files);
+            console.log(`Uploading ${fileArray.length} image(s)...`);
+
+            const imageUrls = await API.cloudinary.uploadMultipleImages(fileArray);
+
+            setUploadedImages([...uploadedImages, ...imageUrls]);
+            console.log('Upload success:', imageUrls);
+        } catch (error) {
+            console.error("Lỗi khi upload hình ảnh:", error);
+            alert(`❌ Không thể tải hình ảnh lên: ${error instanceof Error ? error.message : 'Vui lòng thử lại!'}`);
+        } finally {
+            setIsUploadingImage(false);
+        }
+    };
+
+    // Hàm xóa hình ảnh
+    const removeImage = (index: number) => {
+        setUploadedImages(uploadedImages.filter((_, i) => i !== index));
+    };
 
     // Hàm xử lý gửi yêu cầu cứu hộ
     const handleRescueRequest = async () => {
@@ -161,6 +203,7 @@ export default function CitizenHomePage() {
                 ...rescueRequest,
                 location: currentLocation,
                 coordinates: coordinates,
+                images: uploadedImages,
                 timestamp: new Date().toISOString(),
                 status: "pending",
             };
@@ -170,14 +213,16 @@ export default function CitizenHomePage() {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1500));
 
-            alert("✅ Yêu cầu cứu hộ đã được gửi thành công! Đội cứu hộ sẽ đến ngay!");
             setShowRescueModal(false);
+            setSelectedQuickAction(null);
             setRescueRequest({
                 dangerType: "",
                 description: "",
                 numberOfPeople: 1,
                 urgencyLevel: "high",
             });
+            setUploadedImages([]);
+            setShowSuccessPopup(true);
         } catch (error) {
             console.error("Lỗi khi gửi yêu cầu:", error);
             alert("❌ Có lỗi xảy ra. Vui lòng thử lại!");
@@ -205,170 +250,90 @@ export default function CitizenHomePage() {
 
     return (
         <div className="min-h-screen bg-secondary flex flex-col lg:flex-row">
-            {/* Desktop Sidebar */}
-            <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-white/5 border-r border-white/10">
-                <div className="p-6 border-b border-white/10">
-                    <h1 className="text-2xl font-bold text-white">Cứu hộ Lũ lụt</h1>
-                    <p className="text-sm text-gray-400 mt-1">FPT Flood Rescue</p>
-                </div>
-
-                <nav className="flex-1 p-4">
-                    <ul className="space-y-2">
-                        <li>
-                            <Link href="/citizen" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-primary text-white font-semibold">
-                                <span className="text-xl">🏠</span>
-                                <span>Trang chủ</span>
-                            </Link>
-                        </li>
-                        <li>
-                            <Link href="/citizen/history" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
-                                <span className="text-xl">📜</span>
-                                <span>Lịch sử</span>
-                            </Link>
-                        </li>
-                        <li>
-                            <Link href="/citizen/notifications" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
-                                <span className="text-xl">🔔</span>
-                                <span>Thông báo</span>
-                            </Link>
-                        </li>
-                        <li>
-                            <Link href="/citizen/profile" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
-                                <span className="text-xl">👤</span>
-                                <span>Cá nhân</span>
-                            </Link>
-                        </li>
-                    </ul>
-                </nav>
-
-                <div className="p-4 border-t border-white/10">
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
-                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
-                            U
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-sm font-semibold text-white">User Account</p>
-                            <p className="text-xs text-gray-400">Citizen</p>
-                        </div>
-                    </div>
-                </div>
-            </aside>
+            <DesktopSidebar userName="User Account" userRole="Citizen" />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col">
-                {/* Mobile Header */}
-                <header className="lg:hidden sticky top-0 z-50 bg-secondary/80 backdrop-blur-md border-b border-white/10">
-                    <div className="flex items-center justify-between p-4">
-                        <button className="w-10 h-10 flex items-center justify-center text-white">
-                            <span className="text-2xl">☰</span>
-                        </button>
-                        <h2 className="text-lg font-bold text-white">Cứu hộ Lũ lụt</h2>
-                        <button
-                            onClick={() => document.getElementById('location-map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                            className="w-10 h-10 flex items-center justify-center hover:scale-110 transition-transform"
-                        >
-                            <span className="text-primary text-2xl">📍</span>
-                        </button>
-                    </div>
-                </header>
+            <div className="flex-1 flex flex-col lg:ml-64">
+                <MobileHeader onLocationClick={() => document.getElementById('location-map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
 
-                {/* Desktop Header */}
-                <header className="hidden lg:flex items-center justify-between p-6 border-b border-white/10">
-                    <div>
-                        <h2 className="text-2xl font-bold text-white">Trang chủ</h2>
-                        <p className="text-gray-400 text-sm mt-1">Chào mừng đến với hệ thống cứu hộ</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 text-green-500 text-sm font-bold">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                            </span>
-                            HỆ THỐNG TRỰC TUYẾN
-                        </div>
-                        <button
-                            onClick={() => document.getElementById('location-map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                            className="px-4 py-2 rounded-lg bg-white/5 text-white hover:bg-white/10 transition hover:scale-105"
-                        >
-                            <span className="text-xl">📍</span>
-                        </button>
-                    </div>
-                </header>
+                <DesktopHeader
+                    title="Trang chủ"
+                    subtitle="Chào mừng đến với hệ thống cứu hộ"
+                    onLocationClick={() => document.getElementById('location-map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                />
 
-                <main className="flex-1 overflow-y-auto">
-                    <div className="max-w-7xl mx-auto p-4 lg:p-8">
-                        {/* Status Indicator - Mobile Only */}
-                        <div className="flex justify-center mb-6 lg:hidden">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 text-green-500 text-xs font-bold uppercase tracking-widest">
-                                <span className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                                </span>
-                                Hệ thống trực tuyến
-                            </div>
-                        </div>
+                {/* Main Content Area */}
+                <main className="flex-1 overflow-y-auto pt-[73px] lg:pt-[89px] pb-24 lg:pb-0">
+                    <div className="max-w-7xl mx-auto p-4 lg:p-6 space-y-6">
 
-                        {/* Desktop Grid Layout */}
-                        <div className="grid lg:grid-cols-2 gap-8">
-                            {/* Left Column - Emergency Section */}
-                            <div className="flex flex-col">
-                                {/* Headline */}
-                                <div className="mb-8">
-                                    <h2 className="text-3xl lg:text-4xl font-bold text-white text-center lg:text-left uppercase">
-                                        Cần hỗ trợ ngay?
-                                    </h2>
-                                    <p className="text-gray-400 text-sm lg:text-base mt-3 text-center lg:text-left">
-                                        Nhấn nút bên dưới để gửi tín hiệu cấp cứu và vị trí của bạn tới đội cứu hộ.
-                                    </p>
-                                </div>
-
+                        {/* Hero Section - Emergency CTA */}
+                        <div className="bg-gradient-to-br from-red-600/20 to-red-800/10 border border-red-500/30 rounded-2xl p-6 lg:p-8">
+                            <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-8">
                                 {/* Emergency Button */}
-                                <div className="flex-1 flex items-center justify-center py-8 lg:py-12">
+                                <div className="shrink-0">
                                     <button
                                         onClick={() => openRescueModal()}
-                                        className="group relative flex flex-col items-center justify-center w-64 h-64 lg:w-80 lg:h-80 rounded-full bg-red-600 text-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_40px_rgba(220,38,38,0.4)]" aria-label="Nút cứu hộ khẩn cấp"
+                                        className="group relative flex flex-col items-center justify-center w-44 h-44 lg:w-48 lg:h-48 rounded-full bg-red-600 text-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_40px_rgba(220,38,38,0.4)]"
+                                        aria-label="Nút cứu hộ khẩn cấp"
                                     >
                                         <div className="absolute inset-0 rounded-full border-4 border-red-300/60 scale-110 animate-pulse"></div>
-                                        <span className="text-7xl lg:text-8xl mb-3">🚨</span>
-                                        <span className="text-2xl lg:text-3xl font-black tracking-tight text-center px-6 leading-none">
+                                        <span className="text-6xl lg:text-7xl mb-2">🚨</span>
+                                        <span className="text-xl lg:text-2xl font-black tracking-tight text-center px-4">
                                             CỨU HỘ<br />KHẨN CẤP
                                         </span>
                                     </button>
                                 </div>
 
-                                {/* Location Info */}
-                                <div className="mt-6 p-4 lg:p-5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
-                                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                                        <span className="text-2xl shrink-0">
-                                            {isLoadingLocation ? "⏳" : "📍"}
-                                        </span>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">
-                                                Vị trí hiện tại
-                                            </p>
-                                            <p className="text-sm lg:text-base font-medium text-white mt-1 truncate">
-                                                {currentLocation}
-                                            </p>
-                                            {coordinates && (
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    GPS: {coordinates.lat.toFixed(6)}, {coordinates.lon.toFixed(6)}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
+                                {/* Hero Text */}
+                                <div className="flex-1 text-center lg:text-left">
+                                    <h1 className="text-3xl lg:text-4xl font-black text-white mb-3 leading-tight">
+                                        Bạn đang gặp nguy hiểm?
+                                    </h1>
+                                    <p className="text-gray-300 text-sm lg:text-base leading-relaxed">
+                                        Nhấn nút bên cạnh để gửi tín hiệu cấp cứu. Vị trí GPS của bạn sẽ được gửi tự động đến đội cứu hộ gần nhất.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Grid Layout - Location & Quick Actions */}
+                        <div className="grid lg:grid-cols-2 gap-6">
+
+                            {/* Location Card */}
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                        <span>📍</span>
+                                        Vị trí của bạn
+                                    </h3>
                                     <button
                                         onClick={getCurrentLocation}
                                         disabled={isLoadingLocation}
-                                        className="text-xs lg:text-sm font-bold text-primary px-4 py-2 rounded-full bg-primary/10 hover:bg-primary/20 transition disabled:opacity-50 disabled:cursor-not-allowed shrink-0 ml-3"
+                                        className="text-xs font-bold text-primary px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        {isLoadingLocation ? "..." : "CẬP NHẬT"}
+                                        {isLoadingLocation ? "⏳" : "🔄 Cập nhật"}
                                     </button>
                                 </div>
 
-                                {/* Small Map Display - Below Location Info */}
-                                <div id="location-map" className="mt-4 rounded-xl overflow-hidden scroll-mt-20 bg-white/5 border border-white/10 relative z-0">
+                                {/* Address Display */}
+                                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                                    <p className="text-xs text-gray-400 uppercase font-bold mb-1.5">
+                                        Địa chỉ hiện tại
+                                    </p>
+                                    <p className="text-sm text-white font-medium leading-relaxed">
+                                        {currentLocation}
+                                    </p>
+                                    {coordinates && (
+                                        <p className="text-xs text-gray-500 mt-2 font-mono">
+                                            {coordinates.lat.toFixed(6)}, {coordinates.lon.toFixed(6)}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Map Display */}
+                                <div id="location-map" className="rounded-xl overflow-hidden bg-white/5 border border-white/10 scroll-mt-20">
                                     {coordinates ? (
-                                        <div className="h-48 w-full relative z-0">
+                                        <div className="h-56 lg:h-64 w-full relative">
                                             <OpenMap
                                                 latitude={coordinates.lat}
                                                 longitude={coordinates.lon}
@@ -376,7 +341,7 @@ export default function CitizenHomePage() {
                                             />
                                         </div>
                                     ) : (
-                                        <div className="h-48 flex items-center justify-center">
+                                        <div className="h-56 lg:h-64 flex items-center justify-center">
                                             <div className="text-center">
                                                 <span className="text-4xl mb-2 block">📍</span>
                                                 <p className="text-gray-400 text-sm">Đang lấy vị trí GPS...</p>
@@ -386,87 +351,60 @@ export default function CitizenHomePage() {
                                 </div>
                             </div>
 
-                            {/* Right Column - Quick Actions */}
-                            <div className="flex flex-col">
-                                <h3 className="text-xl lg:text-2xl font-bold text-white mb-6">
+                            {/* Quick Actions Card */}
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <span>⚡</span>
                                     Lựa chọn nhanh
                                 </h3>
 
-                                <div className="flex flex-col gap-4">
+                                <div className="space-y-3">
                                     {quickActions.map((action, index) => (
                                         <Link
                                             key={index}
                                             href={action.href}
-                                            className="flex items-center gap-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-5 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
+                                            className="group flex items-center gap-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl p-4 transition-all duration-200 hover:scale-[1.02]"
                                         >
                                             <div
-                                                className={`flex items-center justify-center rounded-xl shrink-0 w-14 h-14 text-3xl ${action.color === "orange"
-                                                    ? "bg-orange-500/10"
+                                                className={`flex items-center justify-center rounded-xl shrink-0 w-12 h-12 text-2xl transition-transform group-hover:scale-110 ${action.color === "orange"
+                                                    ? "bg-orange-500/20 text-orange-400"
                                                     : action.color === "red"
-                                                        ? "bg-red-500/10"
-                                                        : "bg-blue-500/10"
+                                                        ? "bg-red-500/20 text-red-400"
+                                                        : "bg-blue-500/20 text-blue-400"
                                                     }`}
                                             >
                                                 {action.icon}
                                             </div>
-                                            <div className="flex-1">
-                                                <p className="text-base lg:text-lg font-bold text-white mb-1">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-base font-bold text-white mb-1">
                                                     {action.title}
                                                 </p>
-                                                <p className="text-gray-400 text-sm">
+                                                <p className="text-gray-400 text-xs leading-snug line-clamp-2">
                                                     {action.description}
                                                 </p>
                                             </div>
-                                            <div className="shrink-0 text-gray-500">
+                                            <div className="shrink-0 text-gray-500 group-hover:text-primary transition-colors">
                                                 <span className="text-2xl">›</span>
                                             </div>
                                         </Link>
                                     ))}
                                 </div>
-
-                                {/* Additional Info Cards */}
-                                <div className="grid grid-cols-2 gap-4 mt-6">
-                                    <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                                        <div className="text-3xl mb-2">📊</div>
-                                        <p className="text-xs text-gray-400 uppercase font-bold">
-                                            Yêu cầu
-                                        </p>
-                                        <p className="text-2xl font-bold text-white mt-1">0</p>
-                                    </div>
-                                    <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                                        <div className="text-3xl mb-2">✅</div>
-                                        <p className="text-xs text-gray-400 uppercase font-bold">
-                                            Hoàn thành
-                                        </p>
-                                        <p className="text-2xl font-bold text-white mt-1">0</p>
-                                    </div>
-                                </div>
                             </div>
                         </div>
+
+
                     </div>
                 </main>
 
-                {/* Mobile Bottom Navigation */}
-                <nav className="lg:hidden sticky bottom-0 bg-secondary/90 backdrop-blur-lg border-t border-white/10 pb-6 pt-2">
-                    <div className="flex justify-around items-center">
-                        <Link href="/citizen" className="flex flex-col items-center gap-1 text-primary">
-                            <span className="text-2xl">🏠</span>
-                            <span className="text-[10px] font-bold">TRANG CHỦ</span>
-                        </Link>
-                        <Link href="/citizen/history" className="flex flex-col items-center gap-1 text-gray-400">
-                            <span className="text-2xl">📜</span>
-                            <span className="text-[10px] font-bold">LỊCH SỬ</span>
-                        </Link>
-                        <Link href="/citizen/notifications" className="flex flex-col items-center gap-1 text-gray-400">
-                            <span className="text-2xl">🔔</span>
-                            <span className="text-[10px] font-bold">THÔNG BÁO</span>
-                        </Link>
-                        <Link href="/citizen/profile" className="flex flex-col items-center gap-1 text-gray-400">
-                            <span className="text-2xl">👤</span>
-                            <span className="text-[10px] font-bold">CÁ NHÂN</span>
-                        </Link>
-                    </div>
-                </nav>
+                <MobileBottomNav
+                    items={[
+                        { icon: "🏠", label: "TRANG CHỦ", href: "/citizens" },
+                        { icon: "📜", label: "LỊCH SỬ", href: "/citizens/history" },
+                        { icon: "🔔", label: "THÔNG BÁO", href: "/citizens/notifications" },
+                        { icon: "👤", label: "CÁ NHÂN", href: "/citizens/profile" },
+                    ]}
+                    currentPath="/citizens"
+                />
             </div>
 
             {/* Rescue Request Modal */}
@@ -589,6 +527,70 @@ export default function CitizenHomePage() {
                                     </div>
                                 )}
 
+                                {/* Image Upload */}
+                                {selectedQuickAction && (
+                                    <div className="space-y-3">
+                                        <label className="text-sm font-bold text-white flex items-center gap-2">
+                                            <span>📸</span>
+                                            Thêm hình ảnh thực tế (không bắt buộc)
+                                        </label>
+
+                                        {/* Upload Button */}
+                                        <label className="block cursor-pointer">
+                                            <div className="p-4 rounded-xl bg-white/5 border-2 border-dashed border-white/20 hover:border-primary/50 hover:bg-white/10 transition-all text-center">
+                                                {isUploadingImage ? (
+                                                    <div className="py-2">
+                                                        <span className="text-2xl animate-spin inline-block">⏳</span>
+                                                        <p className="text-sm text-gray-400 mt-2">Đang tải lên...</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="py-2">
+                                                        <span className="text-3xl block mb-2">📤</span>
+                                                        <p className="text-sm font-bold text-white mb-1">Chọn hình ảnh</p>
+                                                        <p className="text-xs text-gray-400">JPG, PNG (Tối đa 5 ảnh)</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                multiple
+                                                max={5}
+                                                onChange={handleImageUpload}
+                                                disabled={isUploadingImage || uploadedImages.length >= 5}
+                                                className="hidden"
+                                            />
+                                        </label>
+
+                                        {/* Preview Images */}
+                                        {uploadedImages.length > 0 && (
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {uploadedImages.map((imageUrl, index) => (
+                                                    <div key={index} className="relative group">
+                                                        <img
+                                                            src={imageUrl}
+                                                            alt={`Hình ${index + 1}`}
+                                                            className="w-full h-24 object-cover rounded-lg border border-white/10"
+                                                        />
+                                                        <button
+                                                            onClick={() => removeImage(index)}
+                                                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {uploadedImages.length > 0 && (
+                                            <p className="text-xs text-gray-400 text-center">
+                                                {uploadedImages.length}/5 hình ảnh
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
                                 {/* Location Info */}
                                 {selectedQuickAction && (
                                     <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
@@ -645,6 +647,14 @@ export default function CitizenHomePage() {
                     </div>
                 </div>
             )}
+
+            {/* Success Popup */}
+            <SuccessPopup
+                isOpen={showSuccessPopup}
+                onClose={() => setShowSuccessPopup(false)}
+                message="Yêu cầu cứu hộ đã được gửi thành công! Đội cứu hộ sẽ đến ngay!"
+                icon="🚨"
+            />
         </div>
     );
 }

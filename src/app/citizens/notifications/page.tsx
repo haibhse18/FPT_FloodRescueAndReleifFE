@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import API from "@/lib/services/api";
+import MobileHeader from "@/app/components/layout/MobileHeader";
+import MobileBottomNav from "@/app/components/layout/MobileBottomNav";
+import DesktopHeader from "@/app/components/layout/DesktopHeader";
+import DesktopSidebar from "@/app/components/layout/DesktopSidebar";
 
 interface Notification {
     id: string;
@@ -16,7 +21,29 @@ interface Notification {
 
 export default function NotificationsPage() {
     const [filter, setFilter] = useState<"all" | "unread">("all");
-    const [notifications, setNotifications] = useState<Notification[]>([
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Fetch notifications from API
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                setIsLoading(true);
+                const data = await API.citizen.getNotifications() as Notification[];
+                setNotifications(data);
+            } catch (error) {
+                console.error("Lỗi khi tải thông báo:", error);
+                // Fallback to mock data on error
+                setNotifications(mockNotifications);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchNotifications();
+    }, []);
+
+    // Mock data fallback
+    const mockNotifications: Notification[] = [
         {
             id: "NOTIF001",
             type: "success",
@@ -25,7 +52,7 @@ export default function NotificationsPage() {
             timestamp: "2 giờ trước",
             isRead: false,
             actionLabel: "Xem chi tiết",
-            actionLink: "/citizen/history"
+            actionLink: "/citizens/history"
         },
         {
             id: "NOTIF002",
@@ -35,7 +62,7 @@ export default function NotificationsPage() {
             timestamp: "5 giờ trước",
             isRead: false,
             actionLabel: "Hướng dẫn an toàn",
-            actionLink: "/citizen/safety-guide"
+            actionLink: "/citizens/safety-guide"
         },
         {
             id: "NOTIF003",
@@ -45,7 +72,7 @@ export default function NotificationsPage() {
             timestamp: "1 ngày trước",
             isRead: true,
             actionLabel: "Theo dõi",
-            actionLink: "/citizen/history"
+            actionLink: "/citizens/history"
         },
         {
             id: "NOTIF004",
@@ -71,9 +98,9 @@ export default function NotificationsPage() {
             timestamp: "3 ngày trước",
             isRead: true,
             actionLabel: "Xem thêm",
-            actionLink: "/citizen/safety-guide"
+            actionLink: "/citizens/safety-guide"
         }
-    ]);
+    ];
 
     const typeConfig = {
         success: {
@@ -120,104 +147,18 @@ export default function NotificationsPage() {
 
     return (
         <div className="min-h-screen bg-secondary flex flex-col lg:flex-row">
-            {/* Desktop Sidebar */}
-            <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-white/5 border-r border-white/10">
-                <div className="p-6 border-b border-white/10">
-                    <h1 className="text-2xl font-bold text-white">Cứu hộ Lũ lụt</h1>
-                    <p className="text-sm text-gray-400 mt-1">FPT Flood Rescue</p>
-                </div>
-
-                <nav className="flex-1 p-4">
-                    <ul className="space-y-2">
-                        <li>
-                            <Link href="/citizen" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
-                                <span className="text-xl">🏠</span>
-                                <span>Trang chủ</span>
-                            </Link>
-                        </li>
-                        <li>
-                            <Link href="/citizen/history" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
-                                <span className="text-xl">📜</span>
-                                <span>Lịch sử</span>
-                            </Link>
-                        </li>
-                        <li>
-                            <Link href="/citizen/notifications" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-primary text-white font-semibold">
-                                <span className="text-xl">🔔</span>
-                                <span>Thông báo</span>
-                                {unreadCount > 0 && (
-                                    <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                                        {unreadCount}
-                                    </span>
-                                )}
-                            </Link>
-                        </li>
-                        <li>
-                            <Link href="/citizen/profile" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition">
-                                <span className="text-xl">👤</span>
-                                <span>Cá nhân</span>
-                            </Link>
-                        </li>
-                    </ul>
-                </nav>
-
-                <div className="p-4 border-t border-white/10">
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
-                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
-                            U
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-sm font-semibold text-white">User Account</p>
-                            <p className="text-xs text-gray-400">Citizen</p>
-                        </div>
-                    </div>
-                </div>
-            </aside>
+            <DesktopSidebar userName="User Account" userRole="Citizen" />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col">
-                {/* Mobile Header */}
-                <header className="lg:hidden sticky top-0 z-50 bg-secondary/80 backdrop-blur-md border-b border-white/10">
-                    <div className="flex items-center justify-between p-4">
-                        <Link href="/citizen" className="w-10 h-10 flex items-center justify-center text-white">
-                            <span className="text-2xl">←</span>
-                        </Link>
-                        <div className="flex items-center gap-2">
-                            <h2 className="text-lg font-bold text-white">Thông báo</h2>
-                            {unreadCount > 0 && (
-                                <span className="bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                                    {unreadCount}
-                                </span>
-                            )}
-                        </div>
-                        <div className="w-10 h-10"></div>
-                    </div>
-                </header>
+            <div className="flex-1 flex flex-col lg:ml-64">
+                <MobileHeader onLocationClick={() => { }} />
 
-                {/* Desktop Header */}
-                <header className="hidden lg:flex items-center justify-between p-6 border-b border-white/10">
-                    <div>
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                            Thông báo
-                            {unreadCount > 0 && (
-                                <span className="bg-red-500 text-white text-sm font-bold rounded-full px-3 py-1">
-                                    {unreadCount} mới
-                                </span>
-                            )}
-                        </h2>
-                        <p className="text-gray-400 text-sm mt-1">Cập nhật mới nhất về cứu hộ và an toàn</p>
-                    </div>
-                    {unreadCount > 0 && (
-                        <button
-                            onClick={markAllAsRead}
-                            className="px-4 py-2 rounded-lg bg-white/5 text-primary hover:bg-white/10 transition text-sm font-bold"
-                        >
-                            Đánh dấu tất cả đã đọc
-                        </button>
-                    )}
-                </header>
+                <DesktopHeader
+                    title="Thông báo"
+                    subtitle="Cập nhật mới nhất về cứu hộ và an toàn"
+                />
 
-                <main className="flex-1 overflow-y-auto">
+                <main className="flex-1 overflow-y-auto pt-[73px] lg:pt-[89px] pb-24 lg:pb-0">
                     <div className="max-w-4xl mx-auto p-4 lg:p-8">
                         {/* Filter Tabs */}
                         <div className="flex items-center justify-between mb-6">
@@ -225,8 +166,8 @@ export default function NotificationsPage() {
                                 <button
                                     onClick={() => setFilter("all")}
                                     className={`px-4 py-2 rounded-full text-sm font-bold transition ${filter === "all"
-                                            ? "bg-primary text-white"
-                                            : "bg-white/5 text-gray-400 hover:bg-white/10"
+                                        ? "bg-primary text-white"
+                                        : "bg-white/5 text-gray-400 hover:bg-white/10"
                                         }`}
                                 >
                                     Tất cả ({notifications.length})
@@ -234,8 +175,8 @@ export default function NotificationsPage() {
                                 <button
                                     onClick={() => setFilter("unread")}
                                     className={`px-4 py-2 rounded-full text-sm font-bold transition ${filter === "unread"
-                                            ? "bg-primary text-white"
-                                            : "bg-white/5 text-gray-400 hover:bg-white/10"
+                                        ? "bg-primary text-white"
+                                        : "bg-white/5 text-gray-400 hover:bg-white/10"
                                         }`}
                                 >
                                     Chưa đọc ({unreadCount})
@@ -255,7 +196,23 @@ export default function NotificationsPage() {
 
                         {/* Notifications List */}
                         <div className="space-y-3">
-                            {filteredNotifications.length === 0 ? (
+                            {isLoading ? (
+                                // Loading skeleton
+                                <div className="space-y-3">
+                                    {[1, 2, 3, 4].map((i) => (
+                                        <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-4 animate-pulse">
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-white/10"></div>
+                                                <div className="flex-1 space-y-2">
+                                                    <div className="h-4 bg-white/10 rounded w-1/2"></div>
+                                                    <div className="h-3 bg-white/10 rounded w-3/4"></div>
+                                                    <div className="h-3 bg-white/10 rounded w-1/4"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : filteredNotifications.length === 0 ? (
                                 <div className="text-center py-12">
                                     <div className="text-6xl mb-4">🔕</div>
                                     <p className="text-gray-400 text-lg">Không có thông báo nào</p>
@@ -266,8 +223,8 @@ export default function NotificationsPage() {
                                         key={notification.id}
                                         onClick={() => markAsRead(notification.id)}
                                         className={`relative bg-white/5 border rounded-xl p-4 transition-all duration-200 cursor-pointer ${notification.isRead
-                                                ? "border-white/10 hover:bg-white/10"
-                                                : "border-white/20 bg-white/10 hover:bg-white/15"
+                                            ? "border-white/10 hover:bg-white/10"
+                                            : "border-white/20 bg-white/10 hover:bg-white/15"
                                             }`}
                                     >
                                         {/* Unread indicator */}
@@ -319,32 +276,15 @@ export default function NotificationsPage() {
                     </div>
                 </main>
 
-                {/* Mobile Bottom Navigation */}
-                <nav className="lg:hidden sticky bottom-0 bg-secondary/90 backdrop-blur-lg border-t border-white/10 pb-6 pt-2">
-                    <div className="flex justify-around items-center">
-                        <Link href="/citizen" className="flex flex-col items-center gap-1 text-gray-400">
-                            <span className="text-2xl">🏠</span>
-                            <span className="text-[10px] font-bold">TRANG CHỦ</span>
-                        </Link>
-                        <Link href="/citizen/history" className="flex flex-col items-center gap-1 text-gray-400">
-                            <span className="text-2xl">📜</span>
-                            <span className="text-[10px] font-bold">LỊCH SỬ</span>
-                        </Link>
-                        <Link href="/citizen/notifications" className="flex flex-col items-center gap-1 text-primary relative">
-                            <span className="text-2xl">🔔</span>
-                            <span className="text-[10px] font-bold">THÔNG BÁO</span>
-                            {unreadCount > 0 && (
-                                <span className="absolute -top-1 right-0 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                                    {unreadCount}
-                                </span>
-                            )}
-                        </Link>
-                        <Link href="/citizen/profile" className="flex flex-col items-center gap-1 text-gray-400">
-                            <span className="text-2xl">👤</span>
-                            <span className="text-[10px] font-bold">CÁ NHÂN</span>
-                        </Link>
-                    </div>
-                </nav>
+                <MobileBottomNav
+                    items={[
+                        { icon: "🏠", label: "TRANG CHỦ", href: "/citizens" },
+                        { icon: "📜", label: "LỊCH SỬ", href: "/citizens/history" },
+                        { icon: "🔔", label: "THÔNG BÁO", href: "/citizens/notifications" },
+                        { icon: "👤", label: "CÁ NHÂN", href: "/citizens/profile" },
+                    ]}
+                    currentPath="/citizens/notifications"
+                />
             </div>
         </div>
     );

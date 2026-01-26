@@ -19,21 +19,21 @@ export default function QuickActionsList({ actions }: QuickActionsListProps) {
             title: "Cứu trợ thực phẩm",
             description: "Yêu cầu cơm, nước uống khẩn cấp",
             color: "orange",
-            href: "/citizen/request-food",
+            href: "/citizens/request-food",
         },
         {
             icon: "⚠️",
             title: "Báo cáo nguy hiểm",
             description: "Sạt lở, nước dâng cao, điện hở",
             color: "red",
-            href: "/citizen/report-danger",
+            href: "/citizens/report-danger",
         },
         {
             icon: "🛡️",
             title: "Hướng dẫn an toàn",
             description: "Kỹ năng sinh tồn khi có lũ",
             color: "blue",
-            href: "/citizen/safety-guide",
+            href: "/citizens/safety-guide",
         },
     ];
 

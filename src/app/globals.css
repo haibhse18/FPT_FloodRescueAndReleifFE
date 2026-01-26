@@ -19,6 +19,17 @@ body {
     }
 }
 
+/* Success Popup Animation */
+@keyframes shrinkWidth {
+    from {
+        width: 100%;
+    }
+
+    to {
+        width: 0%;
+    }
+}
+
 /* MapLibre GL styles */
 .maplibregl-map {
     font-family: Arial, Helvetica, sans-serif;

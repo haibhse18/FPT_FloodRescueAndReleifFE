@@ -22,7 +22,7 @@ export default function MobileBottomNav({ items, currentPath = "/citizen" }: Mob
     const navItems = items || defaultItems;
 
     return (
-        <nav className="lg:hidden sticky bottom-0 bg-secondary/90 backdrop-blur-lg border-t border-white/10 pb-6 pt-2">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-secondary/90 backdrop-blur-lg border-t border-white/10 pb-6 pt-2">
             <div className="flex justify-around items-center">
                 {navItems.map((item, index) => (
                     <Link

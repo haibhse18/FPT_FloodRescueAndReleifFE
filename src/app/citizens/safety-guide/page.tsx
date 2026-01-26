@@ -120,7 +120,7 @@ export default function SafetyGuidePage() {
             <header className="sticky top-0 z-50 bg-secondary/80 backdrop-blur-md border-b border-white/10">
                 <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
                     <Link
-                        href="/citizen"
+                        href="/citizens"
                         className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 transition"
                     >
                         <span className="text-xl">←</span>
@@ -229,7 +229,7 @@ export default function SafetyGuidePage() {
                             </p>
                             <div className="flex flex-col sm:flex-row gap-3">
                                 <Link
-                                    href="/citizen"
+                                    href="/citizens"
                                     className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all hover:scale-105 shadow-lg hover:shadow-xl"
                                 >
                                     <span className="text-xl">🆘</span>

@@ -5,7 +5,7 @@ interface MobileHeaderProps {
 
 export default function MobileHeader({ onMenuClick, onLocationClick }: MobileHeaderProps) {
     return (
-        <header className="lg:hidden sticky top-0 z-50 bg-secondary/80 backdrop-blur-md border-b border-white/10">
+        <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-secondary/80 backdrop-blur-md border-b border-white/10">
             <div className="flex items-center justify-between p-4">
                 <button
                     onClick={onMenuClick}

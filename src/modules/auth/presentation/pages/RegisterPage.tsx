@@ -6,7 +6,8 @@ import Input from "@/shared/ui/Input";
 import PasswordInput from "@/shared/components/forms/PasswordInput";
 import Button from "@/shared/ui/Button";
 import { useRouter } from "next/dist/client/components/navigation";
-import API from "@/services/api";
+import { authApi } from "@/modules/auth/infrastructure/auth.api";
+import { registerSchema } from "@/shared/schemas/validation";
 
 export default function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -31,30 +32,37 @@ export default function RegisterPage() {
         e.preventDefault();
         setError("");
 
-        // Validate passwords match
-        if (formData.password !== formData.confirmPassword) {
-            setError("Mật khẩu không khớp!");
-            return;
-        }
-
         setLoading(true);
 
         try {
-            const response = await API.auth.register({
+            // Validate input using Zod
+            const validationResult = registerSchema.safeParse({
+                fullName: formData.fullName,
+                email: formData.email,
+                password: formData.password,
+                confirmPassword: formData.confirmPassword,
+                phoneNumber: formData.phone,
+            });
+
+            if (!validationResult.success) {
+                const firstError = validationResult.error.issues[0];
+                setError(firstError.message);
+                setLoading(false);
+                return;
+            }
+
+            const response = await authApi.register({
                 fullName: formData.fullName,
                 email: formData.email,
                 password: formData.password,
                 phoneNumber: formData.phone,
             });
 
-            if ((response as any).accessToken) {
-                localStorage.setItem("accessToken", (response as any).accessToken);
-            }
-
-            // Redirect to login or citizen after successful registration
+            // Token is now stored in repository layer
+            // Redirect to login after successful registration
             router.push("/login");
-        } catch (err: any) {
-            setError(err.message || "Đăng ký thất bại");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Đăng ký thất bại");
         } finally {
             setLoading(false);
         }

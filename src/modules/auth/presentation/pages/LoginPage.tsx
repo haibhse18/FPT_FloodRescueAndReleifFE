@@ -8,7 +8,8 @@ import Button from "@/shared/ui/Button";
 import GoogleLoginButton from "@/shared/components/forms/GoogleLoginButton";
 import FormDivider from "@/shared/components/forms/FormDivider";
 import { useRouter } from "next/dist/client/components/navigation";
-import API from "@/services/api";
+import { authApi } from "@/modules/auth/infrastructure/auth.api";
+import { loginSchema } from "@/shared/schemas/validation";
 
 export default function LoginPage() {
     const [phoneNumber, setPhoneNumber] = useState("");
@@ -23,19 +24,26 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const response = await API.auth.login({ phoneNumber, password });
+            // Validate input
+            const validationResult = loginSchema.safeParse({ phoneNumber, password });
+            if (!validationResult.success) {
+                const firstError = validationResult.error.issues[0];
+                setError(firstError.message);
+                setLoading(false);
+                return;
+            }
+
+            const response = await authApi.login({ phoneNumber, password });
             
-            if (!(response as any).accessToken) {
+            if (!response.accessToken) {
                 throw new Error("Không nhận được token từ server");
             }
 
-            // Save token
-            localStorage.setItem("accessToken", (response as any).accessToken);
-
+            // Token is now stored in repository layer
             // Redirect after successful login
             router.push("/citizen");
-        } catch (err: any) {
-            setError(err.message || "Đăng nhập thất bại");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Đăng nhập thất bại");
         } finally {
             setLoading(false);
         }

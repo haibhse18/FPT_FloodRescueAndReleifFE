@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import API from "@/services/api";
+import { authApi } from "@/modules/auth/infrastructure/auth.api";
+import { usersApi } from "@/modules/users/infrastructure/users.api";
 import { MobileHeader, MobileBottomNav, DesktopHeader, DesktopSidebar } from "@/shared/components/layout";
 
 export default function CitizenProfilePage() {
@@ -25,7 +26,7 @@ export default function CitizenProfilePage() {
         const fetchProfile = async () => {
             try {
                 setIsLoading(true);
-                const userData = await API.auth.getCurrentUser() as any;
+                const userData = await authApi.getCurrentUser() as any;
                 const newProfile = {
                     name: userData.fullName || "Nguyễn Văn A",
                     phone: userData.phone || "0123456789",
@@ -48,7 +49,7 @@ export default function CitizenProfilePage() {
     const handleSave = async () => {
         try {
             setIsSaving(true);
-            await API.citizen.updateProfile({
+            await usersApi.updateProfile({
                 fullName: editedProfile.name,
                 phone: editedProfile.phone,
                 address: editedProfile.address,

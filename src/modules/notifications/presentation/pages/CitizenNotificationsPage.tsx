@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import API from "@/services/api";
+import { notificationsApi } from "@/modules/notifications/infrastructure/notifications.api";
 import { MobileHeader, MobileBottomNav, DesktopHeader, DesktopSidebar } from "@/shared/components/layout";
 
 interface Notification {
@@ -25,7 +25,9 @@ export default function CitizenNotificationsPage() {
         const fetchNotifications = async () => {
             try {
                 setIsLoading(true);
-                const data = await API.citizen.getNotifications() as Notification[];
+                const response = await notificationsApi.getNotifications();
+                // Handle API response structure
+                const data = (response as any)?.data || [];
                 setNotifications(data);
             } catch (error) {
                 console.error("Lỗi khi tải thông báo:", error);
@@ -72,7 +74,7 @@ export default function CitizenNotificationsPage() {
 
     const markAsRead = async (id: string) => {
         try {
-            await API.citizen.markNotificationAsRead(id);
+            await notificationsApi.markNotificationAsRead(id);
             setNotifications(notifications.map(n => 
                 n.id === id ? { ...n, isRead: true } : n
             ));
@@ -83,7 +85,7 @@ export default function CitizenNotificationsPage() {
 
     const markAllAsRead = async () => {
         try {
-            await API.citizen.markAllNotificationsAsRead();
+            await notificationsApi.markAllNotificationsAsRead();
             setNotifications(notifications.map(n => ({ ...n, isRead: true })));
         } catch (error) {
             console.error("Error marking all as read:", error);

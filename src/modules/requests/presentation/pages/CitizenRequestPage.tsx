@@ -5,12 +5,13 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import SuccessPopup from "@/shared/ui/SuccessPopup";
-import API from "@/services/api";
+import { requestsApi } from "@/modules/requests/infrastructure/requests.api";
 import { MobileHeader, MobileBottomNav, DesktopHeader, DesktopSidebar } from "@/shared/components/layout";
 import EmergencyButton from "../components/EmergencyButton";
 import LocationInfoCard from "../components/LocationInfoCard";
 import QuickActionsList from "../components/QuickActionsList";
 import RescueRequestModal from "../components/RescueRequestModal";
+import type { ApiResponse } from "@/shared/types/api";
 
 // Dynamic import cho OpenMap để tránh SSR issues
 const OpenMap = dynamic(() => import("@/modules/map/presentation/components/OpenMap"), {
@@ -74,6 +75,7 @@ export default function CitizenRequestPage() {
     // Lấy vị trí hiện tại khi component mount
     useEffect(() => {
         getCurrentLocation();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Hàm lấy vị trí hiện tại
@@ -131,8 +133,8 @@ export default function CitizenRequestPage() {
                 images: uploadedImages,
             };
 
-            const response = await API.citizen.createRescueRequest(payload) as any;
-            if (response.success) {
+            const response = await requestsApi.createRescueRequest(payload) as ApiResponse;
+            if (response && response.success) {
                 setShowRescueModal(false);
                 setShowSuccessPopup(true);
                 setRescueRequest({
@@ -155,24 +157,29 @@ export default function CitizenRequestPage() {
         }
     };
 
-    // Hàm upload ảnh lên Cloudinary
+    // Hàm upload ảnh lên server (server-side upload to Cloudinary)
     const handleImageUpload = async (file: File) => {
         setIsUploadingImage(true);
         try {
             const formData = new FormData();
             formData.append("file", file);
-            formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "");
 
-            const response = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+            const response = await fetch('/api/upload', {
                 method: "POST",
                 body: formData,
             });
-            const data = await response.json();
-            if (data.secure_url) {
-                setUploadedImages([...uploadedImages, data.secure_url]);
+            
+            if (!response.ok) {
+                throw new Error('Upload failed');
+            }
+            
+            const data: { success: boolean; url: string } = await response.json();
+            if (data.success && data.url) {
+                setUploadedImages([...uploadedImages, data.url]);
             }
         } catch (error) {
             console.error("Error uploading image:", error);
+            alert("Lỗi khi tải ảnh lên. Vui lòng thử lại!");
         } finally {
             setIsUploadingImage(false);
         }

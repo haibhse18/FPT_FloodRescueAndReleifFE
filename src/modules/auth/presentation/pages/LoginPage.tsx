@@ -8,8 +8,12 @@ import Button from "@/shared/ui/Button";
 import GoogleLoginButton from "@/shared/components/forms/GoogleLoginButton";
 import FormDivider from "@/shared/components/forms/FormDivider";
 import { useRouter } from "next/dist/client/components/navigation";
-import { authApi } from "@/modules/auth/infrastructure/auth.api";
+import { LoginUseCase } from "@/modules/auth/application/login.usecase";
+import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
 import { loginSchema } from "@/shared/schemas/validation";
+
+// Initialize use case with repository
+const loginUseCase = new LoginUseCase(authRepository);
 
 export default function LoginPage() {
     const [phoneNumber, setPhoneNumber] = useState("");
@@ -33,13 +37,14 @@ export default function LoginPage() {
                 return;
             }
 
-            const response = await authApi.login({ phoneNumber, password });
+            // Use LoginUseCase instead of direct API call
+            const response = await loginUseCase.execute({ phoneNumber, password });
             
             if (!response.accessToken) {
                 throw new Error("Không nhận được token từ server");
             }
 
-            // Token is now stored in repository layer
+            // Token is stored in repository layer
             // Redirect after successful login
             router.push("/citizen");
         } catch (err) {

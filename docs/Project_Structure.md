@@ -1,4 +1,4 @@
-# Structure.md
+# Project_Structure.md
 
 Đây là phiên bản đơn giản của cấu trúc dự án Next.js theo hướng module-based + Clean Architecture, áp dụng trực tiếp với các module và pages bạn cung cấp.
 
@@ -116,5 +116,3 @@ modules/requests/
 * Tổ chức state: ưu tiên server-state (React Server Components/React Query) cho dữ liệu fetch; dùng `store/` cho client-only UI state hoặc data cần chia sẻ realtime.
 
 ---
-
-Phiên bản này đơn giản, đủ để bắt đầu implement. Nếu cần, tôi có thể tạo skeleton repo cho 1 module cụ thể (ví dụ `requests`).

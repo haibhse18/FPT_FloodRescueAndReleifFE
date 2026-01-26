@@ -6,8 +6,12 @@ import Input from "@/shared/ui/Input";
 import PasswordInput from "@/shared/components/forms/PasswordInput";
 import Button from "@/shared/ui/Button";
 import { useRouter } from "next/dist/client/components/navigation";
-import { authApi } from "@/modules/auth/infrastructure/auth.api";
+import { RegisterUseCase } from "@/modules/auth/application/register.usecase";
+import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
 import { registerSchema } from "@/shared/schemas/validation";
+
+// Initialize use case with repository
+const registerUseCase = new RegisterUseCase(authRepository);
 
 export default function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -51,14 +55,14 @@ export default function RegisterPage() {
                 return;
             }
 
-            const response = await authApi.register({
+            // Use RegisterUseCase instead of direct API call
+            await registerUseCase.execute({
                 fullName: formData.fullName,
                 email: formData.email,
                 password: formData.password,
                 phoneNumber: formData.phone,
-            });
+            }, formData.confirmPassword);
 
-            // Token is now stored in repository layer
             // Redirect to login after successful registration
             router.push("/login");
         } catch (err) {

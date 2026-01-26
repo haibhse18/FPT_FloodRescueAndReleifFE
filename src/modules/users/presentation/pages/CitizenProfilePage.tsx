@@ -2,9 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { authApi } from "@/modules/auth/infrastructure/auth.api";
-import { usersApi } from "@/modules/users/infrastructure/users.api";
+import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
+import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
+import { UpdateProfileUseCase } from "@/modules/users/application/updateProfile.usecase";
+import { userRepository } from "@/modules/users/infrastructure/user.repository.impl";
 import { MobileHeader, MobileBottomNav, DesktopHeader, DesktopSidebar } from "@/shared/components/layout";
+
+// Initialize use cases with repositories
+const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
+const updateProfileUseCase = new UpdateProfileUseCase(userRepository);
 
 export default function CitizenProfilePage() {
     const [isEditMode, setIsEditMode] = useState(false);
@@ -21,19 +27,19 @@ export default function CitizenProfilePage() {
 
     const [editedProfile, setEditedProfile] = useState(profile);
 
-    // Fetch user profile from API
+    // Fetch user profile using use case
     useEffect(() => {
         const fetchProfile = async () => {
             try {
                 setIsLoading(true);
-                const userData = await authApi.getCurrentUser() as any;
+                const userData = await getCurrentUserUseCase.execute();
                 const newProfile = {
                     name: userData.fullName || "Nguyễn Văn A",
-                    phone: userData.phone || "0123456789",
+                    phone: userData.phoneNumber || "0123456789",
                     email: userData.email || "nguyenvana@example.com",
                     address: userData.address || "123 Đường Nguyễn Văn Cừ, Quận 5, TP.HCM",
-                    emergencyContact: userData.emergencyContact || "0987654321",
-                    emergencyContactName: userData.emergencyContactName || "Nguyễn Thị B"
+                    emergencyContact: "0987654321",
+                    emergencyContactName: "Nguyễn Thị B"
                 };
                 setProfile(newProfile);
                 setEditedProfile(newProfile);
@@ -49,7 +55,8 @@ export default function CitizenProfilePage() {
     const handleSave = async () => {
         try {
             setIsSaving(true);
-            await usersApi.updateProfile({
+            // Use UpdateProfileUseCase instead of direct API call
+            await updateProfileUseCase.execute({
                 fullName: editedProfile.name,
                 phone: editedProfile.phone,
                 address: editedProfile.address,

@@ -5,13 +5,16 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import SuccessPopup from "@/shared/ui/SuccessPopup";
-import { requestsApi } from "@/modules/requests/infrastructure/requests.api";
+import { CreateRescueRequestUseCase } from "@/modules/requests/application/createRescueRequest.usecase";
+import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 import { MobileHeader, MobileBottomNav, DesktopHeader, DesktopSidebar } from "@/shared/components/layout";
 import EmergencyButton from "../components/EmergencyButton";
 import LocationInfoCard from "../components/LocationInfoCard";
 import QuickActionsList from "../components/QuickActionsList";
 import RescueRequestModal from "../components/RescueRequestModal";
-import type { ApiResponse } from "@/shared/types/api";
+
+// Initialize use case with repository
+const createRescueRequestUseCase = new CreateRescueRequestUseCase(requestRepository);
 
 // Dynamic import cho OpenMap để tránh SSR issues
 const OpenMap = dynamic(() => import("@/modules/map/presentation/components/OpenMap"), {
@@ -133,22 +136,21 @@ export default function CitizenRequestPage() {
                 images: uploadedImages,
             };
 
-            const response = await requestsApi.createRescueRequest(payload) as ApiResponse;
-            if (response && response.success) {
-                setShowRescueModal(false);
-                setShowSuccessPopup(true);
-                setRescueRequest({
-                    dangerType: "",
-                    description: "",
-                    numberOfPeople: 1,
-                    urgencyLevel: "high",
-                });
-                setUploadedImages([]);
-                // Delay reset để user thấy popup
-                setTimeout(() => {
-                    setShowSuccessPopup(false);
-                }, 2000);
-            }
+            // Use CreateRescueRequestUseCase instead of direct API call
+            await createRescueRequestUseCase.execute(payload);
+            setShowRescueModal(false);
+            setShowSuccessPopup(true);
+            setRescueRequest({
+                dangerType: "",
+                description: "",
+                numberOfPeople: 1,
+                urgencyLevel: "high",
+            });
+            setUploadedImages([]);
+            // Delay reset để user thấy popup
+            setTimeout(() => {
+                setShowSuccessPopup(false);
+            }, 2000);
         } catch (error) {
             console.error("Error submitting rescue request:", error);
             alert("Lỗi khi gửi yêu cầu cứu hộ");

@@ -2,8 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { notificationsApi } from "@/modules/notifications/infrastructure/notifications.api";
+import { GetNotificationsUseCase } from "@/modules/notifications/application/getNotifications.usecase";
+import { MarkNotificationReadUseCase } from "@/modules/notifications/application/markNotificationRead.usecase";
+import { notificationRepository } from "@/modules/notifications/infrastructure/notification.repository.impl";
 import { MobileHeader, MobileBottomNav, DesktopHeader, DesktopSidebar } from "@/shared/components/layout";
+
+// Initialize use cases with repository
+const getNotificationsUseCase = new GetNotificationsUseCase(notificationRepository);
+const markNotificationReadUseCase = new MarkNotificationReadUseCase(notificationRepository);
 
 interface Notification {
     id: string;
@@ -25,10 +31,9 @@ export default function CitizenNotificationsPage() {
         const fetchNotifications = async () => {
             try {
                 setIsLoading(true);
-                const response = await notificationsApi.getNotifications();
-                // Handle API response structure
-                const data = (response as any)?.data || [];
-                setNotifications(data);
+                // Use GetNotificationsUseCase instead of direct API call
+                const data = await getNotificationsUseCase.execute();
+                setNotifications(data as Notification[]);
             } catch (error) {
                 console.error("Lỗi khi tải thông báo:", error);
                 setNotifications(mockNotifications);
@@ -74,7 +79,8 @@ export default function CitizenNotificationsPage() {
 
     const markAsRead = async (id: string) => {
         try {
-            await notificationsApi.markNotificationAsRead(id);
+            // Use MarkNotificationReadUseCase instead of direct API call
+            await markNotificationReadUseCase.execute(id);
             setNotifications(notifications.map(n => 
                 n.id === id ? { ...n, isRead: true } : n
             ));
@@ -85,7 +91,8 @@ export default function CitizenNotificationsPage() {
 
     const markAllAsRead = async () => {
         try {
-            await notificationsApi.markAllNotificationsAsRead();
+            // Use MarkNotificationReadUseCase instead of direct API call
+            await markNotificationReadUseCase.executeAll();
             setNotifications(notifications.map(n => ({ ...n, isRead: true })));
         } catch (error) {
             console.error("Error marking all as read:", error);

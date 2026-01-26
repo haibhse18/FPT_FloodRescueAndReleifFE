@@ -10,6 +10,7 @@
     },
     "dependencies": {
         "@openmapvn/openmapvn-gl": "^1.0.1",
+        "cloudinary": "^2.9.0",
         "leaflet": "^1.9.4",
         "next": "14.2.0",
         "react": "^18.2.0",

@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --background: #0A2331;
+    --foreground: #ffffff;
+}
+
+body {
+    color: var(--foreground);
+    background: var(--background);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+}
+
+/* Success Popup Animation */
+@keyframes shrinkWidth {
+    from {
+        width: 100%;
+    }
+
+    to {
+        width: 0%;
+    }
+}
+
+/* MapLibre GL styles */
+.maplibregl-map {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.maplibregl-popup-content {
+    padding: 0;
+    border-radius: 8px;
+}
+
+.maplibregl-popup-close-button {
+    font-size: 20px;
+    padding: 4px 8px;
+}

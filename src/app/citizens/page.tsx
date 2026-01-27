@@ -5,7 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import SuccessPopup from "@/components/ui/success-popup";
-import API from "@/lib/services/apiClient";
+import API from "@/lib/services/api";
 import {
     MobileHeader,
     MobileBottomNav,

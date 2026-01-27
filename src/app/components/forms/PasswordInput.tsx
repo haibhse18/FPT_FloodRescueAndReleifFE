@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Input from "@/app/components/ui/Input";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface PasswordInputProps {
     id: string;
@@ -31,16 +32,13 @@ export default function PasswordInput({
     return (
         <div className={className}>
             {label && (
-                <label
-                    htmlFor={id}
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <Label htmlFor={id} className="text-gray-700">
                     {label}
                     {required && <span className="text-red-500 ml-1">*</span>}
-                </label>
+                </Label>
             )}
             <div className="relative">
-                <input
+                <Input
                     id={id}
                     name={name || id}
                     type={showPassword ? "text" : "password"}
@@ -48,8 +46,7 @@ export default function PasswordInput({
                     onChange={onChange}
                     required={required}
                     placeholder={placeholder}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition ${error ? "border-red-500" : "border-gray-300"
-                        }`}
+                    className={`pr-10 ${error ? "border-red-500" : ""}`}
                 />
                 <button
                     type="button"

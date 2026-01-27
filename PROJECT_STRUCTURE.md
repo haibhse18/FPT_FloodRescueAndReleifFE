@@ -1,6 +1,6 @@
 # CẤU TRÚC PROJECT - FPT FLOOD RESCUE & RELIEF
 
-## 📁 Cấu trúc thư mục mới (Redux-based)
+## 📁 Cấu trúc thư mục (Updated - Shadcn/ui)
 
 ```
 src/
@@ -10,7 +10,10 @@ src/
 │   │   └── page.tsx             # Admin dashboard
 │   │
 │   ├── citizens/                 # Citizens role  
-│   │   ├── components/           # Citizen-specific components
+│   │   ├── components/           # ⭐ CITIZEN COMPONENTS
+│   │   │   ├── layout/          # Layout components (MobileHeader, DesktopSidebar, etc)
+│   │   │   └── index.ts         # Export barrel
+│   │   ├── layout.tsx           # ⭐ LAYOUT CHUNG CHO CITIZENS
 │   │   ├── page.tsx             # Citizen homepage
 │   │   ├── history/             # Lịch sử
 │   │   ├── notifications/       # Thông báo
@@ -29,8 +32,24 @@ src/
 │   │   ├── components/           # Rescue team-specific components
 │   │   └── page.tsx             # Rescue team dashboard
 │   │
-│   ├── api/                      # API routes
-│   │   └── reverse-geocode/     # Reverse geocoding API
+│   ├── api/                      # ⭐ API ROUTES (Organized by Role)
+│   │   ├── citizens/             # APIs cho Citizens
+│   │   │   ├── reverse-geocode/ # GPS → Address
+│   │   │   └── cloudinary/      # Upload ảnh
+│   │   ├── coordinator/          # APIs cho Coordinator (coming soon)
+│   │   ├── rescue-team/          # APIs cho Rescue Team (coming soon)
+│   │   ├── manager/              # APIs cho Manager (coming soon)
+│   │   ├── admin/                # APIs cho Admin (coming soon)
+│   │   └── README.md            # API documentation
+│   │
+│   ├── components/               # Shared components across ALL roles
+│   │   ├── forms/                # Form components (shared)
+│   │   │   ├── FormDivider.tsx
+│   │   │   ├── GoogleLoginButton.tsx
+│   │   │   ├── PasswordInput.tsx
+│   │   │   └── index.ts
+│   │   ├── LocationMap.tsx       # Map components (shared)
+│   │   └── OpenMap.tsx
 │   │
 │   ├── login/                    # Login page
 │   ├── register/                 # Register page
@@ -39,31 +58,72 @@ src/
 │   └── globals.css              # Global styles
 │
 ├── components/
-│   └── shared/                   # Shared components across roles
-│       ├── ui/                   # UI components (Button, Input, Card, Modal)
-│       ├── forms/                # Form components (PasswordInput, GoogleLoginButton)
-│       ├── layout/               # Layout components (Header, Sidebar, Navigation)
-│       ├── LocationMap.tsx       # Map components
-│       └── OpenMap.tsx
+│   └── ui/                       # ⭐ SHADCN/UI COMPONENTS
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── input.tsx
+│       ├── label.tsx
+│       ├── badge.tsx
+│       ├── separator.tsx
+│       ├── avatar.tsx
+│       ├── dialog.tsx
+│       ├── toast.tsx
+│       ├── toaster.tsx
+│       └── success-popup.tsx
+│
+├── hooks/
+│   └── use-toast.ts             # Toast hook
 │
 ├── lib/
-│   └── services/
-│       └── api.ts               # ⭐ API SERVICE - QUẢN LÝ TẤT CẢ API CALLS
+│   ├── services/
+│   │   └── apiClient.ts         # ⭐ API CLIENT - QUẢN LÝ TẤT CẢ API CALLS
+│   └── utils.ts                 # ⭐ cn() utility cho Shadcn
 │
 ├── types/
 │   └── index.ts                 # TypeScript types & interfaces
 │
-├── utils/                        # Utility functions
-├── hooks/                        # Custom React hooks
-└── ...
+└── utils/                        # Utility functions
 
 ```
 
-## ⭐ FILE API SERVICE QUAN TRỌNG
+## ⭐ THAY ĐỔI QUAN TRỌNG
 
-File: `src/lib/services/api.ts`
+### 1. **Shadcn/ui Components** (Mới)
+Thay thế toàn bộ custom components bằng Shadcn/ui:
+- ✅ `components/ui/button.tsx` - Nút bấm với variants
+- ✅ `components/ui/card.tsx` - Card với Header/Content
+- ✅ `components/ui/input.tsx` - Input field
+- ✅ `components/ui/label.tsx` - Label
+- ✅ `components/ui/badge.tsx` - Badges
+- ✅ `components/ui/avatar.tsx` - Avatar
+- ✅ `components/ui/dialog.tsx` - Modal/Dialog
+- ✅ `components/ui/toast.tsx` - Toast notifications
+- ✅ `components/ui/success-popup.tsx` - Success dialog
 
-Chứa tất cả các API endpoints được tổ chức theo modules:
+### 2. **API Client** (Renamed)
+File: `lib/services/apiClient.ts` (trước đây: api.ts)
+- Tập trung quản lý tất cả API calls
+- Tránh nhầm lẫn với Next.js API routes folder
+
+### 3. **API Routes by Role** (Organized)
+Folder: `app/api/`
+- `api/citizens/` - APIs cho Citizens
+- `api/coordinator/` - APIs cho Coordinator
+- `api/rescue-team/` - APIs cho Rescue Team  
+- `api/manager/` - APIs cho Manager
+- `api/admin/` - APIs cho Admin
+
+### 4. **Citizen Layout** (Mới)
+File: `app/citizens/layout.tsx`
+- Layout chung cho tất cả pages trong `/citizens/*`
+- Responsive (Mobile + Desktop)
+- Tích hợp sẵn Header, Sidebar, Bottom Nav
+
+### 3. **Đã xóa** (Không dùng nữa)
+- ❌ `app/components/ui/` - Toàn bộ custom UI components cũ
+- ❌ `app/citizens/components/` - Components cũ
+- ❌ `COMPONENT_USAGE.md` - Tài liệu cũ
+- ❌ `COMPONENT_STRUCTURE.md` - Tài liệu cũ
 
 ### Auth APIs
 - `authAPI.login()` - Đăng nhập

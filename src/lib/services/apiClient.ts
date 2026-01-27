@@ -5,6 +5,8 @@
  * File này chứa tất cả các API endpoints để dễ dàng quản lý và bảo trì
  */
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+
 // ==============================================
 // HELPER FUNCTIONS
 // ==============================================
@@ -16,8 +18,7 @@ async function fetchAPI<T>(
     endpoint: string,
     options: RequestInit = {}
 ): Promise<T> {
-    // Sử dụng relative path cho Next.js API routes
-    const url = endpoint;
+    const url = `${API_BASE_URL}${endpoint}`;
 
     const config: RequestInit = {
         ...options,
@@ -31,8 +32,7 @@ async function fetchAPI<T>(
         const response = await fetch(url, config);
 
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
+            throw new Error(`API Error: ${response.status} ${response.statusText}`);
         }
 
         return await response.json();
@@ -450,7 +450,7 @@ export const cloudinaryAPI = {
      * Lấy signature từ backend để signed upload
      */
     getSignature: async (folder: string = 'rescue_requests') => {
-        return fetchAPI('/api/citizens/cloudinary/signature', {
+        return fetchAPI('/citizens/cloudinary/signature', {
             method: 'POST',
             body: JSON.stringify({ folder }),
         });

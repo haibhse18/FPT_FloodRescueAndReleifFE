@@ -4,18 +4,20 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
-import SuccessPopup from "@/app/components/ui/SuccessPopup";
-import API from "@/lib/services/api";
-import MobileHeader from "@/app/components/layout/MobileHeader";
-import MobileBottomNav from "@/app/components/layout/MobileBottomNav";
-import DesktopHeader from "@/app/components/layout/DesktopHeader";
-import DesktopSidebar from "@/app/components/layout/DesktopSidebar";
+import SuccessPopup from "@/components/ui/success-popup";
+import API from "@/lib/services/apiClient";
+import {
+    MobileHeader,
+    MobileBottomNav,
+    DesktopHeader,
+    DesktopSidebar
+} from "./components/layout";
 // Dynamic import cho OPENMAP để tránh SSR issues
 const OpenMap = dynamic(() => import("@/app/components/OpenMap"), {
     ssr: false,
     loading: () => (
-        <div className="w-full h-full bg-white/5 border border-white/10 rounded-xl flex items-center justify-center">
-            <p className="text-gray-400">Đang tải bản đồ...</p>
+        <div className="w-full h-full rounded-xl flex items-center justify-center" style={{ background: 'rgba(255, 119, 0, 0.1)', border: '2px solid rgba(255, 119, 0, 0.3)' }}>
+            <p style={{ color: '#ff7700' }}>Đang tải bản đồ...</p>
         </div>
     ),
 });
@@ -104,7 +106,7 @@ export default function CitizenHomePage() {
     const getAddressFromOpenMap = async (lat: number, lng: number) => {
         try {
             const res = await fetch(
-                `/api/reverse-geocode?lat=${lat}&lng=${lng}`
+                `/api/citizens/reverse-geocode?lat=${lat}&lng=${lng}`
             );
 
             if (!res.ok) throw new Error("Failed");
@@ -249,11 +251,11 @@ export default function CitizenHomePage() {
     };
 
     return (
-        <div className="min-h-screen bg-secondary flex flex-col lg:flex-row">
+        <div className="min-h-screen flex flex-col lg:flex-row" style={{ background: '#133249' }}>
             <DesktopSidebar userName="User Account" userRole="Citizen" />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col lg:ml-64">
+            <div className="flex-1 flex flex-col">
                 <MobileHeader onLocationClick={() => document.getElementById('location-map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
 
                 <DesktopHeader
@@ -264,21 +266,31 @@ export default function CitizenHomePage() {
 
                 {/* Main Content Area */}
                 <main className="flex-1 overflow-y-auto pt-[73px] lg:pt-[89px] pb-24 lg:pb-0">
-                    <div className="max-w-7xl mx-auto p-4 lg:p-6 space-y-6">
+                    <div className="max-w-7xl mx-auto p-4 lg:p-6 space-y-6 -mt-12 lg:-mt-14">
 
                         {/* Hero Section - Emergency CTA */}
-                        <div className="bg-gradient-to-br from-red-600/20 to-red-800/10 border border-red-500/30 rounded-2xl p-6 lg:p-8">
-                            <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-8">
+                        <div className="relative rounded-3xl p-6 lg:p-8 overflow-hidden shadow-lg" style={{ background: 'rgba(255, 119, 0, 0.1)', border: '2px solid rgba(255, 119, 0, 0.3)' }}>
+                            {/* Decorative background pattern */}
+                            <div className="absolute inset-0 opacity-[0.08]" style={{
+                                backgroundImage: 'radial-gradient(circle at 1px 1px, rgb(255 119 0) 1px, transparent 0)',
+                                backgroundSize: '24px 24px'
+                            }}></div>
+
+                            <div className="relative flex flex-col lg:flex-row items-center gap-6 lg:gap-8">
                                 {/* Emergency Button */}
                                 <div className="shrink-0">
                                     <button
                                         onClick={() => openRescueModal()}
-                                        className="group relative flex flex-col items-center justify-center w-44 h-44 lg:w-48 lg:h-48 rounded-full bg-red-600 text-white hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_40px_rgba(220,38,38,0.4)]"
+                                        className="group relative flex flex-col items-center justify-center w-40 h-40 lg:w-44 lg:h-44 rounded-full text-white hover:scale-105 active:scale-95 transition-all duration-300"
+                                        style={{
+                                            background: 'linear-gradient(135deg, #ff7700 0%, #ff5500 100%)',
+                                            boxShadow: '0 8px 32px rgba(255, 119, 0, 0.4)'
+                                        }}
                                         aria-label="Nút cứu hộ khẩn cấp"
                                     >
-                                        <div className="absolute inset-0 rounded-full border-4 border-red-300/60 scale-110 animate-pulse"></div>
-                                        <span className="text-6xl lg:text-7xl mb-2">🚨</span>
-                                        <span className="text-xl lg:text-2xl font-black tracking-tight text-center px-4">
+                                        <div className="absolute inset-0 rounded-full border-4 scale-110 animate-pulse" style={{ borderColor: 'rgba(255, 119, 0, 0.4)' }}></div>
+                                        <span className="text-5xl lg:text-6xl mb-2 drop-shadow-lg">🚨</span>
+                                        <span className="text-lg lg:text-xl font-black tracking-tight text-center px-4 drop-shadow-md">
                                             CỨU HỘ<br />KHẨN CẤP
                                         </span>
                                     </button>
@@ -286,10 +298,10 @@ export default function CitizenHomePage() {
 
                                 {/* Hero Text */}
                                 <div className="flex-1 text-center lg:text-left">
-                                    <h1 className="text-3xl lg:text-4xl font-black text-white mb-3 leading-tight">
+                                    <h1 className="text-2xl lg:text-3xl font-black mb-3 leading-tight" style={{ color: '#ff7700' }}>
                                         Bạn đang gặp nguy hiểm?
                                     </h1>
-                                    <p className="text-gray-300 text-sm lg:text-base leading-relaxed">
+                                    <p className="text-sm lg:text-base leading-relaxed max-w-xl" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                                         Nhấn nút bên cạnh để gửi tín hiệu cấp cứu. Vị trí GPS của bạn sẽ được gửi tự động đến đội cứu hộ gần nhất.
                                     </p>
                                 </div>
@@ -300,38 +312,43 @@ export default function CitizenHomePage() {
                         <div className="grid lg:grid-cols-2 gap-6">
 
                             {/* Location Card */}
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
+                            <div className="backdrop-blur-sm rounded-2xl p-6 space-y-4 shadow-md hover:shadow-xl transition-shadow duration-300" style={{ background: 'rgba(255, 255, 255, 0.05)', border: '2px solid rgba(255, 119, 0, 0.2)' }}>
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                        <span>📍</span>
+                                    <h3 className="text-xl font-bold flex items-center gap-2" style={{ color: '#ff7700' }}>
+                                        <span className="text-2xl">📍</span>
                                         Vị trí của bạn
                                     </h3>
                                     <button
                                         onClick={getCurrentLocation}
                                         disabled={isLoadingLocation}
-                                        className="text-xs font-bold text-primary px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="text-xs font-bold px-4 py-2 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
+                                        style={{
+                                            color: '#ff7700',
+                                            background: 'rgba(255, 119, 0, 0.1)',
+                                            border: '1px solid rgba(255, 119, 0, 0.3)'
+                                        }}
                                     >
                                         {isLoadingLocation ? "⏳" : "🔄 Cập nhật"}
                                     </button>
                                 </div>
 
                                 {/* Address Display */}
-                                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                                    <p className="text-xs text-gray-400 uppercase font-bold mb-1.5">
+                                <div className="p-4 rounded-xl" style={{ background: 'rgba(255, 119, 0, 0.08)', border: '1px solid rgba(255, 119, 0, 0.2)' }}>
+                                    <p className="text-xs uppercase font-bold mb-2 tracking-wide" style={{ color: '#ff7700' }}>
                                         Địa chỉ hiện tại
                                     </p>
-                                    <p className="text-sm text-white font-medium leading-relaxed">
+                                    <p className="text-sm font-semibold leading-relaxed" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                                         {currentLocation}
                                     </p>
                                     {coordinates && (
-                                        <p className="text-xs text-gray-500 mt-2 font-mono">
+                                        <p className="text-xs mt-2 font-mono px-2 py-1 rounded inline-block" style={{ color: 'rgba(255, 255, 255, 0.6)', background: 'rgba(255, 255, 255, 0.05)' }}>
                                             {coordinates.lat.toFixed(6)}, {coordinates.lon.toFixed(6)}
                                         </p>
                                     )}
                                 </div>
 
                                 {/* Map Display */}
-                                <div id="location-map" className="rounded-xl overflow-hidden bg-white/5 border border-white/10 scroll-mt-20">
+                                <div id="location-map" className="rounded-xl overflow-hidden scroll-mt-20 shadow-inner" style={{ background: 'rgba(0, 0, 0, 0.2)', border: '2px solid rgba(255, 119, 0, 0.2)' }}>
                                     {coordinates ? (
                                         <div className="h-56 lg:h-64 w-full relative">
                                             <OpenMap
@@ -341,10 +358,10 @@ export default function CitizenHomePage() {
                                             />
                                         </div>
                                     ) : (
-                                        <div className="h-56 lg:h-64 flex items-center justify-center">
+                                        <div className="h-56 lg:h-64 flex items-center justify-center" style={{ background: 'rgba(255, 119, 0, 0.05)' }}>
                                             <div className="text-center">
-                                                <span className="text-4xl mb-2 block">📍</span>
-                                                <p className="text-gray-400 text-sm">Đang lấy vị trí GPS...</p>
+                                                <span className="text-5xl mb-3 block animate-bounce">📍</span>
+                                                <p className="text-sm font-medium" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Đang lấy vị trí GPS...</p>
                                             </div>
                                         </div>
                                     )}
@@ -352,9 +369,9 @@ export default function CitizenHomePage() {
                             </div>
 
                             {/* Quick Actions Card */}
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
-                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                    <span>⚡</span>
+                            <div className="backdrop-blur-sm rounded-2xl p-6 space-y-4 shadow-md hover:shadow-xl transition-shadow duration-300" style={{ background: 'rgba(255, 255, 255, 0.05)', border: '2px solid rgba(255, 119, 0, 0.2)' }}>
+                                <h3 className="text-xl font-bold flex items-center gap-2" style={{ color: '#ff7700' }}>
+                                    <span className="text-2xl">⚡</span>
                                     Lựa chọn nhanh
                                 </h3>
 
@@ -363,28 +380,31 @@ export default function CitizenHomePage() {
                                         <Link
                                             key={index}
                                             href={action.href}
-                                            className="group flex items-center gap-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl p-4 transition-all duration-200 hover:scale-[1.02]"
+                                            className="group flex items-center gap-4 rounded-xl p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-md"
+                                            style={{
+                                                background: 'rgba(255, 255, 255, 0.05)',
+                                                border: '2px solid rgba(255, 255, 255, 0.1)'
+                                            }}
                                         >
                                             <div
-                                                className={`flex items-center justify-center rounded-xl shrink-0 w-12 h-12 text-2xl transition-transform group-hover:scale-110 ${action.color === "orange"
-                                                    ? "bg-orange-500/20 text-orange-400"
-                                                    : action.color === "red"
-                                                        ? "bg-red-500/20 text-red-400"
-                                                        : "bg-blue-500/20 text-blue-400"
-                                                    }`}
+                                                className="flex items-center justify-center rounded-xl shrink-0 w-14 h-14 text-3xl transition-transform group-hover:scale-110 shadow-sm"
+                                                style={{
+                                                    background: 'rgba(255, 119, 0, 0.15)',
+                                                    border: '2px solid rgba(255, 119, 0, 0.3)'
+                                                }}
                                             >
                                                 {action.icon}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-base font-bold text-white mb-1">
+                                                <p className="text-base font-bold mb-1" style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
                                                     {action.title}
                                                 </p>
-                                                <p className="text-gray-400 text-xs leading-snug line-clamp-2">
+                                                <p className="text-xs leading-snug line-clamp-2" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
                                                     {action.description}
                                                 </p>
                                             </div>
-                                            <div className="shrink-0 text-gray-500 group-hover:text-primary transition-colors">
-                                                <span className="text-2xl">›</span>
+                                            <div className="shrink-0 transition-colors" style={{ color: '#ff7700' }}>
+                                                <span className="text-2xl font-bold">›</span>
                                             </div>
                                         </Link>
                                     ))}
@@ -409,18 +429,18 @@ export default function CitizenHomePage() {
 
             {/* Rescue Request Modal */}
             {showRescueModal && (
-                <div className="fixed inset-0 z-[100] flex items-end lg:items-center justify-center p-0 lg:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-secondary border-t lg:border border-white/20 rounded-t-3xl lg:rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom lg:slide-in-from-bottom-0 duration-300">
+                <div className="fixed inset-0 z-[100] flex items-end lg:items-center justify-center p-0 lg:p-4 backdrop-blur-md animate-in fade-in duration-200" style={{ background: 'rgba(19, 50, 73, 0.85)' }}>
+                    <div className="rounded-t-3xl lg:rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom lg:slide-in-from-bottom-0 duration-300" style={{ background: '#1a3a52', border: '4px solid rgba(255, 119, 0, 0.4)' }}>
                         {/* Header - Fixed */}
-                        <div className="flex-shrink-0 bg-secondary/98 backdrop-blur-xl border-b border-white/10 p-5 shadow-lg rounded-t-3xl lg:rounded-t-2xl">
+                        <div className="flex-shrink-0 p-5 shadow-lg rounded-t-3xl lg:rounded-t-3xl" style={{ background: 'rgba(255, 119, 0, 0.1)', borderBottom: '2px solid rgba(255, 119, 0, 0.3)' }}>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center shadow-inner">
-                                        <span className="text-2xl">🚨</span>
+                                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #ff7700 0%, #ff5500 100%)' }}>
+                                        <span className="text-3xl">🚨</span>
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-black text-white">Yêu cầu cứu hộ</h2>
-                                        <p className="text-xs text-gray-400">Chọn tình huống và gửi ngay</p>
+                                        <h2 className="text-xl font-black" style={{ color: '#ff7700' }}>Yêu cầu cứu hộ</h2>
+                                        <p className="text-xs font-medium" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Chọn tình huống và gửi ngay</p>
                                     </div>
                                 </div>
                                 <button
@@ -428,9 +448,10 @@ export default function CitizenHomePage() {
                                         setShowRescueModal(false);
                                         setSelectedQuickAction(null);
                                     }}
-                                    className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+                                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm"
+                                    style={{ background: 'rgba(255, 255, 255, 0.1)', border: '2px solid rgba(255, 119, 0, 0.3)' }}
                                 >
-                                    <span className="text-xl text-gray-400">✕</span>
+                                    <span className="text-xl" style={{ color: '#ff7700' }}>✕</span>
                                 </button>
                             </div>
                         </div>
@@ -439,14 +460,14 @@ export default function CitizenHomePage() {
                         <div className="flex-1 overflow-y-auto overscroll-contain"
                             style={{
                                 scrollbarWidth: 'thin',
-                                scrollbarColor: 'rgba(255, 119, 0, 0.3) transparent'
+                                scrollbarColor: 'rgba(255, 119, 0, 0.5) rgba(255, 119, 0, 0.1)'
                             }}
                         >
 
                             {/* Quick Actions */}
                             <div className="p-5 space-y-4">
                                 <div>
-                                    <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                    <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#ff7700' }}>
                                         <span>⚡</span>
                                         Chọn tình huống khẩn cấp
                                     </h3>
@@ -463,19 +484,21 @@ export default function CitizenHomePage() {
                                                         urgencyLevel: "high",
                                                     });
                                                 }}
-                                                className={`relative p-4 rounded-xl border-2 transition-all ${selectedQuickAction === action.id
-                                                    ? `bg-gradient-to-br ${action.color} border-transparent shadow-lg scale-[1.02]`
-                                                    : "bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/10"
-                                                    }`}
+                                                className="relative p-4 rounded-xl border-2 transition-all"
+                                                style={{
+                                                    background: selectedQuickAction === action.id ? 'rgba(255, 119, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                                    borderColor: selectedQuickAction === action.id ? '#ff7700' : 'rgba(255, 255, 255, 0.1)',
+                                                    transform: selectedQuickAction === action.id ? 'scale(1.02)' : 'scale(1)'
+                                                }}
                                             >
                                                 <div className="text-center">
-                                                    <span className="text-4xl mb-2 block">{action.icon}</span>
-                                                    <p className="text-sm font-bold text-white mb-1">{action.label}</p>
-                                                    <p className="text-xs text-gray-400 line-clamp-2">{action.description}</p>
+                                                    <span className="text-4xl mb-2 block drop-shadow">{action.icon}</span>
+                                                    <p className="text-sm font-bold mb-1" style={{ color: selectedQuickAction === action.id ? '#ff7700' : 'rgba(255, 255, 255, 0.9)' }}>{action.label}</p>
+                                                    <p className="text-xs line-clamp-2" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>{action.description}</p>
                                                 </div>
                                                 {selectedQuickAction === action.id && (
-                                                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
-                                                        <span className="text-white text-xs">✓</span>
+                                                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center shadow-md" style={{ background: '#ff7700' }}>
+                                                        <span className="text-white text-xs font-bold">✓</span>
                                                     </div>
                                                 )}
                                             </button>
@@ -486,7 +509,7 @@ export default function CitizenHomePage() {
                                 {/* Additional Details (Optional) */}
                                 {selectedQuickAction && (
                                     <div className="animate-in slide-in-from-top duration-200">
-                                        <label className="block text-sm font-bold text-white mb-2">
+                                        <label className="block text-sm font-bold mb-2" style={{ color: '#ff7700' }}>
                                             📝 Thêm thông tin chi tiết (không bắt buộc)
                                         </label>
                                         <textarea
@@ -494,32 +517,39 @@ export default function CitizenHomePage() {
                                             onChange={(e) => setRescueRequest({ ...rescueRequest, description: e.target.value })}
                                             placeholder="VD: Nước ngập cao 1.5m, có 2 người già cần di chuyển..."
                                             rows={3}
-                                            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition resize-none text-sm"
+                                            className="w-full px-4 py-3 rounded-xl outline-none transition resize-none text-sm"
+                                            style={{
+                                                background: 'rgba(255, 255, 255, 0.05)',
+                                                border: '2px solid rgba(255, 119, 0, 0.2)',
+                                                color: 'rgba(255, 255, 255, 0.9)'
+                                            }}
                                         />
                                     </div>
                                 )}
 
                                 {/* Number of People */}
                                 {selectedQuickAction && (
-                                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
+                                    <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'rgba(255, 119, 0, 0.1)', border: '2px solid rgba(255, 119, 0, 0.3)' }}>
                                         <div className="flex items-center gap-3">
                                             <span className="text-2xl">👥</span>
                                             <div>
-                                                <p className="text-sm font-bold text-white">Số người cần cứu hộ</p>
-                                                <p className="text-xs text-gray-400">Bao gồm cả bạn</p>
+                                                <p className="text-sm font-bold" style={{ color: '#ff7700' }}>Số người cần cứu hộ</p>
+                                                <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Bao gồm cả bạn</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={() => setRescueRequest({ ...rescueRequest, numberOfPeople: Math.max(1, rescueRequest.numberOfPeople - 1) })}
-                                                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white font-bold transition"
+                                                className="w-9 h-9 rounded-full flex items-center justify-center font-bold transition shadow-sm hover:shadow"
+                                                style={{ background: 'rgba(255, 119, 0, 0.2)', border: '2px solid rgba(255, 119, 0, 0.4)', color: '#ff7700' }}
                                             >
                                                 −
                                             </button>
-                                            <span className="text-xl font-bold text-white w-10 text-center">{rescueRequest.numberOfPeople}</span>
+                                            <span className="text-xl font-bold w-12 text-center" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{rescueRequest.numberOfPeople}</span>
                                             <button
                                                 onClick={() => setRescueRequest({ ...rescueRequest, numberOfPeople: Math.min(50, rescueRequest.numberOfPeople + 1) })}
-                                                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white font-bold transition"
+                                                className="w-9 h-9 rounded-full flex items-center justify-center font-bold transition shadow-sm hover:shadow"
+                                                style={{ background: 'rgba(255, 119, 0, 0.2)', border: '2px solid rgba(255, 119, 0, 0.4)', color: '#ff7700' }}
                                             >
                                                 +
                                             </button>
@@ -530,24 +560,24 @@ export default function CitizenHomePage() {
                                 {/* Image Upload */}
                                 {selectedQuickAction && (
                                     <div className="space-y-3">
-                                        <label className="text-sm font-bold text-white flex items-center gap-2">
+                                        <label className="text-sm font-bold flex items-center gap-2" style={{ color: '#ff7700' }}>
                                             <span>📸</span>
                                             Thêm hình ảnh thực tế (không bắt buộc)
                                         </label>
 
                                         {/* Upload Button */}
                                         <label className="block cursor-pointer">
-                                            <div className="p-4 rounded-xl bg-white/5 border-2 border-dashed border-white/20 hover:border-primary/50 hover:bg-white/10 transition-all text-center">
+                                            <div className="p-4 rounded-xl border-2 border-dashed transition-all text-center shadow-sm hover:shadow-md" style={{ background: 'rgba(255, 119, 0, 0.05)', borderColor: 'rgba(255, 119, 0, 0.3)' }}>
                                                 {isUploadingImage ? (
                                                     <div className="py-2">
-                                                        <span className="text-2xl animate-spin inline-block">⏳</span>
-                                                        <p className="text-sm text-gray-400 mt-2">Đang tải lên...</p>
+                                                        <span className="text-3xl animate-spin inline-block">⏳</span>
+                                                        <p className="text-sm mt-2 font-medium" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Đang tải lên...</p>
                                                     </div>
                                                 ) : (
                                                     <div className="py-2">
-                                                        <span className="text-3xl block mb-2">📤</span>
-                                                        <p className="text-sm font-bold text-white mb-1">Chọn hình ảnh</p>
-                                                        <p className="text-xs text-gray-400">JPG, PNG (Tối đa 5 ảnh)</p>
+                                                        <span className="text-4xl block mb-2">📤</span>
+                                                        <p className="text-sm font-bold mb-1" style={{ color: '#ff7700' }}>Chọn hình ảnh</p>
+                                                        <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>JPG, PNG (Tối đa 5 ảnh)</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -570,11 +600,13 @@ export default function CitizenHomePage() {
                                                         <img
                                                             src={imageUrl}
                                                             alt={`Hình ${index + 1}`}
-                                                            className="w-full h-24 object-cover rounded-lg border border-white/10"
+                                                            className="w-full h-24 object-cover rounded-lg shadow-sm"
+                                                            style={{ border: '2px solid rgba(255, 119, 0, 0.3)' }}
                                                         />
                                                         <button
                                                             onClick={() => removeImage(index)}
-                                                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                                            className="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                                            style={{ background: '#ff7700', border: '2px solid white' }}
                                                         >
                                                             ✕
                                                         </button>
@@ -584,7 +616,7 @@ export default function CitizenHomePage() {
                                         )}
 
                                         {uploadedImages.length > 0 && (
-                                            <p className="text-xs text-gray-400 text-center">
+                                            <p className="text-xs text-center font-medium" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
                                                 {uploadedImages.length}/5 hình ảnh
                                             </p>
                                         )}
@@ -593,14 +625,14 @@ export default function CitizenHomePage() {
 
                                 {/* Location Info */}
                                 {selectedQuickAction && (
-                                    <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                                    <div className="p-4 rounded-xl" style={{ background: 'rgba(255, 119, 0, 0.1)', border: '2px solid rgba(255, 119, 0, 0.3)' }}>
                                         <div className="flex items-start gap-3">
                                             <span className="text-2xl">📍</span>
                                             <div className="flex-1">
-                                                <p className="text-sm font-bold text-blue-400 mb-1">Vị trí sẽ được gửi tự động</p>
-                                                <p className="text-sm text-gray-300">{currentLocation}</p>
+                                                <p className="text-sm font-bold mb-1" style={{ color: '#ff7700' }}>Vị trí sẽ được gửi tự động</p>
+                                                <p className="text-sm font-medium" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{currentLocation}</p>
                                                 {coordinates && (
-                                                    <p className="text-xs text-gray-500 mt-1 font-mono">
+                                                    <p className="text-xs mt-1 font-mono px-2 py-1 rounded inline-block" style={{ color: 'rgba(255, 255, 255, 0.6)', background: 'rgba(255, 255, 255, 0.05)' }}>
                                                         {coordinates.lat.toFixed(6)}, {coordinates.lon.toFixed(6)}
                                                     </p>
                                                 )}
@@ -613,21 +645,23 @@ export default function CitizenHomePage() {
 
                         {/* Footer - Fixed */}
                         {selectedQuickAction && (
-                            <div className="flex-shrink-0 bg-secondary/98 backdrop-blur-xl border-t border-white/10 p-5 shadow-[0_-4px_12px_rgba(0,0,0,0.3)] rounded-b-3xl lg:rounded-b-2xl">
+                            <div className="flex-shrink-0 p-5" style={{ background: 'rgba(255, 119, 0, 0.05)', borderTop: '2px solid rgba(255, 119, 0, 0.3)', boxShadow: '0 -4px 12px rgba(0,0,0,0.2)' }}>
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => {
                                             setShowRescueModal(false);
                                             setSelectedQuickAction(null);
                                         }}
-                                        className="flex-1 px-6 py-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all duration-200 hover:scale-[1.02] active:scale-95"
+                                        className="flex-1 px-6 py-4 rounded-xl font-bold transition-all duration-200 hover:scale-[1.02] active:scale-95 shadow-sm hover:shadow"
+                                        style={{ background: 'rgba(255, 255, 255, 0.05)', border: '2px solid rgba(255, 255, 255, 0.2)', color: 'rgba(255, 255, 255, 0.8)' }}
                                     >
                                         Hủy
                                     </button>
                                     <button
                                         onClick={handleRescueRequest}
                                         disabled={isSubmitting}
-                                        className="flex-[2] px-6 py-4 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                                        className="flex-[2] px-6 py-4 rounded-xl text-white font-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                                        style={{ background: 'linear-gradient(135deg, #ff7700 0%, #ff5500 100%)' }}
                                     >
                                         {isSubmitting ? (
                                             <>
@@ -636,7 +670,7 @@ export default function CitizenHomePage() {
                                             </>
                                         ) : (
                                             <>
-                                                <span className="text-xl">🚨</span>
+                                                <span className="text-xl drop-shadow">🚨</span>
                                                 <span>GỬI NGAY</span>
                                             </>
                                         )}
@@ -652,8 +686,8 @@ export default function CitizenHomePage() {
             <SuccessPopup
                 isOpen={showSuccessPopup}
                 onClose={() => setShowSuccessPopup(false)}
+                title="Gửi yêu cầu thành công!"
                 message="Yêu cầu cứu hộ đã được gửi thành công! Đội cứu hộ sẽ đến ngay!"
-                icon="🚨"
             />
         </div>
     );

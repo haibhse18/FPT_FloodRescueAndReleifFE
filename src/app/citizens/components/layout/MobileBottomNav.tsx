@@ -22,14 +22,14 @@ export default function MobileBottomNav({ items, currentPath = "/citizen" }: Mob
     const navItems = items || defaultItems;
 
     return (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-secondary/90 backdrop-blur-lg border-t border-white/10 pb-6 pt-2">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-lg pb-6 pt-2" style={{ background: '#133249', borderTop: '2px solid rgba(255, 119, 0, 0.3)' }}>
             <div className="flex justify-around items-center">
                 {navItems.map((item, index) => (
                     <Link
                         key={index}
                         href={item.href}
-                        className={`flex flex-col items-center gap-1 ${currentPath === item.href ? "text-primary" : "text-gray-400"
-                            }`}
+                        className="flex flex-col items-center gap-1"
+                        style={{ color: currentPath === item.href ? '#ff7700' : 'rgba(255, 255, 255, 0.5)' }}
                     >
                         <span className="text-2xl">{item.icon}</span>
                         <span className="text-[10px] font-bold">{item.label}</span>

@@ -29,16 +29,16 @@ export default function DesktopSidebar({
     ];
 
     return (
-        <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 lg:w-64 bg-gradient-to-b from-white/5 to-white/[0.02] border-r border-white/10 z-40">
+        <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 lg:w-64 border-r z-40" style={{ background: '#133249', borderColor: 'rgba(255, 119, 0, 0.3)' }}>
             {/* Logo Section */}
-            <div className="p-6 border-b border-white/10 bg-gradient-to-br from-primary/10 to-transparent">
+            <div className="p-6 border-b" style={{ borderColor: 'rgba(255, 119, 0, 0.3)', background: 'rgba(255, 119, 0, 0.05)' }}>
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-2xl shadow-lg">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-lg" style={{ background: 'linear-gradient(135deg, #ff7700 0%, #ff5500 100%)' }}>
                         🛟
                     </div>
                     <div>
                         <h1 className="text-xl font-black text-white tracking-tight">Cứu hộ Lũ lụt</h1>
-                        <p className="text-xs text-gray-400 font-semibold mt-0.5">FPT Flood Rescue</p>
+                        <p className="text-xs font-semibold mt-0.5" style={{ color: 'rgba(255, 119, 0, 0.8)' }}>FPT Flood Rescue</p>
                     </div>
                 </div>
             </div>
@@ -52,10 +52,12 @@ export default function DesktopSidebar({
                             <li key={index}>
                                 <Link
                                     href={item.href}
-                                    className={`group relative w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200 ${isActive
-                                            ? "bg-gradient-to-r from-primary to-orange-600 text-white shadow-lg shadow-primary/30"
-                                            : "text-gray-400 hover:bg-white/5 hover:text-white"
-                                        }`}
+                                    className="group relative w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200"
+                                    style={isActive
+                                        ? { background: 'linear-gradient(135deg, #ff7700 0%, #ff5500 100%)', color: 'white', boxShadow: '0 4px 12px rgba(255, 119, 0, 0.3)' }
+                                        : { color: 'rgba(255, 255, 255, 0.6)' }}
+                                    onMouseEnter={(e) => !isActive && (e.currentTarget.style.background = 'rgba(255, 119, 0, 0.1)', e.currentTarget.style.color = '#ff7700')}
+                                    onMouseLeave={(e) => !isActive && (e.currentTarget.style.background = 'transparent', e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)')}
                                 >
                                     <span className={`text-xl transition-transform ${isActive ? "scale-110" : "group-hover:scale-110"}`}>
                                         {item.icon}
@@ -77,19 +79,22 @@ export default function DesktopSidebar({
             </nav>
 
             {/* User Info Footer */}
-            <div className="p-4 border-t border-white/10 bg-gradient-to-br from-white/5 to-transparent">
+            <div className="p-4 border-t" style={{ borderColor: 'rgba(255, 119, 0, 0.3)', background: 'rgba(255, 119, 0, 0.05)' }}>
                 <Link
                     href="/citizens/profile"
-                    className="group flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-95"
+                    className="group flex items-center gap-3 p-3 rounded-xl transition-all hover:scale-[1.02] active:scale-95"
+                    style={{ background: 'rgba(255, 119, 0, 0.1)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 119, 0, 0.2)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 119, 0, 0.1)'}
                 >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-white font-bold shadow-md">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-md" style={{ background: 'linear-gradient(135deg, #ff7700 0%, #ff5500 100%)' }}>
                         {userName.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-white truncate">{userName}</p>
-                        <p className="text-xs text-gray-400">{userRole}</p>
+                        <p className="text-xs" style={{ color: 'rgba(255, 119, 0, 0.8)' }}>{userRole}</p>
                     </div>
-                    <span className="text-gray-500 group-hover:text-primary transition-colors text-lg">›</span>
+                    <span className="transition-colors text-lg" style={{ color: '#ff7700' }}>›</span>
                 </Link>
             </div>
         </aside>

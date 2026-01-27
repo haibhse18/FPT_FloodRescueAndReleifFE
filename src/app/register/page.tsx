@@ -32,19 +32,24 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen bg-secondary flex items-center justify-center p-4 py-8">
+        <div className="min-h-screen flex items-center justify-center p-4 py-8" style={{ background: '#133249' }}>
             <div className="w-full max-w-md">
                 {/* Logo/Header */}
                 <div className="text-center mb-8">
+                    <div className="inline-block mb-4">
+                        <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-lg" style={{ background: 'linear-gradient(135deg, #ff7700 0%, #ff5500 100%)' }}>
+                            🛟
+                        </div>
+                    </div>
                     <h1 className="text-4xl font-bold text-white mb-2">
                         FPT Flood Rescue
                     </h1>
-                    <p className="text-gray-300">Hệ thống cứu trợ lũ lụt</p>
+                    <p className="font-medium" style={{ color: 'rgba(255, 119, 0, 0.8)' }}>Hệ thống cứu trợ lũ lụt</p>
                 </div>
 
                 {/* Register Form */}
-                <div className="bg-white rounded-lg shadow-xl p-8">
-                    <h2 className="text-2xl font-bold text-secondary mb-6 text-center">
+                <div className="rounded-2xl shadow-2xl p-8" style={{ background: 'rgba(255, 255, 255, 0.95)', border: '2px solid rgba(255, 119, 0, 0.2)' }}>
+                    <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: '#ff7700' }}>
                         Đăng Ký Tài Khoản
                     </h2>
 

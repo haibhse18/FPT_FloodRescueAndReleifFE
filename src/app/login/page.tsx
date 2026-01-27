@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import Input from "@/app/components/ui/Input";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import PasswordInput from "@/app/components/forms/PasswordInput";
-import Button from "@/app/components/ui/Button";
 import GoogleLoginButton from "@/app/components/forms/GoogleLoginButton";
 import FormDivider from "@/app/components/forms/FormDivider";
 import { useRouter } from "next/dist/client/components/navigation";
@@ -50,35 +51,43 @@ export default function LoginPage() {
         }
     };
     return (
-        <div className="min-h-screen bg-secondary flex items-center justify-center p-4 py-8">
+        <div className="min-h-screen flex items-center justify-center p-4 py-8" style={{ background: '#133249' }}>
             <div className="w-full max-w-md">
                 {/* Header */}
                 <div className="text-center mb-8">
+                    <div className="inline-block mb-4">
+                        <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-lg" style={{ background: 'linear-gradient(135deg, #ff7700 0%, #ff5500 100%)' }}>
+                            🛟
+                        </div>
+                    </div>
                     <h1 className="text-4xl font-bold text-white mb-2">
                         FPT Flood Rescue
                     </h1>
-                    <p className="text-gray-300">Hệ thống cứu trợ lũ lụt</p>
+                    <p className="font-medium" style={{ color: 'rgba(255, 119, 0, 0.8)' }}>Hệ thống cứu trợ lũ lụt</p>
                 </div>
 
                 {/* Form */}
-                <div className="bg-white rounded-lg shadow-xl p-8">
-                    <h2 className="text-2xl font-bold text-secondary mb-6 text-center">
+                <div className="rounded-2xl shadow-2xl p-8" style={{ background: 'rgba(255, 255, 255, 0.95)', border: '2px solid rgba(255, 119, 0, 0.2)' }}>
+                    <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: '#ff7700' }}>
                         Đăng Nhập
                     </h2>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <Input
-                            className="text-black text-sm"
-                            id="phoneNumber"
-                            value={phoneNumber}
-                            onChange={(e) => setPhoneNumber(e.target.value)}
-                            label="Phone Number"
-                            placeholder="0123456789"
-                            required
-                        />
+                        <div className="space-y-2">
+                            <Label htmlFor="phoneNumber" className="text-gray-700">
+                                Số điện thoại
+                            </Label>
+                            <Input
+                                id="phoneNumber"
+                                type="tel"
+                                value={phoneNumber}
+                                onChange={(e) => setPhoneNumber(e.target.value)}
+                                placeholder="0123456789"
+                                required
+                            />
+                        </div>
 
                         <PasswordInput
-                            className="text-black text-sm" 
                             id="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -94,8 +103,7 @@ export default function LoginPage() {
 
                         <Button
                             type="submit"
-                            variant="primary"
-                            fullWidth
+                            className="w-full"
                             disabled={loading}
                         >
                             {loading ? "Đang đăng nhập..." : "Đăng Nhập"}
@@ -109,14 +117,17 @@ export default function LoginPage() {
                         <span className="text-gray-600">Chưa có tài khoản? </span>
                         <Link
                             href="/register"
-                            className="text-primary hover:text-orange-600 font-semibold"
+                            className="font-semibold transition-colors"
+                            style={{ color: '#ff7700' }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = '#ff5500'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = '#ff7700'}
                         >
                             Đăng ký ngay
                         </Link>
                     </div>
                 </div>
 
-                <div className="text-center mt-8 text-gray-400 text-sm">
+                <div className="text-center mt-8 text-sm" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
                     © 2026 FPT Flood Rescue and Relief
                 </div>
             </div>

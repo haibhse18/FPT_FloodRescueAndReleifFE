@@ -1,34 +1,43 @@
 import { z } from 'zod';
 
-// Login validation schema
+// Login validation schema - theo API_list.md
 export const loginSchema = z.object({
-    phoneNumber: z.string()
-        .min(10, 'Số điện thoại phải có ít nhất 10 số')
-        .max(11, 'Số điện thoại không hợp lệ')
-        .regex(/^(0|\+84)[0-9]{9,10}$/, 'Số điện thoại không đúng định dạng'),
+    email: z.string()
+        .min(1, 'Email là bắt buộc')
+        .email('Email không hợp lệ')
+        .max(255, 'Email quá dài'),
     password: z.string()
+        .min(1, 'Mật khẩu là bắt buộc')
         .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
         .max(100, 'Mật khẩu quá dài'),
 });
 
-// Register validation schema
+// Register validation schema - theo API_list.md
+// Request: { userName, displayName, email, phoneNumber?, password, role? }
 export const registerSchema = z.object({
-    fullName: z.string()
-        .min(2, 'Họ tên phải có ít nhất 2 ký tự')
-        .max(100, 'Họ tên quá dài')
-        .regex(/^[a-zA-ZÀ-ỹ\s]+$/, 'Họ tên chỉ chứa chữ cái'),
+    userName: z.string()
+        .min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự')
+        .max(50, 'Tên đăng nhập quá dài')
+        .regex(/^[a-zA-Z0-9_]+$/, 'Tên đăng nhập chỉ chứa chữ cái, số và dấu gạch dưới'),
+    displayName: z.string()
+        .min(2, 'Tên hiển thị phải có ít nhất 2 ký tự')
+        .max(100, 'Tên hiển thị quá dài'),
     email: z.string()
+        .min(1, 'Email là bắt buộc')
         .email('Email không hợp lệ')
         .max(255, 'Email quá dài'),
     phoneNumber: z.string()
-        .min(10, 'Số điện thoại phải có ít nhất 10 số')
-        .max(11, 'Số điện thoại không hợp lệ')
-        .regex(/^(0|\+84)[0-9]{9,10}$/, 'Số điện thoại không đúng định dạng'),
+        .regex(/^(0|\+84)[0-9]{9,10}$/, 'Số điện thoại không đúng định dạng')
+        .optional()
+        .or(z.literal('')),
     password: z.string()
         .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
         .max(100, 'Mật khẩu quá dài')
         .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Mật khẩu phải chứa chữ hoa, chữ thường và số'),
     confirmPassword: z.string(),
+    role: z.enum(['Citizen', 'Rescue Team', 'Rescue Coordinator', 'Manager', 'Admin'])
+        .optional()
+        .default('Citizen'),
 }).refine((data) => data.password === data.confirmPassword, {
     message: 'Mật khẩu không khớp',
     path: ['confirmPassword'],

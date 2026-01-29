@@ -5,39 +5,42 @@
 
 import { 
     User, 
-    AuthTokens, 
     LoginCredentials, 
-    RegisterData 
+    RegisterData,
+    LoginResponse,
+    RegisterResponse,
+    RefreshResponse,
+    GetCurrentUserResponse
 } from './user.entity';
 
 export interface IAuthRepository {
     /**
      * Đăng nhập user
+     * POST /api/auth/login
      */
-    login(credentials: LoginCredentials): Promise<AuthTokens>;
+    login(credentials: LoginCredentials): Promise<LoginResponse>;
 
     /**
      * Đăng ký user mới
+     * POST /api/auth/register
      */
-    register(data: RegisterData): Promise<AuthTokens>;
+    register(data: RegisterData): Promise<RegisterResponse>;
 
     /**
      * Đăng xuất
+     * POST /api/auth/logout
      */
     logout(): Promise<void>;
 
     /**
      * Lấy thông tin user hiện tại
+     * GET /api/auth/me
      */
-    getCurrentUser(): Promise<User>;
-
-    /**
-     * Đổi mật khẩu
-     */
-    changePassword(oldPassword: string, newPassword: string): Promise<void>;
+    getCurrentUser(): Promise<GetCurrentUserResponse>;
 
     /**
      * Refresh token
+     * POST /api/auth/refresh
      */
-    refreshToken(refreshToken: string): Promise<AuthTokens>;
+    refreshToken(): Promise<RefreshResponse>;
 }

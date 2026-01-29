@@ -8,6 +8,14 @@
     }
 }
 
+/* Ẩn icon mắt mặc định của browser cho password input */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-textfield-decoration-container {
+    display: none !important;
+}
+
 /* Success Popup Animation */
 @keyframes shrinkWidth {
     from {

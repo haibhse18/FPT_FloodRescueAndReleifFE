@@ -20,11 +20,12 @@ const registerUseCase = new RegisterUseCase(authRepository);
 
 export default function RegisterPage() {
     const [formData, setFormData] = useState({
-        fullName: "",
+        userName: "",
+        displayName: "",
         email: "",
         password: "",
         confirmPassword: "",
-        phone: "",
+        phoneNumber: "",
     });
     const [agreedToTerms, setAgreedToTerms] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -52,11 +53,12 @@ export default function RegisterPage() {
         try {
             // Validate input using Zod
             const validationResult = registerSchema.safeParse({
-                fullName: formData.fullName,
+                userName: formData.userName,
+                displayName: formData.displayName,
                 email: formData.email,
                 password: formData.password,
                 confirmPassword: formData.confirmPassword,
-                phoneNumber: formData.phone,
+                phoneNumber: formData.phoneNumber || undefined,
             });
 
             if (!validationResult.success) {
@@ -68,10 +70,11 @@ export default function RegisterPage() {
 
             // Use RegisterUseCase instead of direct API call
             await registerUseCase.execute({
-                fullName: formData.fullName,
+                userName: formData.userName,
+                displayName: formData.displayName,
                 email: formData.email,
                 password: formData.password,
-                phoneNumber: formData.phone,
+                phoneNumber: formData.phoneNumber || undefined,
             }, formData.confirmPassword);
 
             // Redirect to login after successful registration
@@ -117,14 +120,26 @@ export default function RegisterPage() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Full Name Input */}
+                        {/* Username Input */}
                         <Input
-                            id="fullName"
-                            name="fullName"
+                            id="userName"
+                            name="userName"
                             type="text"
-                            value={formData.fullName}
+                            value={formData.userName}
                             onChange={handleChange}
-                            label="Họ và tên"
+                            label="Tên đăng nhập"
+                            placeholder="nguyenvana"
+                            required
+                        />
+
+                        {/* Display Name Input */}
+                        <Input
+                            id="displayName"
+                            name="displayName"
+                            type="text"
+                            value={formData.displayName}
+                            onChange={handleChange}
+                            label="Tên hiển thị"
                             placeholder="Nguyễn Văn A"
                             required
                         />
@@ -141,16 +156,15 @@ export default function RegisterPage() {
                             required
                         />
 
-                        {/* Phone Input */}
+                        {/* Phone Input (Optional) */}
                         <Input
-                            id="phone"
-                            name="phone"
+                            id="phoneNumber"
+                            name="phoneNumber"
                             type="tel"
-                            value={formData.phone}
+                            value={formData.phoneNumber}
                             onChange={handleChange}
-                            label="Số điện thoại"
+                            label="Số điện thoại (không bắt buộc)"
                             placeholder="0123456789"
-                            required
                         />
 
                         {/* Password fields in grid */}

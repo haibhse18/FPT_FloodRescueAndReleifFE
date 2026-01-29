@@ -9,50 +9,54 @@ import { Alert } from "@/shared/ui/components/Alert";
 import PasswordInput from "@/shared/components/forms/PasswordInput";
 import GoogleLoginButton from "@/shared/components/forms/GoogleLoginButton";
 import FormDivider from "@/shared/components/forms/FormDivider";
-import { useRouter } from "next/dist/client/components/navigation";
-import { LoginUseCase } from "@/modules/auth/application/login.usecase";
-import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/useAuth.store";
 import { loginSchema } from "@/shared/schemas/validation";
 
-// Initialize use case with repository
-const loginUseCase = new LoginUseCase(authRepository);
-
 export default function LoginPage() {
-    const [phoneNumber, setPhoneNumber] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [loading, setLoading] = useState(false);
-    const router = useRouter();
     const [error, setError] = useState("");
+    const router = useRouter();
+    const { login, loading, user } = useAuthStore();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
-        setLoading(true);
 
         try {
             // Validate input
-            const validationResult = loginSchema.safeParse({ phoneNumber, password });
+            const validationResult = loginSchema.safeParse({ email, password });
             if (!validationResult.success) {
                 const firstError = validationResult.error.issues[0];
                 setError(firstError.message);
-                setLoading(false);
                 return;
             }
 
-            // Use LoginUseCase instead of direct API call
-            const response = await loginUseCase.execute({ phoneNumber, password });
+            // Use auth store login method
+            const success = await login({ email, password });
             
-            if (!response.accessToken) {
-                throw new Error("Không nhận được token từ server");
+            if (!success) {
+                setError("Đăng nhập thất bại");
+                return;
             }
 
-            // Token is stored in repository layer
-            // Redirect after successful login
-            router.push("/citizen");
+            // Get fresh user data from store after login
+            const currentUser = useAuthStore.getState().user;
+            
+            // Redirect based on user role
+            const redirectMap: Record<string, string> = {
+                'Citizen': '/profile',
+                'Rescue Team': '/team/missions',
+                'Rescue Coordinator': '/coordinator/requests',
+                'Manager': '/manager',
+                'Admin': '/admin/users',
+            };
+
+            const redirectPath = currentUser?.role ? redirectMap[currentUser.role] : '/';
+            router.push(redirectPath);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Đăng nhập thất bại");
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -91,12 +95,13 @@ export default function LoginPage() {
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <Input
-                            id="phoneNumber"
-                            name="phoneNumber"
-                            value={phoneNumber}
-                            onChange={(e) => setPhoneNumber(e.target.value)}
-                            label="Số điện thoại"
-                            placeholder="0123456789"
+                            id="email"
+                            name="email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            label="Email"
+                            placeholder="example@email.com"
                             required
                         />
 

@@ -4,27 +4,29 @@
  */
 
 import { IAuthRepository } from '../domain/auth.repository';
-import { LoginCredentials, AuthTokens } from '../domain/user.entity';
+import { LoginCredentials, LoginResponse } from '../domain/user.entity';
+import { loginSchema } from '@/shared/schemas/validation';
 
 export class LoginUseCase {
     constructor(private readonly authRepository: IAuthRepository) {}
 
     /**
      * Execute login với validation
+     * @param credentials - { email, password }
+     * @returns LoginResponse - { accessToken, user }
      */
-    async execute(credentials: LoginCredentials): Promise<AuthTokens> {
-        // Validate credentials
-        if (!credentials.password) {
-            throw new Error('Mật khẩu là bắt buộc');
-        }
-
-        if (!credentials.phoneNumber && !credentials.email) {
-            throw new Error('Số điện thoại hoặc email là bắt buộc');
+    async execute(credentials: LoginCredentials): Promise<LoginResponse> {
+        // Validate credentials using Zod schema
+        const validation = loginSchema.safeParse(credentials);
+        
+        if (!validation.success) {
+            const firstError = validation.error.errors[0];
+            throw new Error(firstError.message);
         }
 
         // Call repository
-        const tokens = await this.authRepository.login(credentials);
+        const response = await this.authRepository.login(credentials);
 
-        return tokens;
+        return response;
     }
 }

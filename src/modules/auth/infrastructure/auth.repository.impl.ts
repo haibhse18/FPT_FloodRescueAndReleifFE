@@ -1,67 +1,64 @@
 /**
  * Auth Repository Implementation - Infrastructure layer
  * Implement IAuthRepository interface using authApi
+ * 
+ * Theo auth-flow.md: Access token lưu trong memory, không dùng localStorage
  */
 
 import { IAuthRepository } from '../domain/auth.repository';
 import { 
-    User, 
-    AuthTokens, 
     LoginCredentials, 
-    RegisterData 
+    RegisterData,
+    LoginResponse,
+    RegisterResponse,
+    RefreshResponse,
+    GetCurrentUserResponse
 } from '../domain/user.entity';
 import { authApi } from './auth.api';
+import { tokenManager } from '@/lib/axios';
 
 export class AuthRepositoryImpl implements IAuthRepository {
-    async login(credentials: LoginCredentials): Promise<AuthTokens> {
-        const tokens = await authApi.login(credentials);
+    async login(credentials: LoginCredentials): Promise<LoginResponse> {
+        const response = await authApi.login(credentials);
         
-        // Store token after successful login
-        if (typeof window !== 'undefined' && tokens.accessToken) {
-            localStorage.setItem('accessToken', tokens.accessToken);
+        // Lưu accessToken vào memory (không phải localStorage)
+        // Theo auth-flow.md: "Lưu accessToken vào memory/state"
+        if (response.accessToken) {
+            tokenManager.setToken(response.accessToken);
         }
 
-        return tokens;
+        return response;
     }
 
-    async register(data: RegisterData): Promise<AuthTokens> {
-        const tokens = await authApi.register(data);
-
-        // Optionally store token after registration
-        if (typeof window !== 'undefined' && tokens.accessToken) {
-            localStorage.setItem('accessToken', tokens.accessToken);
-        }
-
-        return tokens;
+    async register(data: RegisterData): Promise<RegisterResponse> {
+        // Gọi API register - không tự động login sau khi đăng ký
+        const response = await authApi.register(data);
+        return response;
     }
 
     async logout(): Promise<void> {
-        await authApi.logout();
-        
-        // Clear all auth data
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
+        try {
+            await authApi.logout();
+        } finally {
+            // Xóa token khỏi memory
+            // Theo auth-flow.md: "Xóa accessToken khỏi memory"
+            tokenManager.clearToken();
         }
     }
 
-    async getCurrentUser(): Promise<User> {
+    async getCurrentUser(): Promise<GetCurrentUserResponse> {
         return authApi.getCurrentUser();
     }
 
-    async changePassword(oldPassword: string, newPassword: string): Promise<void> {
-        await authApi.changePassword(oldPassword, newPassword);
-    }
-
-    async refreshToken(refreshToken: string): Promise<AuthTokens> {
-        const tokens = await authApi.refreshToken(refreshToken);
+    async refreshToken(): Promise<RefreshResponse> {
+        const response = await authApi.refreshToken();
         
-        // Update stored token
-        if (typeof window !== 'undefined' && tokens.accessToken) {
-            localStorage.setItem('accessToken', tokens.accessToken);
+        // Cập nhật accessToken mới vào memory
+        if (response.accessToken) {
+            tokenManager.setToken(response.accessToken);
         }
 
-        return tokens;
+        return response;
     }
 }
 

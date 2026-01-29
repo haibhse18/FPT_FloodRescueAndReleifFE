@@ -4,57 +4,37 @@
  */
 
 import { IAuthRepository } from '../domain/auth.repository';
-import { RegisterData, AuthTokens } from '../domain/user.entity';
+import { RegisterData, RegisterResponse } from '../domain/user.entity';
+import { registerSchema } from '@/shared/schemas/validation';
 
 export class RegisterUseCase {
     constructor(private readonly authRepository: IAuthRepository) {}
 
     /**
      * Execute registration với validation
+     * @param data - { userName, displayName, email, phoneNumber?, password, role? }
+     * @param confirmPassword - Xác nhận mật khẩu
+     * @returns RegisterResponse - { message, userId }
      */
-    async execute(data: RegisterData, confirmPassword: string): Promise<AuthTokens> {
-        // Validate required fields
-        if (!data.email) {
-            throw new Error('Email là bắt buộc');
-        }
+    async execute(data: RegisterData, confirmPassword: string): Promise<RegisterResponse> {
+        // Validate using Zod schema
+        const validation = registerSchema.safeParse({
+            userName: data.userName,
+            displayName: data.displayName,
+            email: data.email,
+            phoneNumber: data.phoneNumber,
+            password: data.password,
+            confirmPassword: confirmPassword,
+        });
 
-        if (!data.password) {
-            throw new Error('Mật khẩu là bắt buộc');
-        }
-
-        if (!data.fullName) {
-            throw new Error('Họ tên là bắt buộc');
-        }
-
-        if (!data.phoneNumber) {
-            throw new Error('Số điện thoại là bắt buộc');
-        }
-
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(data.email)) {
-            throw new Error('Email không hợp lệ');
-        }
-
-        // Validate phone format (Vietnam)
-        const phoneRegex = /^(0|\+84)[0-9]{9,10}$/;
-        if (!phoneRegex.test(data.phoneNumber)) {
-            throw new Error('Số điện thoại không hợp lệ');
-        }
-
-        // Validate password match
-        if (data.password !== confirmPassword) {
-            throw new Error('Mật khẩu không khớp');
-        }
-
-        // Validate password strength
-        if (data.password.length < 6) {
-            throw new Error('Mật khẩu phải có ít nhất 6 ký tự');
+        if (!validation.success) {
+            const firstError = validation.error.errors[0];
+            throw new Error(firstError.message);
         }
 
         // Call repository
-        const tokens = await this.authRepository.register(data);
+        const response = await this.authRepository.register(data);
 
-        return tokens;
+        return response;
     }
 }

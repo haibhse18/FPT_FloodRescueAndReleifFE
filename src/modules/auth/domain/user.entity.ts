@@ -5,9 +5,10 @@
 
 export interface User {
     id: string;
+    userName: string;
+    displayName: string;
     email: string;
-    phoneNumber: string;
-    fullName: string;
+    phoneNumber?: string;
     role: UserRole;
     avatar?: string;
     address?: string;
@@ -15,12 +16,13 @@ export interface User {
     updatedAt?: Date;
 }
 
+// Các role hợp lệ theo API_list.md
 export type UserRole = 
-    | 'citizen' 
-    | 'coordinator' 
-    | 'rescue_team' 
-    | 'manager' 
-    | 'admin';
+    | 'Citizen' 
+    | 'Rescue Team' 
+    | 'Rescue Coordinator' 
+    | 'Manager' 
+    | 'Admin';
 
 export interface AuthTokens {
     accessToken: string;
@@ -28,22 +30,46 @@ export interface AuthTokens {
     expiresIn?: number;
 }
 
+// Response từ login API
+export interface LoginResponse {
+    accessToken: string;
+    user: User;
+}
+
+// Response từ register API
+export interface RegisterResponse {
+    message: string;
+    userId: string;
+}
+
+// Response từ refresh API
+export interface RefreshResponse {
+    accessToken: string;
+    user: User;
+}
+
+// Response từ getCurrentUser API
+export interface GetCurrentUserResponse {
+    user: User;
+    role: UserRole;
+}
+
 export interface LoginCredentials {
-    phoneNumber?: string;
-    email?: string;
+    email: string;
     password: string;
 }
 
 export interface RegisterData {
+    userName: string;
+    displayName: string;
     email: string;
+    phoneNumber?: string;
     password: string;
-    fullName: string;
-    phoneNumber: string;
     role?: UserRole;
 }
 
 export interface AuthSession {
     user: User | null;
-    tokens: AuthTokens | null;
+    accessToken: string | null;
     isAuthenticated: boolean;
 }

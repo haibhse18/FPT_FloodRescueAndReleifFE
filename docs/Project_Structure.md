@@ -36,7 +36,7 @@ src/
 │   └── utils/
 │
 ├── services/             # app-wide infra (apiClient, authSession, websocket)
-└── store/                # global state (Redux Toolkit / Zustand / ...)
+└── store/                # global state ( Zustand )
 ```
 
 ---

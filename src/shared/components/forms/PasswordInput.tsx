@@ -47,8 +47,13 @@ export default function PasswordInput({
                     onChange={onChange}
                     required={required}
                     placeholder={placeholder}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition ${error ? "border-[var(--color-error)]" : "border-[var(--color-border)]"
-                        }`}
+                    className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition
+                        [&::-ms-reveal]:hidden [&::-ms-clear]:hidden
+                        ${error ? "border-[var(--color-error)]" : "border-[var(--color-border)]"}`}
+                    style={{
+                        // Ẩn icon mắt mặc định của browser (Edge, Chrome)
+                        WebkitAppearance: 'none',
+                    }}
                 />
                 <button
                     type="button"

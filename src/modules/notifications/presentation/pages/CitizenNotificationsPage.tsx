@@ -6,6 +6,9 @@ import { GetNotificationsUseCase } from "@/modules/notifications/application/get
 import { MarkNotificationReadUseCase } from "@/modules/notifications/application/markNotificationRead.usecase";
 import { notificationRepository } from "@/modules/notifications/infrastructure/notification.repository.impl";
 import { MobileHeader, MobileBottomNav, DesktopHeader, DesktopSidebar } from "@/shared/components/layout";
+import { Button } from "@/shared/ui/components/Button";
+import { Card } from "@/shared/ui/components/Card";
+import { Skeleton } from "@/shared/ui/components/Skeleton";
 
 // Initialize use cases with repository
 const getNotificationsUseCase = new GetNotificationsUseCase(notificationRepository);

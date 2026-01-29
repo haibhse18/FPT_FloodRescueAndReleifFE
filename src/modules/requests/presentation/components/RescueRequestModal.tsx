@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Modal from "@/shared/ui/Modal";
+import { Modal } from "@/shared/ui/components/Modal";
 
 interface QuickRescueAction {
     id: string;

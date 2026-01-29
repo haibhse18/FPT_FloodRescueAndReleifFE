@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-interface SuccessPopupProps {
+export interface SuccessPopupProps {
     isOpen: boolean;
     onClose: () => void;
     message: string;
     icon?: string;
 }
 
-export default function SuccessPopup({
+export function SuccessPopup({
     isOpen,
     onClose,
     message,
@@ -38,17 +38,17 @@ export default function SuccessPopup({
                     : 'opacity-0 translate-x-full'
                 }`}
         >
-            <div className="bg-secondary/95 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 overflow-hidden w-[90vw] sm:w-96 max-w-md">
+            <div className="bg-[var(--color-primary)]/95 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 overflow-hidden w-[90vw] sm:w-96 max-w-md">
                 {/* Success indicator bar */}
-                <div className="h-1.5 bg-gradient-to-r from-green-500 via-emerald-400 to-green-500 animate-pulse" />
+                <div className="h-1.5 bg-gradient-to-r from-[var(--color-success)] via-[var(--color-success-light)] to-[var(--color-success)] animate-pulse" />
 
                 <div className="p-5">
                     <div className="flex items-start gap-3">
-                        {/* Icon với animation */}
+                        {/* Icon with animation */}
                         <div className="flex-shrink-0">
                             <div className="relative">
-                                <div className="absolute inset-0 bg-green-500/30 rounded-full animate-ping" />
-                                <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                                <div className="absolute inset-0 bg-[var(--color-success)]/30 rounded-full animate-ping" />
+                                <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-[var(--color-success)] to-[var(--color-success-dark)] flex items-center justify-center shadow-lg">
                                     <span className="text-2xl">{icon}</span>
                                 </div>
                             </div>
@@ -56,10 +56,10 @@ export default function SuccessPopup({
 
                         {/* Content */}
                         <div className="flex-1 pt-1">
-                            <h3 className="text-base font-bold text-white mb-1">
+                            <h3 className="text-base font-bold text-[var(--color-text-inverse)] mb-1">
                                 {message}
                             </h3>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs text-[var(--color-text-muted)]">
                                 Thông báo sẽ tự đóng trong 3 giây
                             </p>
                         </div>
@@ -69,3 +69,6 @@ export default function SuccessPopup({
         </div>
     );
 }
+
+// Default export for backward compatibility
+export default SuccessPopup;

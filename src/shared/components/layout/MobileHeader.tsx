@@ -31,14 +31,14 @@ export default function DesktopSidebar({
     return (
         <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 lg:w-64 bg-gradient-to-b from-white/5 to-white/[0.02] border-r border-white/10 z-40">
             {/* Logo Section */}
-            <div className="p-6 border-b border-white/10 bg-gradient-to-br from-primary/10 to-transparent">
+            <div className="p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent">
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-2xl shadow-lg">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-dark)] flex items-center justify-center text-2xl shadow-lg">
                         🛟
                     </div>
                     <div>
-                        <h1 className="text-xl font-black text-white tracking-tight">Cứu hộ Lũ lụt</h1>
-                        <p className="text-xs text-gray-400 font-semibold mt-0.5">FPT Flood Rescue</p>
+                        <h1 className="text-xl font-black text-[var(--color-text-inverse)] tracking-tight">Cứu hộ Lũ lụt</h1>
+                        <p className="text-xs text-[var(--color-text-muted)] font-semibold mt-0.5">FPT Flood Rescue</p>
                     </div>
                 </div>
             </div>
@@ -53,8 +53,8 @@ export default function DesktopSidebar({
                                 <Link
                                     href={item.href}
                                     className={`group relative w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200 ${isActive
-                                            ? "bg-gradient-to-r from-primary to-orange-600 text-white shadow-lg shadow-primary/30"
-                                            : "text-gray-400 hover:bg-white/5 hover:text-white"
+                                            ? "bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-accent-dark)] text-[var(--color-text-primary)] shadow-lg"
+                                            : "text-[var(--color-text-muted)] hover:bg-white/5 hover:text-[var(--color-text-inverse)]"
                                         }`}
                                 >
                                     <span className={`text-xl transition-transform ${isActive ? "scale-110" : "group-hover:scale-110"}`}>
@@ -62,7 +62,7 @@ export default function DesktopSidebar({
                                     </span>
                                     <span>{item.label}</span>
                                     {item.badge && item.badge > 0 && (
-                                        <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
+                                        <span className="ml-auto bg-[var(--color-error)] text-[var(--color-text-inverse)] text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
                                             {item.badge}
                                         </span>
                                     )}
@@ -82,14 +82,14 @@ export default function DesktopSidebar({
                     href="/citizens/profile"
                     className="group flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-95"
                 >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-white font-bold shadow-md">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-dark)] flex items-center justify-center text-[var(--color-text-primary)] font-bold shadow-md">
                         {userName.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white truncate">{userName}</p>
-                        <p className="text-xs text-gray-400">{userRole}</p>
+                        <p className="text-sm font-bold text-[var(--color-text-inverse)] truncate">{userName}</p>
+                        <p className="text-xs text-[var(--color-text-muted)]">{userRole}</p>
                     </div>
-                    <span className="text-gray-500 group-hover:text-primary transition-colors text-lg">›</span>
+                    <span className="text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors text-lg">›</span>
                 </Link>
             </div>
         </aside>

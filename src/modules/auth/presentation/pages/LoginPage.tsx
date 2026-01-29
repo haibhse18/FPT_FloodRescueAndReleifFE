@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import Input from "@/shared/ui/Input";
+import { Input } from "@/shared/ui/components/Input";
+import { Button } from "@/shared/ui/components/Button";
+import { Card } from "@/shared/ui/components/Card";
+import { Alert } from "@/shared/ui/components/Alert";
 import PasswordInput from "@/shared/components/forms/PasswordInput";
-import Button from "@/shared/ui/Button";
 import GoogleLoginButton from "@/shared/components/forms/GoogleLoginButton";
 import FormDivider from "@/shared/components/forms/FormDivider";
 import { useRouter } from "next/dist/client/components/navigation";
@@ -55,74 +57,117 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-secondary flex items-center justify-center p-4 py-8">
-            <div className="w-full max-w-md">
-                {/* Header */}
-                <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2">
+        <div className="min-h-screen bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-dark)] to-[var(--color-teal-dark)] flex items-center justify-center p-4 py-8">
+            {/* Decorative elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-40 -right-40 w-80 h-80 bg-[var(--color-accent)]/10 rounded-full blur-3xl" />
+                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[var(--color-teal-light)]/10 rounded-full blur-3xl" />
+            </div>
+
+            <div className="w-full max-w-md relative z-10">
+                {/* Logo & Branding */}
+                <div className="text-center mb-10">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[var(--color-accent)] mb-6 shadow-lg">
+                        <svg className="w-10 h-10 text-[var(--color-primary)]" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <h1 className="text-3xl font-bold text-[var(--color-text-inverse)] mb-2">
                         FPT Flood Rescue
                     </h1>
-                    <p className="text-gray-300">Hệ thống cứu trợ lũ lụt</p>
+                    <p className="text-[var(--color-teal-light)] text-lg">Hệ thống cứu trợ lũ lụt</p>
                 </div>
 
-                {/* Form */}
-                <div className="bg-white rounded-lg shadow-xl p-8">
-                    <h2 className="text-2xl font-bold text-secondary mb-6 text-center">
-                        Đăng Nhập
-                    </h2>
+                {/* Login Card */}
+                <Card variant="default" padding="lg" className="shadow-2xl backdrop-blur-sm">
+                    <div className="text-center mb-8">
+                        <h2 className="text-2xl font-bold text-[var(--color-primary)]">
+                            Chào mừng trở lại
+                        </h2>
+                        <p className="text-[var(--color-text-muted)] mt-2">
+                            Đăng nhập để tiếp tục
+                        </p>
+                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-5">
                         <Input
-                            className="text-black text-sm"
                             id="phoneNumber"
+                            name="phoneNumber"
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
-                            label="Phone Number"
+                            label="Số điện thoại"
                             placeholder="0123456789"
                             required
                         />
 
-                        <PasswordInput
-                            className="text-black text-sm" 
-                            id="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            label="Mật khẩu"
-                            required
-                        />
+                        <div>
+                            <PasswordInput
+                                id="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                label="Mật khẩu"
+                                required
+                            />
+                            <div className="text-right mt-2">
+                                <Link
+                                    href="/forgot-password"
+                                    className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-dark)] font-medium transition-colors"
+                                >
+                                    Quên mật khẩu?
+                                </Link>
+                            </div>
+                        </div>
 
                         {error && (
-                            <p className="text-red-500 text-sm text-center">
+                            <Alert variant="error">
                                 {error}
-                            </p>
+                            </Alert>
                         )}
 
                         <Button
                             type="submit"
                             variant="primary"
                             fullWidth
+                            size="lg"
+                            isLoading={loading}
                             disabled={loading}
                         >
                             {loading ? "Đang đăng nhập..." : "Đăng Nhập"}
                         </Button>
                     </form>
 
-                    <FormDivider />
+                    <FormDivider text="hoặc tiếp tục với" />
                     <GoogleLoginButton />
 
-                    <div className="text-center mt-6">
-                        <span className="text-gray-600">Chưa có tài khoản? </span>
+                    <div className="text-center mt-8 pt-6 border-t border-[var(--color-border)]">
+                        <span className="text-[var(--color-text-secondary)]">Chưa có tài khoản? </span>
                         <Link
                             href="/register"
-                            className="text-primary hover:text-orange-600 font-semibold"
+                            className="text-[var(--color-accent)] hover:text-[var(--color-accent-dark)] font-semibold transition-colors"
                         >
                             Đăng ký ngay
                         </Link>
                     </div>
-                </div>
+                </Card>
 
-                <div className="text-center mt-8 text-gray-400 text-sm">
-                    © 2026 FPT Flood Rescue and Relief
+                {/* Footer */}
+                <div className="text-center mt-8 space-y-2">
+                    <div className="flex items-center justify-center gap-4 text-[var(--color-teal-light)] text-sm">
+                        <Link href="/terms" className="hover:text-[var(--color-text-inverse)] transition-colors">
+                            Điều khoản
+                        </Link>
+                        <span>•</span>
+                        <Link href="/privacy" className="hover:text-[var(--color-text-inverse)] transition-colors">
+                            Bảo mật
+                        </Link>
+                        <span>•</span>
+                        <Link href="/help" className="hover:text-[var(--color-text-inverse)] transition-colors">
+                            Trợ giúp
+                        </Link>
+                    </div>
+                    <p className="text-[var(--color-teal-light)]/70 text-sm">
+                        © 2026 FPT Flood Rescue and Relief
+                    </p>
                 </div>
             </div>
         </div>

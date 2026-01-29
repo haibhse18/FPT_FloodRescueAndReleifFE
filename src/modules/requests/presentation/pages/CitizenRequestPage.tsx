@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
-import SuccessPopup from "@/shared/ui/SuccessPopup";
+import SuccessPopup from "@/shared/ui/components/SuccessPopup";
 import { CreateRescueRequestUseCase } from "@/modules/requests/application/createRescueRequest.usecase";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 import { MobileHeader, MobileBottomNav, DesktopHeader, DesktopSidebar } from "@/shared/components/layout";

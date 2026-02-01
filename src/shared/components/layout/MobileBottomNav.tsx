@@ -17,8 +17,8 @@ export default function MobileBottomNav({ items, currentPath = "/citizen" }: Mob
     const defaultItems: NavItem[] = [
         { icon: "🏠", label: "TRANG CHỦ", href: "/citizen" },
         { icon: "📜", label: "LỊCH SỬ", href: "/citizen/history" },
-        { icon: "🔔", label: "THÔNG BÁO", href: "/citizen/notifications" },
-        { icon: "👤", label: "CÁ NHÂN", href: "/citizen/profile" },
+        { icon: "🔔", label: "THÔNG BÁO", href: "/notifications" },
+        { icon: "👤", label: "CÁ NHÂN", href: "/profile" },
     ];
 
     const navItems = items || defaultItems;
@@ -30,9 +30,8 @@ export default function MobileBottomNav({ items, currentPath = "/citizen" }: Mob
                     <Link
                         key={index}
                         href={item.href}
-                        className={`flex flex-col items-center gap-1 ${
-                            currentPath === item.href ? "text-primary" : "text-gray-400"
-                        }`}
+                        className={`flex flex-col items-center gap-1 ${currentPath === item.href ? "text-primary" : "text-gray-400"
+                            }`}
                     >
                         <span className="text-2xl">{item.icon}</span>
                         <span className="text-[10px] font-bold">{item.label}</span>

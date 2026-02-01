@@ -64,13 +64,13 @@ export default function LoginPage() {
                         break;
                     case 'citizen':
                     default:
-                        router.push("/request");
+                        router.push("/citizen");
                         break;
                 }
             } catch (userError) {
-                // If can't get user info, default to citizen request page
+                // If can't get user info, default to citizen homepage
                 console.error("Lỗi khi lấy thông tin user:", userError);
-                router.push("/request");
+                router.push("/citizen");
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Đăng nhập thất bại");

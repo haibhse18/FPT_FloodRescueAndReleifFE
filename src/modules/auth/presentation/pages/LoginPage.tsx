@@ -9,14 +9,15 @@ import GoogleLoginButton from "@/shared/components/forms/GoogleLoginButton";
 import FormDivider from "@/shared/components/forms/FormDivider";
 import { useRouter } from "next/dist/client/components/navigation";
 import { LoginUseCase } from "@/modules/auth/application/login.usecase";
+import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
-import { loginSchema } from "@/shared/schemas/validation";
 
-// Initialize use case with repository
+// Initialize use cases with repository
 const loginUseCase = new LoginUseCase(authRepository);
+const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 
 export default function LoginPage() {
-    const [phoneNumber, setPhoneNumber] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -28,25 +29,49 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            // Validate input
-            const validationResult = loginSchema.safeParse({ phoneNumber, password });
-            if (!validationResult.success) {
-                const firstError = validationResult.error.issues[0];
-                setError(firstError.message);
+            // Basic validation
+            if (!email || !password) {
+                setError("Vui lòng nhập email và mật khẩu");
                 setLoading(false);
                 return;
             }
 
             // Use LoginUseCase instead of direct API call
-            const response = await loginUseCase.execute({ phoneNumber, password });
-            
+            const response = await loginUseCase.execute({ email, password });
+
             if (!response.accessToken) {
                 throw new Error("Không nhận được token từ server");
             }
 
             // Token is stored in repository layer
-            // Redirect after successful login
-            router.push("/citizen");
+            // Get user info to determine redirect based on role
+            try {
+                const userData = await getCurrentUserUseCase.execute();
+
+                // Redirect based on user role
+                switch (userData.role) {
+                    case 'coordinator':
+                        router.push("/coordinator/dashboard");
+                        break;
+                    case 'rescue_team':
+                        router.push("/team/missions");
+                        break;
+                    case 'manager':
+                        router.push("/manager");
+                        break;
+                    case 'admin':
+                        router.push("/admin");
+                        break;
+                    case 'citizen':
+                    default:
+                        router.push("/request");
+                        break;
+                }
+            } catch (userError) {
+                // If can't get user info, default to citizen request page
+                console.error("Lỗi khi lấy thông tin user:", userError);
+                router.push("/request");
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Đăng nhập thất bại");
         } finally {
@@ -74,16 +99,17 @@ export default function LoginPage() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <Input
                             className="text-black text-sm"
-                            id="phoneNumber"
-                            value={phoneNumber}
-                            onChange={(e) => setPhoneNumber(e.target.value)}
-                            label="Phone Number"
-                            placeholder="0123456789"
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            label="Email"
+                            placeholder="example@email.com"
                             required
                         />
 
                         <PasswordInput
-                            className="text-black text-sm" 
+                            className="text-black text-sm"
                             id="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}

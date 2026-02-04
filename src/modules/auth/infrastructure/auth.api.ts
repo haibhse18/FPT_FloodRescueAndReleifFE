@@ -54,8 +54,8 @@ export const authApi = {
     /**
      * GET /api/auth/me
      * Lấy thông tin user hiện tại
-     * Response: { user, role }
-     * Auth: Required
+     * Response: { _id, userName, displayName, email, phoneNumber, role, isActive, createdAt, updatedAt, ... }
+     * Auth: Required (Bearer token)
      */
     getCurrentUser: async (): Promise<GetCurrentUserResponse> => {
         const response = await axiosInstance.get<GetCurrentUserResponse>('/auth/me');

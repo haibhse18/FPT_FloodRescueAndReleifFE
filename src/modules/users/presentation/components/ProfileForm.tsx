@@ -7,8 +7,6 @@ export interface CitizenProfile {
   phone: string;
   email: string;
   address: string;
-  emergencyContactName: string;
-  emergencyContact: string;
 }
 
 interface ProfileFormProps {
@@ -136,60 +134,6 @@ export default function ProfileForm({
                 className="bg-transparent border-0 border-b border-gray-200 rounded-none px-0 text-gray-900 font-bold text-lg focus:ring-0"
               />
             }
-          </div>
-        </div>
-
-        {/* Emergency Contact Section */}
-        <div className="pt-6 border-t border-gray-100">
-          <h4 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <span className="p-1.5 bg-red-50 rounded text-red-500">🚨</span>
-            Liên hệ khẩn cấp
-          </h4>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Input
-              label="👤 Tên người liên hệ"
-              value={
-                isEditMode ?
-                  editedProfile.emergencyContactName
-                : profile.emergencyContactName
-              }
-              onChange={(e) =>
-                onProfileChange({
-                  ...editedProfile,
-                  emergencyContactName: e.target.value,
-                })
-              }
-              disabled={!isEditMode || isSaving}
-              readOnly={!isEditMode}
-              className={
-                !isEditMode ?
-                  "bg-transparent border-0 border-b border-gray-200 rounded-none px-0 text-gray-900 font-bold text-lg focus:ring-0"
-                : "bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
-              }
-            />
-
-            <Input
-              label="📱 Số điện thoại khẩn cấp"
-              value={
-                isEditMode ?
-                  editedProfile.emergencyContact
-                : profile.emergencyContact
-              }
-              onChange={(e) =>
-                onProfileChange({
-                  ...editedProfile,
-                  emergencyContact: e.target.value,
-                })
-              }
-              disabled={!isEditMode || isSaving}
-              readOnly={!isEditMode}
-              className={
-                !isEditMode ?
-                  "bg-transparent border-0 border-b border-gray-200 rounded-none px-0 text-gray-900 font-bold text-lg focus:ring-0"
-                : "bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
-              }
-            />
           </div>
         </div>
 

@@ -4,7 +4,8 @@
  */
 
 export interface User {
-    id: string;
+    _id?: string; // MongoDB ID
+    id?: string;  // Fallback
     userName: string;
     displayName: string;
     email: string;
@@ -12,8 +13,9 @@ export interface User {
     role: UserRole;
     avatar?: string;
     address?: string;
-    createdAt?: Date;
-    updatedAt?: Date;
+    isActive?: boolean;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
 }
 
 // Các role hợp lệ theo API_list.md
@@ -48,11 +50,8 @@ export interface RefreshResponse {
     user: User;
 }
 
-// Response từ getCurrentUser API
-export interface GetCurrentUserResponse {
-    user: User;
-    role: UserRole;
-}
+// Response từ getCurrentUser API - API trả về User object trực tiếp
+export type GetCurrentUserResponse = User;
 
 export interface LoginCredentials {
     email: string;

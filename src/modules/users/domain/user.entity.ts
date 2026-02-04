@@ -5,19 +5,19 @@
 
 export interface UserProfile {
     id: string;
-    fullName: string;
+    userName: string;
     phone: string;
+    displayName: string;
     email: string;
     address?: string;
-    avatar?: string;
-    emergencyContact?: string;
-    emergencyContactName?: string;
+    avatarUrl?: string;
 }
 
 export interface UpdateProfileData {
-    fullName?: string;
+    userName?: string;
     phone?: string;
     address?: string;
+    displayName?: string;
 }
 
 export type ReportType = 'daily' | 'weekly' | 'monthly';
@@ -39,7 +39,7 @@ export interface Report {
 
 export interface UserListItem {
     id: string;
-    fullName: string;
+    userName: string;
     email: string;
     phone: string;
     role: string;

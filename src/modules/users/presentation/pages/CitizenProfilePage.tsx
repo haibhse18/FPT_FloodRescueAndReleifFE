@@ -14,6 +14,7 @@ import {
     type CitizenProfile,
 } from "@/modules/users/presentation/components";
 import { MobileHeader, MobileBottomNav, DesktopHeader, DesktopSidebar } from "@/shared/components/layout";
+import { Button } from "@/shared/ui/components";
 
 // Initialize use cases with repositories
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
@@ -23,13 +24,12 @@ export default function CitizenProfilePage() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [profile, setProfile] = useState<CitizenProfile>({
         name: "Nguyễn Văn A",
         phone: "0123456789",
         email: "nguyenvana@example.com",
         address: "123 Đường Nguyễn Văn Cừ, Quận 5, TP.HCM",
-        emergencyContactName: "Nguyễn Thị B",
-        emergencyContact: "0987654321",
     });
 
     const [editedProfile, setEditedProfile] = useState<CitizenProfile>(profile);
@@ -39,20 +39,40 @@ export default function CitizenProfilePage() {
         const fetchProfile = async () => {
             try {
                 setIsLoading(true);
-                const response = await getCurrentUserUseCase.execute();
-                const userData = response.user;
+                setError(null);
+                const userData = await getCurrentUserUseCase.execute();
+                
+                if (!userData) {
+                    throw new Error('Dữ liệu người dùng không hợp lệ');
+                }
+
                 const newProfile: CitizenProfile = {
-                    name: userData.displayName || "Nguyễn Văn A",
-                    phone: userData.phoneNumber || "0123456789",
-                    email: userData.email || "nguyenvana@example.com",
-                    address: userData.address || "123 Đường Nguyễn Văn Cừ, Quận 5, TP.HCM",
-                    emergencyContactName: "Nguyễn Thị B",
-                    emergencyContact: "0987654321",
+                    name: userData.displayName || userData.userName || "Người dùng",
+                    phone: userData.phoneNumber || "N/A",
+                    email: userData.email || "N/A",
+                    address: userData.address || "N/A",
                 };
                 setProfile(newProfile);
                 setEditedProfile(newProfile);
             } catch (error) {
+                let errorMessage = "Không tìm thấy thông tin người dùng";
+                
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                    
+                    // Nếu là lỗi network, thêm gợi ý
+                    if (errorMessage.includes('network') || errorMessage.includes('ERR_NETWORK')) {
+                        errorMessage += " - Vui lòng kiểm tra kết nối mạng";
+                    }
+                    
+                    // Nếu là lỗi 401, hướng user đăng nhập lại
+                    if (errorMessage.includes('401') || errorMessage.includes('đăng nhập')) {
+                        errorMessage = "Phiên đăng nhập hết hạn - Vui lòng đăng nhập lại";
+                    }
+                }
+                
                 console.error("Lỗi khi tải thông tin cá nhân:", error);
+                setError(errorMessage);
             } finally {
                 setIsLoading(false);
             }
@@ -64,7 +84,7 @@ export default function CitizenProfilePage() {
         try {
             setIsSaving(true);
             await updateProfileUseCase.execute({
-                fullName: editedProfile.name,
+                displayName: editedProfile.name,
                 phone: editedProfile.phone,
                 address: editedProfile.address,
             });
@@ -88,6 +108,39 @@ export default function CitizenProfilePage() {
         console.log("Logout clicked");
     };
 
+    const handleRetry = () => {
+        setIsLoading(true);
+        setError(null);
+        const fetchProfile = async () => {
+            try {
+                const userData = await getCurrentUserUseCase.execute();
+                
+                if (!userData) {
+                    throw new Error('Dữ liệu người dùng không hợp lệ');
+                }
+
+                const newProfile: CitizenProfile = {
+                    name: userData.displayName || userData.userName || "Người dùng",
+                    phone: userData.phoneNumber || "N/A",
+                    email: userData.email || "N/A",
+                    address: userData.address || "N/A",
+                };
+                setProfile(newProfile);
+                setEditedProfile(newProfile);
+            } catch (error) {
+                let errorMessage = "Không tìm thấy thông tin người dùng";
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                }
+                console.error("Lỗi khi tải thông tin cá nhân:", error);
+                setError(errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchProfile();
+    };
+
     return (
         <div className="min-h-screen bg-secondary">
             <DesktopSidebar />
@@ -102,6 +155,20 @@ export default function CitizenProfilePage() {
 
                 <main className="pt-16 lg:pt-24 pb-20 lg:pb-8 overflow-auto min-h-screen">
                     <div className="max-w-4xl mx-auto p-4 lg:p-8">
+                        {/* Error Message */}
+                        {error && (
+                            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 font-medium flex items-center justify-between">
+                                <span>❌ {error}</span>
+                                <Button
+                                    onClick={handleRetry}
+                                    variant="outline"
+                                    className="border-red-300 text-red-700 hover:bg-red-100"
+                                >
+                                    Thử lại
+                                </Button>
+                            </div>
+                        )}
+
                         {/* Profile Header */}
                         <ProfileHeader
                             name={profile.name}

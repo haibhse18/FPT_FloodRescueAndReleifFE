@@ -1,75 +1,154 @@
 /**
  * Auth API Adapter - Infrastructure layer
- * Direct API calls cho authentication sử dụng axios
+ * Direct API calls cho authentication
  */
 
-import axiosInstance from '@/lib/axios';
-import { 
-    LoginCredentials, 
-    RegisterData, 
-    LoginResponse,
-    RegisterResponse,
-    RefreshResponse,
-    GetCurrentUserResponse
+import {
+    LoginCredentials,
+    RegisterData,
+    AuthTokens,
+    User
 } from '../domain/user.entity';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+
 /**
- * Auth API methods theo API_list.md
+ * Get token from localStorage
+ */
+function getAuthToken(): string | null {
+    if (typeof window !== 'undefined') {
+        return localStorage.getItem('accessToken');
+    }
+    return null;
+}
+
+/**
+ * Get authorization headers
+ */
+function getAuthHeaders(): HeadersInit {
+    const token = getAuthToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/**
+ * Auth API methods
  */
 export const authApi = {
     /**
-     * POST /api/auth/login
-     * Đăng nhập hệ thống
-     * Request: { email, password }
-     * Response: { accessToken, user }
+     * POST /auth/login
      */
-    login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
-        const response = await axiosInstance.post<LoginResponse>('/auth/login', credentials);
-        return response.data;
+    login: async (credentials: LoginCredentials): Promise<AuthTokens> => {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(credentials),
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Đăng nhập thất bại');
+        }
+
+        return response.json();
     },
 
     /**
-     * POST /api/auth/register
-     * Đăng ký tài khoản
-     * Request: { userName, displayName, email, phoneNumber?, password, role? }
-     * Response: { message, userId }
-     * Note: role mặc định là "Citizen"
+     * POST /auth/register
      */
-    register: async (data: RegisterData): Promise<RegisterResponse> => {
-        const response = await axiosInstance.post<RegisterResponse>('/auth/register', data);
-        return response.data;
+    register: async (data: RegisterData): Promise<AuthTokens> => {
+        const response = await fetch(`${API_BASE_URL}/auth/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Đăng ký thất bại');
+        }
+
+        return response.json();
     },
 
     /**
-     * POST /api/auth/logout
-     * Đăng xuất khỏi hệ thống
-     * Request: Refresh token từ cookie (tự động gửi)
-     * Response: 204 No Content
-     * Note: Xóa refresh token khỏi database và cookie
+     * POST /auth/logout
      */
     logout: async (): Promise<void> => {
-        await axiosInstance.post('/auth/logout');
+        const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders(),
+            },
+        });
+
+        // Clear token regardless of response
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('accessToken');
+        }
+
+        if (!response.ok) {
+            console.warn('Logout API failed, but token cleared locally');
+        }
     },
 
     /**
-     * GET /api/auth/me
-     * Lấy thông tin user hiện tại
-     * Response: { _id, userName, displayName, email, phoneNumber, role, isActive, createdAt, updatedAt, ... }
-     * Auth: Required (Bearer token)
+     * GET /auth/me
      */
-    getCurrentUser: async (): Promise<GetCurrentUserResponse> => {
-        const response = await axiosInstance.get<GetCurrentUserResponse>('/auth/me');
-        return response.data;
+    getCurrentUser: async (): Promise<User> => {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders(),
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Không thể lấy thông tin người dùng');
+        }
+
+        return response.json();
     },
 
     /**
-     * POST /api/auth/refresh
-     * Làm mới access token
-     * Request: Refresh token từ cookie (tự động gửi)
-     * Response: { accessToken, user }
+     * POST /auth/change-password
      */
-    refreshToken: async (): Promise<RefreshResponse> => {
-        const response = await axiosInstance.post<RefreshResponse>('/auth/refresh');
-        return response.data;
+    changePassword: async (oldPassword: string, newPassword: string): Promise<void> => {
+        const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders(),
+            },
+            body: JSON.stringify({ oldPassword, newPassword }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Đổi mật khẩu thất bại');
+        }
+    },
+
+    /**
+     * POST /auth/refresh-token
+     */
+    refreshToken: async (refreshToken: string): Promise<AuthTokens> => {
+        const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ refreshToken }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Không thể refresh token');
+        }
+
+        return response.json();
     },
 };

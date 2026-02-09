@@ -17,7 +17,7 @@ export default function CitizenHomePage() {
         const fetchUser = async () => {
             try {
                 const user = await getCurrentUserUseCase.execute();
-                setUserName(user.fullName || "Người dùng");
+                setUserName(user.displayName || "Người dùng");
             } catch (error) {
                 console.error("Error fetching user:", error);
             } finally {

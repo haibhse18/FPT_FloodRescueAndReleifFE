@@ -130,11 +130,10 @@ export default function CitizenHistoryPage() {
                                     <button
                                         key={btn.value}
                                         onClick={() => setFilter(btn.value as typeof filter)}
-                                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                                            filter === btn.value
+                                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === btn.value
                                                 ? "bg-primary text-white"
                                                 : "bg-white/5 text-gray-400 hover:bg-white/10"
-                                        }`}
+                                            }`}
                                     >
                                         {btn.label}
                                     </button>
@@ -169,13 +168,12 @@ export default function CitizenHistoryPage() {
                                                     <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${request.statusColor}`}>
                                                         {request.statusText}
                                                     </span>
-                                                    <span className={`px-2 py-1 rounded-lg text-xs font-bold ${
-                                                        request.priority === "critical"
+                                                    <span className={`px-2 py-1 rounded-lg text-xs font-bold ${request.priority === "critical"
                                                             ? "bg-red-500/20 text-red-400 border border-red-500/30"
                                                             : request.priority === "high"
                                                                 ? "bg-orange-500/20 text-orange-400 border border-orange-500/30"
                                                                 : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                                                    }`}>
+                                                        }`}>
                                                         {request.priority.toUpperCase()}
                                                     </span>
                                                 </div>

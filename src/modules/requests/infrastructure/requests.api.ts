@@ -85,4 +85,24 @@ export const requestsApi = {
             headers: authSession.getAuthHeaders(),
         });
     },
+
+    /**
+     * Get request detail by ID
+     * GET /requests/{id}
+     */
+    getRequestDetail: async (requestId: string): Promise<ApiResponse> => {
+        return apiClient.get(`/requests/${requestId}`, {
+            headers: authSession.getAuthHeaders(),
+        });
+    },
+
+    /**
+     * Citizen confirm safe / received
+     * PATCH /requests/{id}/confirm
+     */
+    confirmRequest: async (requestId: string): Promise<ApiResponse> => {
+        return apiClient.patch(`/requests/${requestId}/confirm`, undefined, {
+            headers: authSession.getAuthHeaders(),
+        });
+    },
 };

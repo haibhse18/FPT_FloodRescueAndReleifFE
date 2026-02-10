@@ -170,11 +170,11 @@ export default function CitizenRequestPage() {
                 method: "POST",
                 body: formData,
             });
-            
+
             if (!response.ok) {
                 throw new Error('Upload failed');
             }
-            
+
             const data: { success: boolean; url: string } = await response.json();
             if (data.success && data.url) {
                 setUploadedImages([...uploadedImages, data.url]);
@@ -190,8 +190,8 @@ export default function CitizenRequestPage() {
     return (
         <div className="min-h-screen bg-[#133249] text-white flex flex-col">
             {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-10 pointer-events-none" 
-                 style={{backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px"}}></div>
+            <div className="absolute inset-0 opacity-10 pointer-events-none"
+                style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px" }}></div>
 
             {/* Responsive Headers */}
             <div className="hidden md:block">
@@ -213,13 +213,13 @@ export default function CitizenRequestPage() {
                         {/* Top Banner */}
                         <div className="bg-[#FF7700] rounded-xl p-6 shadow-xl relative overflow-hidden group">
                             <div className="absolute -right-6 -top-6 w-32 h-32 bg-white opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-                            
+
                             <div className="flex justify-between items-center relative z-10">
                                 <div>
                                     <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Yêu cầu cứu hộ</h1>
                                     <p className="text-white/90 text-sm lg:text-base">Gửi yêu cầu ngay nếu bạn đang gặp nguy hiểm</p>
                                 </div>
-                                <span className="text-4xl lg:text-5xl">🚨</span>
+                                <span className="text-3xl lg:text-4xl">🚨</span>
                             </div>
                         </div>
 
@@ -250,11 +250,10 @@ export default function CitizenRequestPage() {
                                             setSelectedQuickAction(action.id);
                                             setRescueRequest({ ...rescueRequest, dangerType: action.id });
                                         }}
-                                        className={`p-4 rounded-xl border transition-all ${
-                                            selectedQuickAction === action.id
+                                        className={`p-4 rounded-xl border transition-all ${selectedQuickAction === action.id
                                                 ? `${action.color} ring-2 ring-[#FF7700]`
                                                 : "bg-white/5 border-white/10 hover:bg-white/10"
-                                        }`}
+                                            }`}
                                     >
                                         <div className="text-3xl mb-2">{action.icon}</div>
                                         <h3 className="font-bold text-white mb-1">{action.label}</h3>
@@ -280,10 +279,10 @@ export default function CitizenRequestPage() {
                         )}
 
                         {/* Success Popup */}
-                        <SuccessPopup 
-                            isOpen={showSuccessPopup} 
+                        <SuccessPopup
+                            isOpen={showSuccessPopup}
                             onClose={() => setShowSuccessPopup(false)}
-                            message="Yêu cầu cứu hộ đã gửi thành công!" 
+                            message="Yêu cầu cứu hộ đã gửi thành công!"
                         />
                     </div>
                 </div>

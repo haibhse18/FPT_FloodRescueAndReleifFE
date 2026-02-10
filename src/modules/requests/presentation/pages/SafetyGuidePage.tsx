@@ -114,7 +114,7 @@ export default function SafetyGuidePage() {
                                     <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Hướng dẫn an toàn</h1>
                                     <p className="text-white/90 text-sm lg:text-base">Kỹ năng sinh tồn khi lũ lụt</p>
                                 </div>
-                                <span className="text-4xl lg:text-5xl">📖</span>
+                                <span className="text-3xl lg:text-4xl">📖</span>
                             </div>
                         </div>
                         <div className="bg-gradient-to-br from-red-500/20 to-orange-500/10 border border-red-500/30 rounded-2xl p-6 mb-6">

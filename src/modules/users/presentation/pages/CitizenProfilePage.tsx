@@ -41,7 +41,7 @@ export default function CitizenProfilePage() {
                 setIsLoading(true);
                 setError(null);
                 const userData = await getCurrentUserUseCase.execute();
-                
+
                 if (!userData) {
                     throw new Error('Dữ liệu người dùng không hợp lệ');
                 }
@@ -56,21 +56,21 @@ export default function CitizenProfilePage() {
                 setEditedProfile(newProfile);
             } catch (error) {
                 let errorMessage = "Không tìm thấy thông tin người dùng";
-                
+
                 if (error instanceof Error) {
                     errorMessage = error.message;
-                    
+
                     // Nếu là lỗi network, thêm gợi ý
                     if (errorMessage.includes('network') || errorMessage.includes('ERR_NETWORK')) {
                         errorMessage += " - Vui lòng kiểm tra kết nối mạng";
                     }
-                    
+
                     // Nếu là lỗi 401, hướng user đăng nhập lại
                     if (errorMessage.includes('401') || errorMessage.includes('đăng nhập')) {
                         errorMessage = "Phiên đăng nhập hết hạn - Vui lòng đăng nhập lại";
                     }
                 }
-                
+
                 console.error("Lỗi khi tải thông tin cá nhân:", error);
                 setError(errorMessage);
             } finally {
@@ -114,7 +114,7 @@ export default function CitizenProfilePage() {
         const fetchProfile = async () => {
             try {
                 const userData = await getCurrentUserUseCase.execute();
-                
+
                 if (!userData) {
                     throw new Error('Dữ liệu người dùng không hợp lệ');
                 }
@@ -144,8 +144,8 @@ export default function CitizenProfilePage() {
     return (
         <div className="min-h-screen bg-[#133249]">
             {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-10 pointer-events-none" 
-                 style={{backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px"}}></div>
+            <div className="absolute inset-0 opacity-10 pointer-events-none"
+                style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px" }}></div>
 
             <DesktopSidebar />
             <MobileHeader />
@@ -162,13 +162,13 @@ export default function CitizenProfilePage() {
                         {/* Top Banner */}
                         <div className="bg-[#FF7700] rounded-xl p-6 shadow-xl relative overflow-hidden group">
                             <div className="absolute -right-6 -top-6 w-32 h-32 bg-white opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-                            
+
                             <div className="flex justify-between items-center relative z-10">
                                 <div>
                                     <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Hồ sơ cá nhân</h1>
                                     <p className="text-white/90 text-sm lg:text-base">Cập nhật thông tin và cài đặt</p>
                                 </div>
-                                <span className="text-4xl lg:text-5xl">👤</span>
+                                <span className="text-3xl lg:text-4xl">👤</span>
                             </div>
                         </div>
                         {/* Error Message */}

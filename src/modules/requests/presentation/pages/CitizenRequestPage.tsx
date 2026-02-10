@@ -188,7 +188,7 @@ export default function CitizenRequestPage() {
     };
 
     return (
-        <div className="min-h-screen bg-black text-white flex flex-col">
+        <div className="min-h-screen bg-[#1C262B] text-white flex flex-col">
             {/* Responsive Headers */}
             <div className="hidden md:block">
                 <DesktopHeader title="Yêu cầu cứu hộ" subtitle="Gửi yêu cầu cứu hộ khẩn cấp" />
@@ -241,7 +241,7 @@ export default function CitizenRequestPage() {
                                         }}
                                         className={`p-4 rounded-xl border transition-all ${
                                             selectedQuickAction === action.id
-                                                ? `${action.color} ring-2 ring-primary`
+                                                ? `${action.color} ring-2 ring-[#FF7700]`
                                                 : "bg-white/5 border-white/10 hover:bg-white/10"
                                         }`}
                                     >

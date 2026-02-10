@@ -142,7 +142,7 @@ export default function CitizenProfilePage() {
     };
 
     return (
-        <div className="min-h-screen bg-secondary">
+        <div className="min-h-screen bg-[#1C262B]">
             <DesktopSidebar />
             <MobileHeader />
 

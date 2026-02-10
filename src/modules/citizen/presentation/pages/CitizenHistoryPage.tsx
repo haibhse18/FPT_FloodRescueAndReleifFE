@@ -87,7 +87,7 @@ export default function CitizenHistoryPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-secondary flex flex-col lg:flex-row">
+        <div className="min-h-screen bg-[#1C262B] flex flex-col lg:flex-row">
             <DesktopSidebar />
 
             <div className="flex-1 flex flex-col lg:ml-64">
@@ -131,8 +131,8 @@ export default function CitizenHistoryPage() {
                                         key={btn.value}
                                         onClick={() => setFilter(btn.value as typeof filter)}
                                         className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === btn.value
-                                                ? "bg-primary text-white shadow-lg shadow-primary/20"
-                                                : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                                            ? "bg-[#FF7700] text-white shadow-lg shadow-[#FF7700]/20"
+                                            : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
                                             }`}
                                     >
                                         <span className="mr-1">{btn.icon}</span>
@@ -155,7 +155,7 @@ export default function CitizenHistoryPage() {
                                     </p>
                                     <Link
                                         href="/citizen/request"
-                                        className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-orange-400 rounded-xl text-white font-bold transition-all"
+                                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#FF7700] hover:bg-[#FF8800] rounded-xl text-white font-bold transition-all"
                                     >
                                         <span>➕</span>
                                         <span>Tạo yêu cầu mới</span>
@@ -177,16 +177,16 @@ export default function CitizenHistoryPage() {
                                                         {request.statusText}
                                                     </span>
                                                     <span className={`px-2 py-1 rounded-lg text-xs font-bold ${request.priority === "critical"
-                                                            ? "bg-red-500/20 text-red-400 border border-red-500/30"
-                                                            : request.priority === "high"
-                                                                ? "bg-orange-500/20 text-orange-400 border border-orange-500/30"
-                                                                : request.priority === "medium"
-                                                                    ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                                                                    : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                                        ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                                                        : request.priority === "high"
+                                                            ? "bg-orange-500/20 text-orange-400 border border-orange-500/30"
+                                                            : request.priority === "medium"
+                                                                ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                                                                : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
                                                         }`}>
                                                         {request.priority === "critical" ? "🚨 KHẨN CẤP" :
-                                                         request.priority === "high" ? "⚠️ CAO" :
-                                                         request.priority === "medium" ? "📌 TRUNG BÌNH" : "ℹ️ THẤP"}
+                                                            request.priority === "high" ? "⚠️ CAO" :
+                                                                request.priority === "medium" ? "📌 TRUNG BÌNH" : "ℹ️ THẤP"}
                                                     </span>
                                                 </div>
                                                 <h3 className="text-lg font-bold text-white mb-2">
@@ -217,7 +217,7 @@ export default function CitizenHistoryPage() {
                                         <div className="flex gap-2 mt-4">
                                             <Link
                                                 href={`/citizen/requests/${request.id}`}
-                                                className="flex-1 px-4 py-2 bg-primary/20 hover:bg-primary/30 border border-primary/30 rounded-xl text-primary hover:text-orange-300 text-sm font-bold text-center transition-all"
+                                                className="flex-1 px-4 py-2 bg-[#FF7700]/20 hover:bg-[#FF7700]/30 border border-[#FF7700]/30 rounded-xl text-[#FF7700] hover:text-[#FF8800] text-sm font-bold text-center transition-all"
                                             >
                                                 👁️ Xem chi tiết
                                             </Link>

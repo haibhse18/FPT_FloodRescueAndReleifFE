@@ -118,7 +118,7 @@ export default function CitizenNotificationsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-secondary flex flex-col lg:flex-row">
+        <div className="min-h-screen bg-[#1C262B] flex flex-col lg:flex-row">
             <DesktopSidebar />
             
             <div className="flex-1 flex flex-col lg:ml-64">
@@ -134,7 +134,7 @@ export default function CitizenNotificationsPage() {
                                     onClick={() => setFilter("all")}
                                     className={`px-4 py-2 rounded-xl font-bold transition ${
                                         filter === "all" 
-                                            ? "bg-primary text-white" 
+                                            ? "bg-[#FF7700] text-white" 
                                             : "bg-white/5 text-gray-400 hover:bg-white/10"
                                     }`}
                                 >
@@ -144,7 +144,7 @@ export default function CitizenNotificationsPage() {
                                     onClick={() => setFilter("unread")}
                                     className={`px-4 py-2 rounded-xl font-bold transition relative ${
                                         filter === "unread" 
-                                            ? "bg-primary text-white" 
+                                            ? "bg-[#FF7700] text-white" 
                                             : "bg-white/5 text-gray-400 hover:bg-white/10"
                                     }`}
                                 >
@@ -158,7 +158,7 @@ export default function CitizenNotificationsPage() {
                             {unreadCount > 0 && (
                                 <button
                                     onClick={markAllAsRead}
-                                    className="text-sm text-primary hover:text-primary/80 font-bold"
+                                    className="text-sm text-[#FF7700] hover:text-[#FF8800] font-bold"
                                 >
                                     Đánh dấu tất cả đã đọc
                                 </button>
@@ -189,7 +189,7 @@ export default function CitizenNotificationsPage() {
                                             key={notification.id}
                                             onClick={() => !notification.isRead && markAsRead(notification.id)}
                                             className={`${style.bg} border ${style.border} rounded-xl p-6 transition-all duration-200 cursor-pointer hover:scale-[1.02] ${
-                                                !notification.isRead ? "ring-2 ring-primary/20" : ""
+                                                !notification.isRead ? "ring-2 ring-[#FF7700]/20" : ""
                                             }`}
                                         >
                                             <div className="flex items-start gap-4">
@@ -198,7 +198,7 @@ export default function CitizenNotificationsPage() {
                                                     <div className="flex items-start justify-between gap-2 mb-2">
                                                         <h3 className="text-lg font-bold text-white">{notification.title}</h3>
                                                         {!notification.isRead && (
-                                                            <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2" />
+                                                            <span className="w-2 h-2 bg-[#FF7700] rounded-full flex-shrink-0 mt-2" />
                                                         )}
                                                     </div>
                                                     <p className="text-gray-300 mb-3">{notification.message}</p>
@@ -207,7 +207,7 @@ export default function CitizenNotificationsPage() {
                                                         {notification.actionLabel && notification.actionLink && (
                                                             <Link
                                                                 href={notification.actionLink}
-                                                                className="text-sm font-bold text-primary hover:text-primary/80"
+                                                                className="text-sm font-bold text-[#FF7700] hover:text-[#FF8800]"
                                                             >
                                                                 {notification.actionLabel} →
                                                             </Link>

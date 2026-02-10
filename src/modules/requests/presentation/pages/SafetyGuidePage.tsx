@@ -92,7 +92,7 @@ export default function SafetyGuidePage() {
     };
 
     return (
-        <div className="min-h-screen bg-secondary flex flex-col lg:flex-row">
+        <div className="min-h-screen bg-[#1C262B] flex flex-col lg:flex-row">
             <DesktopSidebar />
 
             <div className="flex-1 flex flex-col lg:ml-64">

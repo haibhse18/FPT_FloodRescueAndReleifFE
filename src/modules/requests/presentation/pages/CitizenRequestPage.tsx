@@ -193,14 +193,6 @@ export default function CitizenRequestPage() {
             <div className="absolute inset-0 opacity-10 pointer-events-none"
                 style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px" }}></div>
 
-            {/* Responsive Headers */}
-            <div className="hidden md:block">
-                <DesktopHeader title="Yêu cầu cứu hộ" subtitle="Gửi yêu cầu cứu hộ khẩn cấp" />
-            </div>
-            <div className="md:hidden">
-                <MobileHeader />
-            </div>
-
             <div className="flex-1 flex">
                 {/* Desktop Sidebar */}
                 <div className="hidden md:block md:w-64">
@@ -208,7 +200,7 @@ export default function CitizenRequestPage() {
                 </div>
 
                 {/* Main Content */}
-                <div className="flex-1 overflow-auto md:pb-0 pb-20 relative">
+                <div className="flex-1 overflow-auto md:pb-0 pb-20 relative pt-4 lg:pt-8">
                     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
                         {/* Top Banner */}
                         <div className="bg-[#FF7700] rounded-xl p-6 shadow-xl relative overflow-hidden group">

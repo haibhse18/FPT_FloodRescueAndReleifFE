@@ -100,10 +100,7 @@ export default function SafetyGuidePage() {
             <DesktopSidebar />
 
             <div className="flex-1 flex flex-col lg:ml-64 relative">
-                <MobileHeader />
-                <DesktopHeader title="Hướng dẫn an toàn" subtitle="Kỹ năng sinh tồn trong lũ lụt" />
-
-                <main className="pt-[73px] lg:pt-[89px] pb-24 lg:pb-0 overflow-auto">
+                <main className="pt-4 lg:pt-8 pb-24 lg:pb-0 overflow-auto">
                     <div className="max-w-4xl mx-auto p-4 lg:p-8 space-y-6">
                         {/* Top Banner */}
                         <div className="bg-[#FF7700] rounded-xl p-6 shadow-xl relative overflow-hidden group">

@@ -91,13 +91,7 @@ export default function CitizenHistoryPage() {
             <DesktopSidebar />
 
             <div className="flex-1 flex flex-col lg:ml-64">
-                <MobileHeader />
-                <DesktopHeader
-                    title="Lịch sử yêu cầu"
-                    subtitle="Xem lại các yêu cầu cứu hộ và cứu trợ của bạn"
-                />
-
-                <main className="pt-[73px] lg:pt-[89px] pb-24 lg:pb-0 overflow-auto">
+                <main className="pt-4 lg:pt-8 pb-24 lg:pb-0 overflow-auto">
                     {/* Background Pattern */}
                     <div className="absolute inset-0 opacity-10 pointer-events-none"
                         style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px" }}></div>

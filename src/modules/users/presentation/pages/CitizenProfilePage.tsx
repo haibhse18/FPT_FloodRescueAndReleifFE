@@ -148,16 +148,10 @@ export default function CitizenProfilePage() {
                 style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px" }}></div>
 
             <DesktopSidebar />
-            <MobileHeader />
 
             {/* Main Content */}
             <div className="lg:ml-64 relative">
-                <DesktopHeader
-                    title="Thông tin cá nhân"
-                    subtitle="Quản lý hồ sơ và cài đặt tài khoản"
-                />
-
-                <main className="pt-16 lg:pt-24 pb-20 lg:pb-8 overflow-auto min-h-screen">
+                <main className="pt-4 lg:pt-8 pb-20 lg:pb-8 overflow-auto min-h-screen">
                     <div className="max-w-4xl mx-auto p-4 lg:p-8 space-y-6">
                         {/* Top Banner */}
                         <div className="bg-[#FF7700] rounded-xl p-6 shadow-xl relative overflow-hidden group">

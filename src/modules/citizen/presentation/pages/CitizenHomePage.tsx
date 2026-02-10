@@ -44,9 +44,9 @@ export default function CitizenHomePage() {
             icon: "🆘",
             title: "Gọi cứu hộ",
             subtitle: "Khẩn cấp",
-            color: "from-red-500/20 to-pink-500/10",
-            borderColor: "border-red-500/30",
-            iconBg: "bg-red-500/20",
+            color: "from-[#FF7700]/30 to-[#FF7700]/10",
+            borderColor: "border-[#FF7700]/50",
+            iconBg: "bg-[#FF7700]/30",
             href: "/citizen/request",
             isPrimary: true
         },
@@ -55,9 +55,9 @@ export default function CitizenHomePage() {
             icon: "📖",
             title: "Hướng dẫn",
             subtitle: "An toàn",
-            color: "from-blue-500/20 to-cyan-500/10",
-            borderColor: "border-blue-500/30",
-            iconBg: "bg-blue-500/20",
+            color: "from-[#FF7700]/20 to-[#FF9900]/10",
+            borderColor: "border-[#FF7700]/30",
+            iconBg: "bg-[#FF7700]/20",
             href: "/citizen/guide"
         },
         {
@@ -65,9 +65,9 @@ export default function CitizenHomePage() {
             icon: "👤",
             title: "Hồ sơ",
             subtitle: "Cá nhân",
-            color: "from-purple-500/20 to-pink-500/10",
-            borderColor: "border-purple-500/30",
-            iconBg: "bg-purple-500/20",
+            color: "from-[#FF7700]/20 to-[#FF9900]/10",
+            borderColor: "border-[#FF7700]/30",
+            iconBg: "bg-[#FF7700]/20",
             href: "/citizen/profile"
         },
         {
@@ -75,9 +75,9 @@ export default function CitizenHomePage() {
             icon: "🔔",
             title: "Thông báo",
             subtitle: "Cập nhật",
-            color: "from-yellow-500/20 to-orange-500/10",
-            borderColor: "border-yellow-500/30",
-            iconBg: "bg-yellow-500/20",
+            color: "from-[#FF7700]/20 to-[#FF9900]/10",
+            borderColor: "border-[#FF7700]/30",
+            iconBg: "bg-[#FF7700]/20",
             href: "/citizen/notifications"
         }
     ];
@@ -136,7 +136,7 @@ export default function CitizenHomePage() {
     ];
 
     return (
-        <div className="min-h-screen bg-secondary flex flex-col lg:flex-row">
+        <div className="min-h-screen bg-[#1C262B] flex flex-col lg:flex-row">
             <DesktopSidebar />
 
             <div className="flex-1 flex flex-col lg:ml-64">
@@ -149,7 +149,7 @@ export default function CitizenHomePage() {
                 <main className="pt-[73px] lg:pt-[89px] pb-24 lg:pb-0 overflow-auto">
                     <div className="p-4 lg:p-8 space-y-6">
                         {/* Welcome Banner */}
-                        <div className="bg-gradient-to-br from-primary/20 via-orange-500/10 to-transparent border border-primary/30 rounded-2xl p-6 lg:p-8">
+                        <div className="bg-gradient-to-br from-[#FF7700]/20 via-[#FF7700]/10 to-transparent border border-[#FF7700]/30 rounded-2xl p-6 lg:p-8">
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                     <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">
@@ -181,7 +181,7 @@ export default function CitizenHomePage() {
                                     </p>
                                     <Link
                                         href="/citizen/guide"
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/30 rounded-xl text-orange-400 text-sm font-bold transition-all"
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#FF7700]/20 hover:bg-[#FF7700]/30 border border-[#FF7700]/30 rounded-xl text-[#FF7700] text-sm font-bold transition-all"
                                     >
                                         <span>Xem hướng dẫn an toàn</span>
                                         <span>→</span>
@@ -251,7 +251,7 @@ export default function CitizenHomePage() {
                                 </h2>
                                 <Link
                                     href="/citizen/history"
-                                    className="text-primary hover:text-orange-400 text-sm font-bold transition-colors"
+                                    className="text-[#FF7700] hover:text-[#FF8800] text-sm font-bold transition-colors"
                                 >
                                     Xem tất cả →
                                 </Link>

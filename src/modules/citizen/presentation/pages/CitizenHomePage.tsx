@@ -11,7 +11,8 @@ const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 export default function CitizenHomePage() {
     const [userName, setUserName] = useState("Người dùng");
     const [isLoading, setIsLoading] = useState(true);
-    const [currentTime, setCurrentTime] = useState(new Date());
+    const [currentLocation, setCurrentLocation] = useState("Đang tải vị trí...");
+    const [coordinates, setCoordinates] = useState<{ lat: number; lon: number } | null>(null);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -26,268 +27,170 @@ export default function CitizenHomePage() {
         };
         fetchUser();
 
-        // Update time every minute
-        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-        return () => clearInterval(timer);
+        // Get current location
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude } = position.coords;
+                    setCoordinates({ lat: latitude, lon: longitude });
+                    
+                    try {
+                        const response = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+                        );
+                        const data = await response.json();
+                        const location = data.address?.city || data.address?.town || data.display_name.split(",")[0];
+                        setCurrentLocation(location);
+                    } catch (error) {
+                        setCurrentLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                    }
+                },
+                () => {
+                    setCurrentLocation("Không thể lấy vị trí");
+                }
+            );
+        }
     }, []);
-
-    const getGreeting = () => {
-        const hour = currentTime.getHours();
-        if (hour < 12) return "Chào buổi sáng";
-        if (hour < 18) return "Chào buổi chiều";
-        return "Chào buổi tối";
-    };
 
     const quickActions = [
         {
-            id: "sos",
-            icon: "🆘",
-            title: "Gọi cứu hộ",
-            subtitle: "Khẩn cấp",
-            color: "from-[#FF7700]/30 to-[#FF7700]/10",
-            borderColor: "border-[#FF7700]/50",
-            iconBg: "bg-[#FF7700]/30",
+            id: "rescue",
+            icon: "🚑",
+            title: "Yêu cầu cứu trợ",
+            subtitle: "Thực phẩm, thuốc men",
             href: "/citizen/request",
-            isPrimary: true
+            color: "bg-[#8F8D87] hover:bg-[#9e9c96]"
+        },
+        {
+            id: "danger",
+            icon: "⚠️",
+            title: "Báo cáo nguy hiểm",
+            subtitle: "Sạt lở, nước dâng",
+            href: "/citizen/request",
+            color: "bg-[#8F8D87] hover:bg-[#9e9c96]"
         },
         {
             id: "guide",
             icon: "📖",
-            title: "Hướng dẫn",
-            subtitle: "An toàn",
-            color: "from-[#FF7700]/20 to-[#FF9900]/10",
-            borderColor: "border-[#FF7700]/30",
-            iconBg: "bg-[#FF7700]/20",
-            href: "/citizen/guide"
-        },
-        {
-            id: "profile",
-            icon: "👤",
-            title: "Hồ sơ",
-            subtitle: "Cá nhân",
-            color: "from-[#FF7700]/20 to-[#FF9900]/10",
-            borderColor: "border-[#FF7700]/30",
-            iconBg: "bg-[#FF7700]/20",
-            href: "/citizen/profile"
-        },
-        {
-            id: "notifications",
-            icon: "🔔",
-            title: "Thông báo",
-            subtitle: "Cập nhật",
-            color: "from-[#FF7700]/20 to-[#FF9900]/10",
-            borderColor: "border-[#FF7700]/30",
-            iconBg: "bg-[#FF7700]/20",
-            href: "/citizen/notifications"
-        }
-    ];
-
-    const stats = [
-        {
-            icon: "📊",
-            label: "Tổng yêu cầu",
-            value: "4",
-            color: "bg-gradient-to-br from-blue-500/20 to-cyan-500/10 border-blue-500/30",
-            iconBg: "bg-blue-500/20"
-        },
-        {
-            icon: "⏳",
-            label: "Đang xử lý",
-            value: "1",
-            color: "bg-gradient-to-br from-yellow-500/20 to-orange-500/10 border-yellow-500/30",
-            iconBg: "bg-yellow-500/20"
-        },
-        {
-            icon: "✅",
-            label: "Hoàn thành",
-            value: "3",
-            color: "bg-gradient-to-br from-green-500/20 to-emerald-500/10 border-green-500/30",
-            iconBg: "bg-green-500/20"
-        }
-    ];
-
-    const floodWarning = {
-        level: "medium",
-        title: "Cảnh báo mức độ trung bình",
-        message: "Khu vực Quận 5 có nguy cơ ngập úng. Theo dõi thông tin và chuẩn bị phương án di chuyển nếu cần.",
-        color: "from-orange-500/20 to-yellow-500/10",
-        borderColor: "border-orange-500/50"
-    };
-
-    const recentRequests = [
-        {
-            id: "REQ001",
-            type: "Cứu hộ",
-            status: "completed",
-            location: "123 Nguyễn Trãi, Q5",
-            time: "2 giờ trước",
-            statusText: "Hoàn thành",
-            statusColor: "bg-green-500/20 text-green-400 border-green-500/30"
-        },
-        {
-            id: "REQ002",
-            type: "Cứu trợ",
-            status: "in_progress",
-            location: "456 Lê Văn Sỹ, Q3",
-            time: "1 ngày trước",
-            statusText: "Đang xử lý",
-            statusColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+            title: "Hướng dẫn an toàn",
+            subtitle: "Kỹ năng sinh tồn",
+            href: "/citizen/guide",
+            color: "bg-[#8F8D87] hover:bg-[#9e9c96]"
         }
     ];
 
     return (
-        <div className="min-h-screen bg-[#1C262B] flex flex-col lg:flex-row">
+        <div className="min-h-screen bg-[#133249] flex flex-col lg:flex-row">
             <DesktopSidebar />
 
             <div className="flex-1 flex flex-col lg:ml-64">
                 <MobileHeader />
                 <DesktopHeader
-                    title={`${getGreeting()}, ${userName}!`}
-                    subtitle="Chúc bạn một ngày an toàn và hạnh phúc"
+                    title={`Chào ${userName}!`}
+                    subtitle="Hệ thống cứu hộ lũ lụt trực tuyến"
                 />
 
                 <main className="pt-[73px] lg:pt-[89px] pb-24 lg:pb-0 overflow-auto">
-                    <div className="p-4 lg:p-8 space-y-6">
-                        {/* Welcome Banner */}
-                        <div className="bg-gradient-to-br from-[#FF7700]/20 via-[#FF7700]/10 to-transparent border border-[#FF7700]/30 rounded-2xl p-6 lg:p-8">
-                            <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                    <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">
-                                        {getGreeting()}, {userName}! 👋
+                    {/* Background Pattern */}
+                    <div className="absolute inset-0 opacity-10 pointer-events-none" 
+                         style={{backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px"}}></div>
+
+                    <div className="relative p-4 lg:p-8 space-y-6 max-w-7xl mx-auto">
+                        {/* Top Banner */}
+                        <div className="bg-[#FF7700] rounded-xl p-6 shadow-xl relative overflow-hidden group">
+                            <div className="absolute -right-6 -top-6 w-32 h-32 bg-white opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+                            
+                            <div className="flex justify-between items-start relative z-10">
+                                <div className="flex flex-col gap-3">
+                                    <h1 className="text-white text-3xl lg:text-4xl font-extrabold tracking-tight leading-none uppercase">
+                                        Cứu hộ<br/>Lũ lụt
                                     </h1>
-                                    <p className="text-gray-400 text-sm lg:text-base">
-                                        {currentTime.toLocaleDateString('vi-VN', {
-                                            weekday: 'long',
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric'
-                                        })}
-                                    </p>
+                                    <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full w-fit">
+                                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                                        <span className="text-sm font-semibold text-white">Hệ thống trực tuyến</span>
+                                    </div>
                                 </div>
-                                <div className="text-4xl lg:text-6xl">🏠</div>
+                                <span className="text-5xl">🌊</span>
                             </div>
                         </div>
 
-                        {/* Flood Warning Alert */}
-                        <div className={`bg-gradient-to-br ${floodWarning.color} border ${floodWarning.borderColor} rounded-2xl p-5 lg:p-6`}>
-                            <div className="flex items-start gap-4">
-                                <div className="text-3xl lg:text-4xl">⚠️</div>
-                                <div className="flex-1">
-                                    <h3 className="text-lg font-bold text-white mb-1">
-                                        {floodWarning.title}
-                                    </h3>
-                                    <p className="text-gray-300 text-sm lg:text-base mb-3">
-                                        {floodWarning.message}
-                                    </p>
-                                    <Link
-                                        href="/citizen/guide"
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#FF7700]/20 hover:bg-[#FF7700]/30 border border-[#FF7700]/30 rounded-xl text-[#FF7700] text-sm font-bold transition-all"
-                                    >
-                                        <span>Xem hướng dẫn an toàn</span>
-                                        <span>→</span>
-                                    </Link>
-                                </div>
+                        {/* Hero SOS Section */}
+                        <div className="flex flex-col items-center justify-center py-8 lg:py-12">
+                            <div className="text-center mb-8">
+                                <p className="text-[#FF7700] font-bold text-2xl lg:text-3xl mb-2">CẦN HỖ TRỢ NGAY?</p>
+                                <p className="text-slate-300 text-base lg:text-lg">
+                                    Bấm nút bên dưới để gửi tín hiệu cấp cứu và vị trí của bạn
+                                </p>
+                            </div>
+
+                            {/* SOS Button with Ripple Effect */}
+                            <div className="relative flex items-center justify-center">
+                                {/* Ripple layers */}
+                                <div className="absolute w-64 h-64 lg:w-80 lg:h-80 rounded-full border border-red-500/30 animate-ping-slow"></div>
+                                <div className="absolute w-52 h-52 lg:w-64 lg:h-64 rounded-full border border-red-500/50 animate-ping" style={{animationDuration: "3s", animationDelay: "1s"}}></div>
+                                
+                                <Link
+                                    href="/citizen/request"
+                                    className="sos-pulse relative w-48 h-48 lg:w-56 lg:h-56 rounded-full bg-[#FF3535] border-4 border-white shadow-[0_0_40px_rgba(255,53,53,0.7)] flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform z-20 group cursor-pointer hover:bg-red-600"
+                                >
+                                    <span className="text-6xl lg:text-7xl mb-2">📶</span>
+                                    <span className="text-2xl lg:text-3xl font-black tracking-wider text-white">CỨU HỘ</span>
+                                    <span className="text-base lg:text-lg font-bold tracking-widest text-white">KHẨN CẤP</span>
+                                </Link>
                             </div>
                         </div>
 
-                        {/* Quick Actions Grid */}
-                        <div>
-                            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                                <span>⚡</span>
-                                <span>Hành động nhanh</span>
-                            </h2>
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+                        {/* Quick Options Section */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between px-2">
+                                <h3 className="text-white font-bold text-xl lg:text-2xl">Lựa chọn nhanh</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                 {quickActions.map((action) => (
                                     <Link
                                         key={action.id}
                                         href={action.href}
-                                        className={`group bg-gradient-to-br ${action.color} border ${action.borderColor} rounded-2xl p-4 lg:p-6 hover:scale-105 transition-all duration-300 ${action.isPrimary ? 'lg:col-span-2 lg:row-span-1' : ''
-                                            }`}
+                                        className={`${action.color} rounded-xl p-5 flex items-center gap-4 shadow-lg transition-all cursor-pointer group`}
                                     >
-                                        <div className={`${action.iconBg} w-12 h-12 lg:w-16 lg:h-16 rounded-2xl flex items-center justify-center mb-3 lg:mb-4 group-hover:scale-110 transition-transform`}>
-                                            <span className="text-2xl lg:text-4xl">{action.icon}</span>
+                                        <div className="w-14 h-14 rounded-lg bg-white/20 flex items-center justify-center text-3xl group-hover:bg-white/30 transition-colors">
+                                            {action.icon}
                                         </div>
-                                        <h3 className="text-base lg:text-lg font-bold text-white mb-1">
-                                            {action.title}
-                                        </h3>
-                                        <p className="text-xs lg:text-sm text-gray-400">{action.subtitle}</p>
+                                        <div className="flex flex-col flex-1">
+                                            <span className="text-white font-bold text-lg leading-tight">{action.title}</span>
+                                            <span className="text-white/80 text-sm">{action.subtitle}</span>
+                                        </div>
+                                        <span className="text-white/50 text-2xl">›</span>
                                     </Link>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Stats Overview */}
-                        <div>
-                            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                                <span>📈</span>
-                                <span>Tổng quan</span>
-                            </h2>
-                            <div className="grid grid-cols-3 gap-3 lg:gap-4">
-                                {stats.map((stat, index) => (
-                                    <div
-                                        key={index}
-                                        className={`bg-gradient-to-br ${stat.color} border rounded-2xl p-4 lg:p-6 text-center`}
-                                    >
-                                        <div className={`${stat.iconBg} w-10 h-10 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center mx-auto mb-3`}>
-                                            <span className="text-xl lg:text-2xl">{stat.icon}</span>
-                                        </div>
-                                        <div className="text-2xl lg:text-3xl font-bold text-white mb-1">
-                                            {stat.value}
-                                        </div>
-                                        <div className="text-xs lg:text-sm text-gray-400">
-                                            {stat.label}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Recent Requests */}
-                        <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                    <span>🕐</span>
-                                    <span>Yêu cầu gần đây</span>
-                                </h2>
-                                <Link
-                                    href="/citizen/history"
-                                    className="text-[#FF7700] hover:text-[#FF8800] text-sm font-bold transition-colors"
+                        {/* Location Bar */}
+                        <div className="bg-slate-200 rounded-xl p-5 shadow-lg border-l-4 border-[#FF7700]">
+                            <div className="flex justify-between items-center mb-3">
+                                <div className="flex items-center gap-2 text-slate-600">
+                                    <span className="text-xl">📍</span>
+                                    <span className="text-sm font-bold uppercase tracking-wide">Vị trí hiện tại</span>
+                                </div>
+                                <button 
+                                    onClick={() => window.location.reload()}
+                                    className="text-[#FF3535] text-sm font-bold uppercase hover:underline"
                                 >
-                                    Xem tất cả →
-                                </Link>
+                                    Cập nhật
+                                </button>
                             </div>
-                            <div className="space-y-3">
-                                {recentRequests.map((request) => (
-                                    <div
-                                        key={request.id}
-                                        className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-5 hover:bg-white/10 transition-all cursor-pointer"
-                                    >
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className="font-mono text-sm text-gray-400">
-                                                        #{request.id}
-                                                    </span>
-                                                    <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${request.statusColor}`}>
-                                                        {request.statusText}
-                                                    </span>
-                                                </div>
-                                                <h3 className="text-white font-bold mb-1">{request.type}</h3>
-                                                <p className="text-gray-400 text-sm flex items-center gap-1">
-                                                    <span>📍</span>
-                                                    <span>{request.location}</span>
-                                                </p>
-                                            </div>
-                                            <span className="text-xs text-gray-500">{request.time}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                            <p className="text-slate-800 text-lg font-bold mb-2">{currentLocation}</p>
+                            {coordinates && (
+                                <div className="text-xs text-slate-500 font-mono">
+                                    Lat: {coordinates.lat.toFixed(4)} • Long: {coordinates.lon.toFixed(4)}
+                                </div>
+                            )}
                         </div>
 
                         {/* Emergency Contacts */}
-                        <div className="bg-gradient-to-br from-red-500/10 to-pink-500/5 border border-red-500/20 rounded-2xl p-6">
-                            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+                            <h2 className="text-white font-bold text-xl mb-4 flex items-center gap-2">
                                 <span>📞</span>
                                 <span>Liên hệ khẩn cấp</span>
                             </h2>
@@ -301,12 +204,10 @@ export default function CitizenHomePage() {
                                     <a
                                         key={index}
                                         href={`tel:${contact.number}`}
-                                        className="bg-white/5 border border-white/10 rounded-xl p-3 lg:p-4 text-center hover:bg-white/10 hover:scale-105 transition-all"
+                                        className="bg-white/5 border border-white/10 rounded-xl p-4 text-center hover:bg-white/10 hover:scale-105 transition-all"
                                     >
-                                        <div className="text-2xl lg:text-3xl mb-2">{contact.icon}</div>
-                                        <div className="text-white font-bold text-sm lg:text-base mb-1">
-                                            {contact.number}
-                                        </div>
+                                        <div className="text-3xl mb-2">{contact.icon}</div>
+                                        <div className="text-white font-bold text-lg mb-1">{contact.number}</div>
                                         <div className="text-gray-400 text-xs">{contact.label}</div>
                                     </a>
                                 ))}

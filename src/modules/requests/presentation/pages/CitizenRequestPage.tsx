@@ -188,7 +188,11 @@ export default function CitizenRequestPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#1C262B] text-white flex flex-col">
+        <div className="min-h-screen bg-[#133249] text-white flex flex-col">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none" 
+                 style={{backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px"}}></div>
+
             {/* Responsive Headers */}
             <div className="hidden md:block">
                 <DesktopHeader title="Yêu cầu cứu hộ" subtitle="Gửi yêu cầu cứu hộ khẩn cấp" />
@@ -204,12 +208,19 @@ export default function CitizenRequestPage() {
                 </div>
 
                 {/* Main Content */}
-                <div className="flex-1 overflow-auto md:pb-0 pb-20">
-                    <div className="p-4 md:p-6 space-y-6">
-                        {/* Tiêu đề trang */}
-                        <div>
-                            <h1 className="text-3xl font-bold">Yêu cầu cứu hộ</h1>
-                            <p className="text-gray-400 mt-2">Gửi yêu cầu cứu hộ khẩn cấp, chia sẻ vị trí và ảnh</p>
+                <div className="flex-1 overflow-auto md:pb-0 pb-20 relative">
+                    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
+                        {/* Top Banner */}
+                        <div className="bg-[#FF7700] rounded-xl p-6 shadow-xl relative overflow-hidden group">
+                            <div className="absolute -right-6 -top-6 w-32 h-32 bg-white opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+                            
+                            <div className="flex justify-between items-center relative z-10">
+                                <div>
+                                    <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Yêu cầu cứu hộ</h1>
+                                    <p className="text-white/90 text-sm lg:text-base">Gửi yêu cầu ngay nếu bạn đang gặp nguy hiểm</p>
+                                </div>
+                                <span className="text-4xl lg:text-5xl">🚨</span>
+                            </div>
                         </div>
 
                         {/* Bản đồ */}

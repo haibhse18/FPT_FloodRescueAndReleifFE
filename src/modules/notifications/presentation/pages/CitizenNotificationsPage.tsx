@@ -118,15 +118,31 @@ export default function CitizenNotificationsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#1C262B] flex flex-col lg:flex-row">
+        <div className="min-h-screen bg-[#133249] flex flex-col lg:flex-row">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none" 
+                 style={{backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px"}}></div>
+
             <DesktopSidebar />
             
-            <div className="flex-1 flex flex-col lg:ml-64">
+            <div className="flex-1 flex flex-col lg:ml-64 relative">
                 <MobileHeader />
                 <DesktopHeader title="Thông báo" subtitle="Cập nhật mới nhất về cứu hộ và an toàn" />
 
                 <main className="pt-[73px] lg:pt-[89px] pb-24 lg:pb-0 overflow-auto">
-                    <div className="max-w-4xl mx-auto p-4 lg:p-8">
+                    <div className="max-w-4xl mx-auto p-4 lg:p-8 space-y-6">
+                        {/* Top Banner */}
+                        <div className="bg-[#FF7700] rounded-xl p-6 shadow-xl relative overflow-hidden group">
+                            <div className="absolute -right-6 -top-6 w-32 h-32 bg-white opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+                            
+                            <div className="flex justify-between items-center relative z-10">
+                                <div>
+                                    <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Thông báo</h1>
+                                    <p className="text-white/90 text-sm lg:text-base">Cập nhật quan trọng về cứu hộ</p>
+                                </div>
+                                <span className="text-4xl lg:text-5xl">🔔</span>
+                            </div>
+                        </div>
                         {/* Header */}
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-4">

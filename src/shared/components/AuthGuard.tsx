@@ -59,7 +59,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
                 const roleRedirects: Record<string, string> = {
                     'Citizen': '/citizen',
                     'Rescue Team': '/team/missions',
-                    'Rescue Coordinator': '/coordinator/requests',
+                    'Rescue Coordinator': '/coordinator/dashboard',
                     'Manager': '/manager',
                     'Admin': '/admin/users',
                 };

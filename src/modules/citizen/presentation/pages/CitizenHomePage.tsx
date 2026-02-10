@@ -84,30 +84,28 @@ export default function CitizenHomePage() {
             <DesktopSidebar />
 
             <div className="flex-1 flex flex-col lg:ml-64">
-                <main className="pt-4 lg:pt-8 pb-24 lg:pb-0 overflow-auto">
+                {/* Fixed Header Banner */}
+                <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
+                    <div className="max-w-7xl mx-auto flex justify-between items-start">
+                        <div className="flex flex-col gap-3">
+                            <h1 className="text-white text-3xl lg:text-4xl font-extrabold tracking-tight leading-none uppercase">
+                                Cứu hộ<br/>Lũ lụt
+                            </h1>
+                            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full w-fit">
+                                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                                <span className="text-sm font-semibold text-white">Hệ thống trực tuyến</span>
+                            </div>
+                        </div>
+                        <span className="text-5xl">🌊</span>
+                    </div>
+                </header>
+
+                <main className="pb-24 lg:pb-0 overflow-auto">
                     {/* Background Pattern */}
                     <div className="absolute inset-0 opacity-10 pointer-events-none" 
                          style={{backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px"}}></div>
 
                     <div className="relative p-4 lg:p-8 space-y-6 max-w-7xl mx-auto">
-                        {/* Top Banner */}
-                        <div className="bg-[#FF7700] rounded-xl p-6 shadow-xl relative overflow-hidden group">
-                            <div className="absolute -right-6 -top-6 w-32 h-32 bg-white opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-                            
-                            <div className="flex justify-between items-start relative z-10">
-                                <div className="flex flex-col gap-3">
-                                    <h1 className="text-white text-3xl lg:text-4xl font-extrabold tracking-tight leading-none uppercase">
-                                        Cứu hộ<br/>Lũ lụt
-                                    </h1>
-                                    <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full w-fit">
-                                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                                        <span className="text-sm font-semibold text-white">Hệ thống trực tuyến</span>
-                                    </div>
-                                </div>
-                                <span className="text-5xl">🌊</span>
-                            </div>
-                        </div>
-
                         {/* Hero SOS Section */}
                         <div className="flex flex-col items-center justify-center py-8 lg:py-12">
                             <div className="text-center mb-8">

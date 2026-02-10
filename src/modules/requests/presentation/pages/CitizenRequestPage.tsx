@@ -200,21 +200,20 @@ export default function CitizenRequestPage() {
                 </div>
 
                 {/* Main Content */}
-                <div className="flex-1 overflow-auto md:pb-0 pb-20 relative pt-4 lg:pt-8">
-                    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-                        {/* Top Banner */}
-                        <div className="bg-[#FF7700] rounded-xl p-6 shadow-xl relative overflow-hidden group">
-                            <div className="absolute -right-6 -top-6 w-32 h-32 bg-white opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-
-                            <div className="flex justify-between items-center relative z-10">
-                                <div>
-                                    <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Yêu cầu cứu hộ</h1>
-                                    <p className="text-white/90 text-sm lg:text-base">Gửi yêu cầu ngay nếu bạn đang gặp nguy hiểm</p>
-                                </div>
-                                <span className="text-3xl lg:text-4xl">🚨</span>
+                <div className="flex-1 flex flex-col relative">
+                    {/* Fixed Header Banner */}
+                    <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
+                        <div className="max-w-7xl mx-auto flex justify-between items-center">
+                            <div>
+                                <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Yêu cầu cứu hộ</h1>
+                                <p className="text-white/90 text-sm lg:text-base">Gửi yêu cầu ngay nếu bạn đang gặp nguy hiểm</p>
                             </div>
+                            <span className="text-3xl lg:text-4xl">🚨</span>
                         </div>
+                    </header>
 
+                    <div className="flex-1 overflow-auto md:pb-0 pb-20">
+                    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
                         {/* Bản đồ */}
                         <div>
                             <h2 className="text-xl font-semibold mb-3">Bản đồ vị trí của bạn</h2>
@@ -277,6 +276,7 @@ export default function CitizenRequestPage() {
                             message="Yêu cầu cứu hộ đã gửi thành công!"
                         />
                     </div>
+                </div>
                 </div>
             </div>
 

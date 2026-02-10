@@ -91,25 +91,23 @@ export default function CitizenHistoryPage() {
             <DesktopSidebar />
 
             <div className="flex-1 flex flex-col lg:ml-64">
-                <main className="pt-4 lg:pt-8 pb-24 lg:pb-0 overflow-auto">
+                {/* Fixed Header Banner */}
+                <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
+                    <div className="max-w-7xl mx-auto flex justify-between items-center">
+                        <div>
+                            <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Lịch sử yêu cầu</h1>
+                            <p className="text-white/90 text-sm lg:text-base">Theo dõi trạng thái các yêu cầu của bạn</p>
+                        </div>
+                        <span className="text-3xl lg:text-4xl">📜</span>
+                    </div>
+                </header>
+
+                <main className="pb-24 lg:pb-0 overflow-auto">
                     {/* Background Pattern */}
                     <div className="absolute inset-0 opacity-10 pointer-events-none"
                         style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px" }}></div>
 
                     <div className="relative p-4 lg:p-8 space-y-6 max-w-7xl mx-auto">
-                        {/* Top Banner */}
-                        <div className="bg-[#FF7700] rounded-xl p-6 shadow-xl relative overflow-hidden group">
-                            <div className="absolute -right-6 -top-6 w-32 h-32 bg-white opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-
-                            <div className="flex justify-between items-center relative z-10">
-                                <div>
-                                    <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Lịch sử yêu cầu</h1>
-                                    <p className="text-white/90 text-sm lg:text-base">Theo dõi trạng thái các yêu cầu của bạn</p>
-                                </div>
-                                <span className="text-3xl lg:text-4xl">📜</span>
-                            </div>
-                        </div>
-
                         {/* Stats Grid */}
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
                             {stats.map((stat, index) => (

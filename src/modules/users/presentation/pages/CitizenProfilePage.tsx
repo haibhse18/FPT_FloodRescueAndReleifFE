@@ -150,21 +150,20 @@ export default function CitizenProfilePage() {
             <DesktopSidebar />
 
             {/* Main Content */}
-            <div className="lg:ml-64 relative">
-                <main className="pt-4 lg:pt-8 pb-20 lg:pb-8 overflow-auto min-h-screen">
-                    <div className="max-w-4xl mx-auto p-4 lg:p-8 space-y-6">
-                        {/* Top Banner */}
-                        <div className="bg-[#FF7700] rounded-xl p-6 shadow-xl relative overflow-hidden group">
-                            <div className="absolute -right-6 -top-6 w-32 h-32 bg-white opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-
-                            <div className="flex justify-between items-center relative z-10">
-                                <div>
-                                    <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Hồ sơ cá nhân</h1>
-                                    <p className="text-white/90 text-sm lg:text-base">Cập nhật thông tin và cài đặt</p>
-                                </div>
-                                <span className="text-3xl lg:text-4xl">👤</span>
-                            </div>
+            <div className="lg:ml-64 flex flex-col relative">
+                {/* Fixed Header Banner */}
+                <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
+                    <div className="max-w-4xl mx-auto flex justify-between items-center">
+                        <div>
+                            <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Hồ sơ cá nhân</h1>
+                            <p className="text-white/90 text-sm lg:text-base">Cập nhật thông tin và cài đặt</p>
                         </div>
+                        <span className="text-3xl lg:text-4xl">👤</span>
+                    </div>
+                </header>
+
+                <main className="pb-20 lg:pb-8 overflow-auto min-h-screen">
+                    <div className="max-w-4xl mx-auto p-4 lg:p-8 space-y-6">
                         {/* Error Message */}
                         {error && (
                             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 font-medium flex items-center justify-between">

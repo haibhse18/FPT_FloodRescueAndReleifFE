@@ -57,7 +57,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
             if (!allowedRoles.includes(role)) {
                 // Redirect về trang mặc định theo role
                 const roleRedirects: Record<string, string> = {
-                    'Citizen': '/profile',
+                    'Citizen': '/citizen',
                     'Rescue Team': '/team/missions',
                     'Rescue Coordinator': '/coordinator/requests',
                     'Manager': '/manager',

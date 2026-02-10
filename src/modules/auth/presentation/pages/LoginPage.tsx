@@ -46,7 +46,7 @@ export default function LoginPage() {
             
             // Redirect based on user role
             const redirectMap: Record<string, string> = {
-                'Citizen': '/profile',
+                'Citizen': '/citizen',
                 'Rescue Team': '/team/missions',
                 'Rescue Coordinator': '/coordinator/requests',
                 'Manager': '/manager',

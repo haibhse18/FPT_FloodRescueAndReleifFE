@@ -26,28 +26,28 @@ const quickRescueActions: QuickRescueAction[] = [
         icon: "🌊",
         label: "Ngập lụt",
         description: "Nước dâng cao, cần di chuyển khẩn cấp",
-        color: "from-blue-500/20 to-cyan-500/10 border-blue-500/30"
+        color: "from-[#FF7700]/20 to-[#FF7700]/10 border-[#FF7700]/30"
     },
     {
         id: "trapped",
         icon: "🏚️",
         label: "Bị kẹt",
         description: "Bị mắc kẹt, không thể thoát ra",
-        color: "from-orange-500/20 to-yellow-500/10 border-orange-500/30"
+        color: "from-[#FF7700]/20 to-[#FF7700]/10 border-[#FF7700]/30"
     },
     {
         id: "injury",
         icon: "🤕",
         label: "Bị thương",
         description: "Có người bị thương cần cấp cứu",
-        color: "from-red-500/20 to-pink-500/10 border-red-500/30"
+        color: "from-[#FF7700]/20 to-[#FF7700]/10 border-[#FF7700]/30"
     },
     {
         id: "landslide",
         icon: "⛰️",
         label: "Sạt lở",
         description: "Đất đá sạt lở, nguy hiểm cao",
-        color: "from-amber-500/20 to-orange-500/10 border-amber-500/30"
+        color: "from-[#FF7700]/20 to-[#FF7700]/10 border-[#FF7700]/30"
     }
 ];
 
@@ -110,7 +110,7 @@ export default function RescueRequestModal({
             <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="flex-[2] px-6 py-4 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                className="flex-[2] px-6 py-4 rounded-xl bg-gradient-to-r from-[#FF7700] to-[#FF8820] hover:from-[#FF8820] hover:to-[#FF9940] text-white font-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
             >
                 {isSubmitting ? (
                     <>

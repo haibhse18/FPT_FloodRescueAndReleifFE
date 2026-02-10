@@ -50,28 +50,28 @@ export default function CitizenRequestPage() {
             icon: "🌊",
             label: "Ngập lụt",
             description: "Nước dâng cao, cần di chuyển khẩn cấp",
-            color: "from-blue-500/20 to-cyan-500/10 border-blue-500/30"
+            color: "from-[#FF7700]/20 to-[#FF7700]/10 border-[#FF7700]/30"
         },
         {
             id: "trapped",
             icon: "🏚️",
             label: "Bị kẹt",
             description: "Bị mắc kẹt, không thể thoát ra",
-            color: "from-orange-500/20 to-yellow-500/10 border-orange-500/30"
+            color: "from-[#FF7700]/20 to-[#FF7700]/10 border-[#FF7700]/30"
         },
         {
             id: "injury",
             icon: "🤕",
             label: "Bị thương",
             description: "Có người bị thương cần cấp cứu",
-            color: "from-red-500/20 to-pink-500/10 border-red-500/30"
+            color: "from-[#FF7700]/20 to-[#FF7700]/10 border-[#FF7700]/30"
         },
         {
             id: "landslide",
             icon: "⛰️",
             label: "Sạt lở",
             description: "Đất đá sạt lở, nguy hiểm cao",
-            color: "from-amber-500/20 to-orange-500/10 border-amber-500/30"
+            color: "from-[#FF7700]/20 to-[#FF7700]/10 border-[#FF7700]/30"
         }
     ];
 
@@ -107,12 +107,13 @@ export default function CitizenRequestPage() {
         }
     };
 
-    // Hàm gọi API OpenMap để lấy địa chỉ từ tọa độ
+    // Hàm gọi API OpenMap.vn để lấy địa chỉ từ tọa độ
     const getAddressFromOpenMap = async (lat: number, lon: number) => {
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+            const response = await fetch(`https://api.openmap.vn/api/v1/reverse?lat=${lat}&lon=${lon}`);
             const data = await response.json();
-            setCurrentLocation(data.address?.city || data.address?.town || data.display_name.split(",")[0]);
+            const location = data.address?.city || data.address?.district || data.address?.province || data.display_name || `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+            setCurrentLocation(location);
         } catch (error) {
             console.error("Error fetching address:", error);
             setCurrentLocation(`${lat.toFixed(2)}, ${lon.toFixed(2)}`);
@@ -203,12 +204,9 @@ export default function CitizenRequestPage() {
                 <div className="flex-1 flex flex-col relative">
                     {/* Fixed Header Banner */}
                     <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
-                        <div className="max-w-7xl mx-auto flex justify-between items-center">
-                            <div>
-                                <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Yêu cầu cứu hộ</h1>
-                                <p className="text-white/90 text-sm lg:text-base">Gửi yêu cầu ngay nếu bạn đang gặp nguy hiểm</p>
-                            </div>
-                            <span className="text-3xl lg:text-4xl">🚨</span>
+                        <div className="max-w-7xl mx-auto">
+                            <h1 className="text-white text-xl lg:text-2xl font-extrabold mb-0.5">Yêu cầu cứu hộ</h1>
+                            <p className="text-white/90 text-xs lg:text-sm">Gửi yêu cầu ngay nếu bạn đang gặp nguy hiểm</p>
                         </div>
                     </header>
 
@@ -217,7 +215,7 @@ export default function CitizenRequestPage() {
                         {/* Bản đồ */}
                         <div>
                             <h2 className="text-xl font-semibold mb-3">Bản đồ vị trí của bạn</h2>
-                            <div className="rounded-xl overflow-hidden h-96 border border-white/10">
+                            <div className="rounded-xl overflow-hidden h-[28rem] border border-white/10">
                                 {coordinates && <OpenMap latitude={coordinates.lat} longitude={coordinates.lon} />}
                             </div>
                         </div>

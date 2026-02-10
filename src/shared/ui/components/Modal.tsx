@@ -5,11 +5,13 @@ export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
+  icon?: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, icon, children, footer, size = 'md' }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -95,18 +97,21 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
       {/* Modal */}
       <div 
         ref={modalRef}
-        className={`relative bg-white rounded-lg shadow-xl w-full ${sizes[size]} max-h-[90vh] overflow-y-auto animate-in zoom-in-95 slide-in-from-bottom-4 duration-300`}
+        className={`relative bg-[#1a3a52] rounded-xl shadow-2xl w-full ${sizes[size]} max-h-[90vh] flex flex-col animate-in zoom-in-95 slide-in-from-bottom-4 duration-300`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
-            <h3 id="modal-title" className="text-xl font-semibold">{title}</h3>
+          <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              {icon && <span className="text-2xl">{icon}</span>}
+              <h3 id="modal-title" className="text-xl font-bold text-white">{title}</h3>
+            </div>
             <button
               onClick={onClose}
-              className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all duration-200 hover:scale-110"
+              className="text-white/60 hover:text-white transition-all duration-200 hover:scale-110"
               aria-label="Close modal"
             >
               <X size={24} />
@@ -115,9 +120,16 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         )}
         
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto flex-1">
           {children}
         </div>
+
+        {/* Footer */}
+        {footer && (
+          <div className="p-6 border-t border-white/10">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

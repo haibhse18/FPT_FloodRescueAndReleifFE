@@ -1,59 +1,76 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { MobileHeader, MobileBottomNav, DesktopHeader, DesktopSidebar } from "@/shared/components/layout";
+import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
+
+interface Request {
+    id: string;
+    type: string;
+    status: string;
+    location: string;
+    createdAt: string;
+    completedAt?: string;
+    statusText: string;
+    statusColor: string;
+    priority: string;
+    peopleCount: number;
+    description?: string;
+}
 
 export default function CitizenHistoryPage() {
     const [filter, setFilter] = useState<"all" | "pending" | "in_progress" | "completed">("all");
-    const [requests] = useState([
-        {
-            id: "REQ001",
-            type: "Cứu hộ",
-            status: "completed",
-            location: "123 Nguyễn Trãi, Q5",
-            createdAt: "2026-01-30 10:30",
-            completedAt: "2026-01-30 12:45",
-            statusText: "Hoàn thành",
-            statusColor: "bg-green-500/20 text-green-400 border-green-500/30",
-            priority: "high",
-            peopleCount: 5
-        },
-        {
-            id: "REQ002",
-            type: "Cứu trợ",
-            status: "in_progress",
-            location: "456 Lê Văn Sỹ, Q3",
-            createdAt: "2026-01-31 09:15",
-            statusText: "Đang xử lý",
-            statusColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-            priority: "medium",
-            peopleCount: 3
-        },
-        {
-            id: "REQ003",
-            type: "Cứu hộ",
-            status: "pending",
-            location: "789 Võ Văn Tần, Q1",
-            createdAt: "2026-02-01 14:20",
-            statusText: "Chờ xử lý",
-            statusColor: "bg-gray-500/20 text-gray-400 border-gray-500/30",
-            priority: "critical",
-            peopleCount: 2
-        },
-        {
-            id: "REQ004",
-            type: "Cứu trợ",
-            status: "completed",
-            location: "321 Điện Biên Phủ, Q10",
-            createdAt: "2026-01-29 16:00",
-            completedAt: "2026-01-29 18:30",
-            statusText: "Hoàn thành",
-            statusColor: "bg-green-500/20 text-green-400 border-green-500/30",
-            priority: "low",
-            peopleCount: 1
+    const [requests, setRequests] = useState<Request[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetchRequests();
+    }, []);
+
+    const fetchRequests = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = await requestRepository.getMyRequests();
+            
+            // Map API response to UI format
+            const mappedRequests: Request[] = data.map((req: any) => {
+                const statusMap: Record<string, { text: string; color: string; filter: string }> = {
+                    'Submitted': { text: 'Chờ xử lý', color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', filter: 'pending' },
+                    'Accepted': { text: 'Đã chấp nhận', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', filter: 'in_progress' },
+                    'Rejected': { text: 'Bị từ chối', color: 'bg-red-500/20 text-red-400 border-red-500/30', filter: 'completed' },
+                    'In Progress': { text: 'Đang xử lý', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', filter: 'in_progress' },
+                    'Completed': { text: 'Hoàn thành', color: 'bg-green-500/20 text-green-400 border-green-500/30', filter: 'completed' },
+                    'Cancelled': { text: 'Đã hủy', color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', filter: 'completed' }
+                };
+
+                const status = statusMap[req.status] || statusMap['Submitted'];
+                
+                return {
+                    id: req.requestId || req.id,
+                    type: req.type === 'rescue' ? 'Cứu hộ' : req.type === 'supply' ? 'Cứu trợ' : 'Yêu cầu',
+                    status: status.filter,
+                    location: req.location || `${req.latitude?.toFixed(4)}, ${req.longitude?.toFixed(4)}`,
+                    createdAt: new Date(req.createdAt).toLocaleString('vi-VN'),
+                    completedAt: req.completedAt ? new Date(req.completedAt).toLocaleString('vi-VN') : undefined,
+                    statusText: status.text,
+                    statusColor: status.color,
+                    priority: req.priority?.toLowerCase() || req.urgencyLevel?.toLowerCase() || 'medium',
+                    peopleCount: req.peopleCount || req.numberOfPeople || 1,
+                    description: req.description
+                };
+            });
+
+            setRequests(mappedRequests);
+        } catch (err) {
+            console.error('Error fetching requests:', err);
+            setError('Không thể tải lịch sử yêu cầu. Vui lòng thử lại sau.');
+        } finally {
+            setIsLoading(false);
         }
-    ]);
+    };
 
     const filteredRequests = requests.filter(req =>
         filter === "all" || req.status === filter
@@ -93,12 +110,21 @@ export default function CitizenHistoryPage() {
             <div className="flex-1 flex flex-col lg:ml-64">
                 {/* Fixed Header Banner */}
                 <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
-                    <div className="max-w-7xl mx-auto flex justify-between items-center">
-                        <div>
-                            <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Lịch sử yêu cầu</h1>
-                            <p className="text-white/90 text-sm lg:text-base">Theo dõi trạng thái các yêu cầu của bạn</p>
+                    <div className="max-w-7xl mx-auto">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h1 className="text-white text-xl lg:text-2xl font-extrabold mb-0.5">Lịch sử yêu cầu</h1>
+                                <p className="text-white/90 text-xs lg:text-sm">Theo dõi trạng thái các yêu cầu của bạn</p>
+                            </div>
+                            <button
+                                onClick={fetchRequests}
+                                disabled={isLoading}
+                                className="p-2 lg:p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                aria-label="Làm mới"
+                            >
+                                <span className={`text-xl ${isLoading ? 'animate-spin inline-block' : ''}`}>🔄</span>
+                            </button>
                         </div>
-                        <span className="text-3xl lg:text-4xl">📜</span>
                     </div>
                 </header>
 
@@ -153,22 +179,57 @@ export default function CitizenHistoryPage() {
 
                         {/* Requests List */}
                         <div className="space-y-3">
-                            {filteredRequests.length === 0 ? (
+                            {isLoading ? (
                                 <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center">
-                                    <div className="text-6xl mb-4">🔭</div>
+                                    <div className="w-16 h-16 border-4 border-[#FF7700] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                                     <h3 className="text-xl font-bold text-white mb-2">
-                                        Không có yêu cầu nào
+                                        Đang tải...
                                     </h3>
-                                    <p className="text-gray-400 mb-4">
-                                        Thử thay đổi bộ lọc hoặc tạo yêu cầu mới
+                                    <p className="text-gray-400">
+                                        Vui lòng đợi trong giây lát
                                     </p>
-                                    <Link
-                                        href="/citizen/request"
+                                </div>
+                            ) : error ? (
+                                <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-12 text-center">
+                                    <div className="text-6xl mb-4">⚠️</div>
+                                    <h3 className="text-xl font-bold text-red-400 mb-2">
+                                        Đã xảy ra lỗi
+                                    </h3>
+                                    <p className="text-gray-400 mb-4">{error}</p>
+                                    <button
+                                        onClick={fetchRequests}
                                         className="inline-flex items-center gap-2 px-6 py-3 bg-[#FF7700] hover:bg-[#FF8800] rounded-xl text-white font-bold transition-all"
                                     >
-                                        <span>➕</span>
-                                        <span>Tạo yêu cầu mới</span>
-                                    </Link>
+                                        <span>🔄</span>
+                                        <span>Thử lại</span>
+                                    </button>
+                                </div>
+                            ) : filteredRequests.length === 0 ? (
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center">
+                                    <div className="text-6xl mb-4">
+                                        {requests.length === 0 ? '📭' : '🔭'}
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-2">
+                                        {requests.length === 0 
+                                            ? 'Chưa có yêu cầu nào'
+                                            : 'Không tìm thấy yêu cầu phù hợp'
+                                        }
+                                    </h3>
+                                    <p className="text-gray-400 mb-4">
+                                        {requests.length === 0
+                                            ? 'Bạn chưa gửi yêu cầu cứu hộ/cứu trợ nào'
+                                            : 'Thử thay đổi bộ lọc để xem các yêu cầu khác'
+                                        }
+                                    </p>
+                                    {requests.length === 0 && (
+                                        <Link
+                                            href="/citizen/request"
+                                            className="inline-flex items-center gap-2 px-6 py-3 bg-[#FF7700] hover:bg-[#FF8800] rounded-xl text-white font-bold transition-all"
+                                        >
+                                            <span>➕</span>
+                                            <span>Tạo yêu cầu mới</span>
+                                        </Link>
+                                    )}
                                 </div>
                             ) : (
                                 filteredRequests.map((request) => (

@@ -153,12 +153,9 @@ export default function CitizenProfilePage() {
             <div className="lg:ml-64 flex flex-col relative">
                 {/* Fixed Header Banner */}
                 <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
-                    <div className="max-w-4xl mx-auto flex justify-between items-center">
-                        <div>
-                            <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Hồ sơ cá nhân</h1>
-                            <p className="text-white/90 text-sm lg:text-base">Cập nhật thông tin và cài đặt</p>
-                        </div>
-                        <span className="text-3xl lg:text-4xl">👤</span>
+                    <div className="max-w-4xl mx-auto">
+                        <h1 className="text-white text-xl lg:text-2xl font-extrabold mb-0.5">Hồ sơ cá nhân</h1>
+                        <p className="text-white/90 text-xs lg:text-sm">Cập nhật thông tin và cài đặt</p>
                     </div>
                 </header>
 

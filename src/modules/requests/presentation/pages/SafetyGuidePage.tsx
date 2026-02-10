@@ -102,12 +102,9 @@ export default function SafetyGuidePage() {
             <div className="flex-1 flex flex-col lg:ml-64 relative">
                 {/* Fixed Header Banner */}
                 <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
-                    <div className="max-w-4xl mx-auto flex justify-between items-center">
-                        <div>
-                            <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Hướng dẫn an toàn</h1>
-                            <p className="text-white/90 text-sm lg:text-base">Kỹ năng sinh tồn khi lũ lụt</p>
-                        </div>
-                        <span className="text-3xl lg:text-4xl">📖</span>
+                    <div className="max-w-4xl mx-auto">
+                        <h1 className="text-white text-xl lg:text-2xl font-extrabold mb-0.5">Hướng dẫn an toàn</h1>
+                        <p className="text-white/90 text-xs lg:text-sm">Kỹ năng sinh tồn khi lũ lụt</p>
                     </div>
                 </header>
 

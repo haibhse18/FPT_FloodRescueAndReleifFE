@@ -6,9 +6,6 @@ import { GetNotificationsUseCase } from "@/modules/notifications/application/get
 import { MarkNotificationReadUseCase } from "@/modules/notifications/application/markNotificationRead.usecase";
 import { notificationRepository } from "@/modules/notifications/infrastructure/notification.repository.impl";
 import { MobileHeader, MobileBottomNav, DesktopHeader, DesktopSidebar } from "@/shared/components/layout";
-import { Button } from "@/shared/ui/components/Button";
-import { Card } from "@/shared/ui/components/Card";
-import { Skeleton } from "@/shared/ui/components/Skeleton";
 
 // Initialize use cases with repository
 const getNotificationsUseCase = new GetNotificationsUseCase(notificationRepository);
@@ -128,12 +125,9 @@ export default function CitizenNotificationsPage() {
             <div className="flex-1 flex flex-col lg:ml-64 relative">
                 {/* Fixed Header Banner */}
                 <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
-                    <div className="max-w-4xl mx-auto flex justify-between items-center">
-                        <div>
-                            <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">Thông báo</h1>
-                            <p className="text-white/90 text-sm lg:text-base">Cập nhật quan trọng về cứu hộ</p>
-                        </div>
-                        <span className="text-3xl lg:text-4xl">🔔</span>
+                    <div className="max-w-4xl mx-auto">
+                        <h1 className="text-white text-xl lg:text-2xl font-extrabold mb-0.5">Thông báo</h1>
+                        <p className="text-white/90 text-xs lg:text-sm">Cập nhật quan trọng về cứu hộ</p>
                     </div>
                 </header>
 

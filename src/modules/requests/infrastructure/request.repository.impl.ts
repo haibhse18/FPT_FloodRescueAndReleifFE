@@ -32,6 +32,15 @@ export class RequestRepositoryImpl implements IRequestRepository {
         const response = await requestsApi.getHistory();
         return (response as any).data || [];
     }
+
+    async getRequestDetail(requestId: string): Promise<RescueRequest> {
+        const response = await requestsApi.getRequestDetail(requestId);
+        return (response as any).data;
+    }
+
+    async confirmRequest(requestId: string): Promise<void> {
+        await requestsApi.confirmRequest(requestId);
+    }
 }
 
 // Singleton instance for easy access

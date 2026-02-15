@@ -92,15 +92,24 @@ export default function SafetyGuidePage() {
     };
 
     return (
-        <div className="min-h-screen bg-secondary flex flex-col lg:flex-row">
+        <div className="min-h-screen bg-[#133249] flex flex-col lg:flex-row">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none" 
+                 style={{backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px"}}></div>
+
             <DesktopSidebar />
 
-            <div className="flex-1 flex flex-col lg:ml-64">
-                <MobileHeader />
-                <DesktopHeader title="Hướng dẫn an toàn" subtitle="Kỹ năng sinh tồn trong lũ lụt" />
+            <div className="flex-1 flex flex-col lg:ml-64 relative">
+                {/* Fixed Header Banner */}
+                <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
+                    <div className="max-w-4xl mx-auto">
+                        <h1 className="text-white text-xl lg:text-2xl font-extrabold mb-0.5">Hướng dẫn an toàn</h1>
+                        <p className="text-white/90 text-xs lg:text-sm">Kỹ năng sinh tồn khi lũ lụt</p>
+                    </div>
+                </header>
 
-                <main className="pt-[73px] lg:pt-[89px] pb-24 lg:pb-0 overflow-auto">
-                    <div className="max-w-4xl mx-auto p-4 lg:p-8">
+                <main className="pb-24 lg:pb-0 overflow-auto">
+                    <div className="max-w-4xl mx-auto p-4 lg:p-8 space-y-6">
                         <div className="bg-gradient-to-br from-red-500/20 to-orange-500/10 border border-red-500/30 rounded-2xl p-6 mb-6">
                             <div className="flex items-start gap-4">
                                 <div className="text-5xl">⚠️</div>

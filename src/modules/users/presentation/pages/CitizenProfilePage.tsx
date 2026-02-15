@@ -41,7 +41,7 @@ export default function CitizenProfilePage() {
                 setIsLoading(true);
                 setError(null);
                 const userData = await getCurrentUserUseCase.execute();
-                
+
                 if (!userData) {
                     throw new Error('Dữ liệu người dùng không hợp lệ');
                 }
@@ -56,21 +56,21 @@ export default function CitizenProfilePage() {
                 setEditedProfile(newProfile);
             } catch (error) {
                 let errorMessage = "Không tìm thấy thông tin người dùng";
-                
+
                 if (error instanceof Error) {
                     errorMessage = error.message;
-                    
+
                     // Nếu là lỗi network, thêm gợi ý
                     if (errorMessage.includes('network') || errorMessage.includes('ERR_NETWORK')) {
                         errorMessage += " - Vui lòng kiểm tra kết nối mạng";
                     }
-                    
+
                     // Nếu là lỗi 401, hướng user đăng nhập lại
                     if (errorMessage.includes('401') || errorMessage.includes('đăng nhập')) {
                         errorMessage = "Phiên đăng nhập hết hạn - Vui lòng đăng nhập lại";
                     }
                 }
-                
+
                 console.error("Lỗi khi tải thông tin cá nhân:", error);
                 setError(errorMessage);
             } finally {
@@ -114,7 +114,7 @@ export default function CitizenProfilePage() {
         const fetchProfile = async () => {
             try {
                 const userData = await getCurrentUserUseCase.execute();
-                
+
                 if (!userData) {
                     throw new Error('Dữ liệu người dùng không hợp lệ');
                 }
@@ -142,19 +142,25 @@ export default function CitizenProfilePage() {
     };
 
     return (
-        <div className="min-h-screen bg-secondary">
+        <div className="min-h-screen bg-[#133249]">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none"
+                style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px" }}></div>
+
             <DesktopSidebar />
-            <MobileHeader />
 
             {/* Main Content */}
-            <div className="lg:ml-64">
-                <DesktopHeader
-                    title="Thông tin cá nhân"
-                    subtitle="Quản lý hồ sơ và cài đặt tài khoản"
-                />
+            <div className="lg:ml-64 flex flex-col relative">
+                {/* Fixed Header Banner */}
+                <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
+                    <div className="max-w-4xl mx-auto">
+                        <h1 className="text-white text-xl lg:text-2xl font-extrabold mb-0.5">Hồ sơ cá nhân</h1>
+                        <p className="text-white/90 text-xs lg:text-sm">Cập nhật thông tin và cài đặt</p>
+                    </div>
+                </header>
 
-                <main className="pt-16 lg:pt-24 pb-20 lg:pb-8 overflow-auto min-h-screen">
-                    <div className="max-w-4xl mx-auto p-4 lg:p-8">
+                <main className="pb-20 lg:pb-8 overflow-auto min-h-screen">
+                    <div className="max-w-4xl mx-auto p-4 lg:p-8 space-y-6">
                         {/* Error Message */}
                         {error && (
                             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 font-medium flex items-center justify-between">

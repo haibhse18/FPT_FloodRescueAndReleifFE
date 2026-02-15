@@ -20,4 +20,9 @@ export interface INotificationRepository {
      * Đánh dấu tất cả thông báo đã đọc
      */
     markAllAsRead(): Promise<void>;
+
+    /**
+     * Lấy số lượng thông báo chưa đọc
+     */
+    getUnreadCount(): Promise<number>;
 }

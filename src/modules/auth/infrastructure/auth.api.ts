@@ -1,75 +1,80 @@
 /**
  * Auth API Adapter - Infrastructure layer
- * Direct API calls cho authentication sử dụng axios
+ * Direct API calls cho authentication
  */
 
-import axiosInstance from '@/lib/axios';
-import { 
-    LoginCredentials, 
-    RegisterData, 
-    LoginResponse,
-    RegisterResponse,
-    RefreshResponse,
-    GetCurrentUserResponse
-} from '../domain/user.entity';
+import {
+  LoginCredentials,
+  RegisterData,
+  AuthTokens,
+  User,
+  LoginResponse,
+  RegisterResponse,
+  RefreshResponse,
+} from "../domain/user.entity";
+import axiosInstance from "@/lib/axios";
 
 /**
- * Auth API methods theo API_list.md
+ * Auth API methods
  */
 export const authApi = {
-    /**
-     * POST /api/auth/login
-     * Đăng nhập hệ thống
-     * Request: { email, password }
-     * Response: { accessToken, user }
-     */
-    login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
-        const response = await axiosInstance.post<LoginResponse>('/auth/login', credentials);
-        return response.data;
-    },
+  /**
+   * POST /auth/login
+   */
+  login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
+    const response = await axiosInstance.post<LoginResponse>(
+      "/auth/login",
+      credentials,
+    );
+    return response.data;
+  },
 
-    /**
-     * POST /api/auth/register
-     * Đăng ký tài khoản
-     * Request: { userName, displayName, email, phoneNumber?, password, role? }
-     * Response: { message, userId }
-     * Note: role mặc định là "Citizen"
-     */
-    register: async (data: RegisterData): Promise<RegisterResponse> => {
-        const response = await axiosInstance.post<RegisterResponse>('/auth/register', data);
-        return response.data;
-    },
+  /**
+   * POST /auth/register
+   */
+  register: async (data: RegisterData): Promise<RegisterResponse> => {
+    const response = await axiosInstance.post<RegisterResponse>(
+      "/auth/register",
+      data,
+    );
+    return response.data;
+  },
 
-    /**
-     * POST /api/auth/logout
-     * Đăng xuất khỏi hệ thống
-     * Request: Refresh token từ cookie (tự động gửi)
-     * Response: 204 No Content
-     * Note: Xóa refresh token khỏi database và cookie
-     */
-    logout: async (): Promise<void> => {
-        await axiosInstance.post('/auth/logout');
-    },
+  /**
+   * POST /auth/logout
+   */
+  logout: async (): Promise<void> => {
+    await axiosInstance.post("/auth/logout");
+  },
 
-    /**
-     * GET /api/auth/me
-     * Lấy thông tin user hiện tại
-     * Response: { _id, userName, displayName, email, phoneNumber, role, isActive, createdAt, updatedAt, ... }
-     * Auth: Required (Bearer token)
-     */
-    getCurrentUser: async (): Promise<GetCurrentUserResponse> => {
-        const response = await axiosInstance.get<GetCurrentUserResponse>('/auth/me');
-        return response.data;
-    },
+  /**
+   * GET /auth/me
+   */
+  getCurrentUser: async (): Promise<User> => {
+    const response = await axiosInstance.get<User>("/auth/me");
+    return response.data;
+  },
 
-    /**
-     * POST /api/auth/refresh
-     * Làm mới access token
-     * Request: Refresh token từ cookie (tự động gửi)
-     * Response: { accessToken, user }
-     */
-    refreshToken: async (): Promise<RefreshResponse> => {
-        const response = await axiosInstance.post<RefreshResponse>('/auth/refresh');
-        return response.data;
-    },
+  /**
+   * POST /auth/change-password
+   */
+  changePassword: async (
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<void> => {
+    await axiosInstance.post("/auth/change-password", {
+      oldPassword,
+      newPassword,
+    });
+  },
+
+  /**
+   * POST /auth/refresh
+   * Sử dụng '/auth/refresh' để khớp với logic trong interceptor của axios.ts
+   * Cookie refreshToken sẽ được tự động gửi kèm
+   */
+  refreshToken: async (): Promise<RefreshResponse> => {
+    const response = await axiosInstance.post<RefreshResponse>("/auth/refresh");
+    return response.data;
+  },
 };

@@ -37,4 +37,14 @@ export const notificationsApi = {
             headers: authSession.getAuthHeaders(),
         });
     },
+
+    /**
+     * Get unread notifications count
+     * GET /notifications/unread-count
+     */
+    getUnreadCount: async (): Promise<ApiResponse> => {
+        return apiClient.get('/notifications/unread-count', {
+            headers: authSession.getAuthHeaders(),
+        });
+    },
 };

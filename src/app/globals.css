@@ -27,6 +27,38 @@ input[type="password"]::-webkit-textfield-decoration-container {
     }
 }
 
+/* SOS Button Pulse Animation */
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 53, 53, 0.7);
+    }
+    70% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 20px rgba(255, 53, 53, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 53, 53, 0);
+    }
+}
+
+.sos-pulse {
+    animation: pulse-ring 2s infinite;
+}
+
+/* Ping animation for ripple effect */
+@keyframes ping-slow {
+    75%, 100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+.animate-ping-slow {
+    animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
 /* MapLibre GL styles */
 .maplibregl-map {
     font-family: Arial, Helvetica, sans-serif;

@@ -30,4 +30,14 @@ export interface IRequestRepository {
      * Lấy lịch sử yêu cầu
      */
     getHistory(): Promise<RescueRequest[]>;
+
+    /**
+     * Lấy chi tiết yêu cầu
+     */
+    getRequestDetail(requestId: string): Promise<RescueRequest>;
+
+    /**
+     * Xác nhận an toàn / đã nhận
+     */
+    confirmRequest(requestId: string): Promise<void>;
 }

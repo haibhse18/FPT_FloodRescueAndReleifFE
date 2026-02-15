@@ -6,9 +6,6 @@ import { GetNotificationsUseCase } from "@/modules/notifications/application/get
 import { MarkNotificationReadUseCase } from "@/modules/notifications/application/markNotificationRead.usecase";
 import { notificationRepository } from "@/modules/notifications/infrastructure/notification.repository.impl";
 import { MobileHeader, MobileBottomNav, DesktopHeader, DesktopSidebar } from "@/shared/components/layout";
-import { Button } from "@/shared/ui/components/Button";
-import { Card } from "@/shared/ui/components/Card";
-import { Skeleton } from "@/shared/ui/components/Skeleton";
 
 // Initialize use cases with repository
 const getNotificationsUseCase = new GetNotificationsUseCase(notificationRepository);
@@ -84,7 +81,7 @@ export default function CitizenNotificationsPage() {
         try {
             // Use MarkNotificationReadUseCase instead of direct API call
             await markNotificationReadUseCase.execute(id);
-            setNotifications(notifications.map(n => 
+            setNotifications(notifications.map(n =>
                 n.id === id ? { ...n, isRead: true } : n
             ));
         } catch (error) {
@@ -102,8 +99,8 @@ export default function CitizenNotificationsPage() {
         }
     };
 
-    const filteredNotifications = filter === "all" 
-        ? notifications 
+    const filteredNotifications = filter === "all"
+        ? notifications
         : notifications.filter(n => !n.isRead);
 
     const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -118,35 +115,42 @@ export default function CitizenNotificationsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-secondary flex flex-col lg:flex-row">
-            <DesktopSidebar />
-            
-            <div className="flex-1 flex flex-col lg:ml-64">
-                <MobileHeader />
-                <DesktopHeader title="Thông báo" subtitle="Cập nhật mới nhất về cứu hộ và an toàn" />
+        <div className="min-h-screen bg-[#133249] flex flex-col lg:flex-row">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none"
+                style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "20px 20px" }}></div>
 
-                <main className="pt-[73px] lg:pt-[89px] pb-24 lg:pb-0 overflow-auto">
-                    <div className="max-w-4xl mx-auto p-4 lg:p-8">
+            <DesktopSidebar />
+
+            <div className="flex-1 flex flex-col lg:ml-64 relative">
+                {/* Fixed Header Banner */}
+                <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
+                    <div className="max-w-4xl mx-auto">
+                        <h1 className="text-white text-xl lg:text-2xl font-extrabold mb-0.5">Thông báo</h1>
+                        <p className="text-white/90 text-xs lg:text-sm">Cập nhật quan trọng về cứu hộ</p>
+                    </div>
+                </header>
+
+                <main className="pb-24 lg:pb-0 overflow-auto">
+                    <div className="max-w-4xl mx-auto p-4 lg:p-8 space-y-6">
                         {/* Header */}
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-4">
                                 <button
                                     onClick={() => setFilter("all")}
-                                    className={`px-4 py-2 rounded-xl font-bold transition ${
-                                        filter === "all" 
-                                            ? "bg-primary text-white" 
+                                    className={`px-4 py-2 rounded-xl font-bold transition ${filter === "all"
+                                            ? "bg-[#FF7700] text-white"
                                             : "bg-white/5 text-gray-400 hover:bg-white/10"
-                                    }`}
+                                        }`}
                                 >
                                     Tất cả ({notifications.length})
                                 </button>
                                 <button
                                     onClick={() => setFilter("unread")}
-                                    className={`px-4 py-2 rounded-xl font-bold transition relative ${
-                                        filter === "unread" 
-                                            ? "bg-primary text-white" 
+                                    className={`px-4 py-2 rounded-xl font-bold transition relative ${filter === "unread"
+                                            ? "bg-[#FF7700] text-white"
                                             : "bg-white/5 text-gray-400 hover:bg-white/10"
-                                    }`}
+                                        }`}
                                 >
                                     Chưa đọc ({unreadCount})
                                     {unreadCount > 0 && (
@@ -158,7 +162,7 @@ export default function CitizenNotificationsPage() {
                             {unreadCount > 0 && (
                                 <button
                                     onClick={markAllAsRead}
-                                    className="text-sm text-primary hover:text-primary/80 font-bold"
+                                    className="text-sm text-[#FF7700] hover:text-[#FF8800] font-bold"
                                 >
                                     Đánh dấu tất cả đã đọc
                                 </button>
@@ -188,9 +192,8 @@ export default function CitizenNotificationsPage() {
                                         <div
                                             key={notification.id}
                                             onClick={() => !notification.isRead && markAsRead(notification.id)}
-                                            className={`${style.bg} border ${style.border} rounded-xl p-6 transition-all duration-200 cursor-pointer hover:scale-[1.02] ${
-                                                !notification.isRead ? "ring-2 ring-primary/20" : ""
-                                            }`}
+                                            className={`${style.bg} border ${style.border} rounded-xl p-6 transition-all duration-200 cursor-pointer hover:scale-[1.02] ${!notification.isRead ? "ring-2 ring-[#FF7700]/20" : ""
+                                                }`}
                                         >
                                             <div className="flex items-start gap-4">
                                                 <div className="text-3xl">{style.icon}</div>
@@ -198,7 +201,7 @@ export default function CitizenNotificationsPage() {
                                                     <div className="flex items-start justify-between gap-2 mb-2">
                                                         <h3 className="text-lg font-bold text-white">{notification.title}</h3>
                                                         {!notification.isRead && (
-                                                            <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2" />
+                                                            <span className="w-2 h-2 bg-[#FF7700] rounded-full flex-shrink-0 mt-2" />
                                                         )}
                                                     </div>
                                                     <p className="text-gray-300 mb-3">{notification.message}</p>
@@ -207,7 +210,7 @@ export default function CitizenNotificationsPage() {
                                                         {notification.actionLabel && notification.actionLink && (
                                                             <Link
                                                                 href={notification.actionLink}
-                                                                className="text-sm font-bold text-primary hover:text-primary/80"
+                                                                className="text-sm font-bold text-[#FF7700] hover:text-[#FF8800]"
                                                             >
                                                                 {notification.actionLabel} →
                                                             </Link>

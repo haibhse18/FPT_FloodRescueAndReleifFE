@@ -20,6 +20,11 @@ export class NotificationRepositoryImpl implements INotificationRepository {
     async markAllAsRead(): Promise<void> {
         await notificationsApi.markAllNotificationsAsRead();
     }
+
+    async getUnreadCount(): Promise<number> {
+        const response = await notificationsApi.getUnreadCount();
+        return (response as any).count || 0;
+    }
 }
 
 // Singleton instance for easy access

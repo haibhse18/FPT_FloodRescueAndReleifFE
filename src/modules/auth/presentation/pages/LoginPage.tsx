@@ -48,7 +48,7 @@ export default function LoginPage() {
             const redirectMap: Record<string, string> = {
                 'Citizen': '/citizen',
                 'Rescue Team': '/team/missions',
-                'Rescue Coordinator': '/coordinator/requests',
+                'Rescue Coordinator': '/coordinator/dashboard',
                 'Manager': '/manager',
                 'Admin': '/admin/users',
             };

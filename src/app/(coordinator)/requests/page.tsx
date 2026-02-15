@@ -1,5 +1,6 @@
-﻿import CoordinatorRequestsPage from "@/modules/missions/presentation/pages/CoordinatorRequestsPage";
+﻿import CoordinatorDashboardPage from "@/modules/coordinator/presentation/pages/CoordinatorDashboardPage";
 
 export default function Page() {
-    return <CoordinatorRequestsPage />;
+  // Requests page now shows the dashboard with full request management
+  return <CoordinatorDashboardPage />;
 }

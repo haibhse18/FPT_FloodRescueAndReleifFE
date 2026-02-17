@@ -1,128 +1,95 @@
 /**
  * API Client - Global Infrastructure Service
- * 
- * Pure HTTP client for making API requests.
- * Framework-agnostic, no business logic.
+ *
+ * Wrapper around axiosInstance for standardized API calls.
  * Used by all modules for external API communication.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+import axiosInstance from "@/lib/axios";
+import { AxiosRequestConfig } from "axios";
 
-export interface ApiClientConfig {
-    headers?: HeadersInit;
-    baseURL?: string;
-}
+export interface ApiClientConfig extends AxiosRequestConfig {}
 
 /**
- * Generic HTTP client wrapper with error handling
+ * Generic HTTP client wrapper using Axios
  * @param endpoint - API endpoint path
- * @param options - Fetch options
- * @returns Parsed JSON response
+ * @param config - Axios request config
+ * @returns Parsed JSON response (data)
  */
 export async function fetchAPI<T>(
-    endpoint: string,
-    options: RequestInit = {},
-    config: ApiClientConfig = {}
+  endpoint: string,
+  config: AxiosRequestConfig = {},
 ): Promise<T> {
-    const baseURL = config.baseURL || API_BASE_URL;
-    const url = `${baseURL}${endpoint}`;
-
-    const requestConfig: RequestInit = {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...config.headers,
-            ...options.headers,
-        },
-    };
-
-    try {
-        const response = await fetch(url, requestConfig);
-
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.status} ${response.statusText}`);
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error(`API call failed: ${endpoint}`, error);
-        throw error;
-    }
+  const response = await axiosInstance.request<T>({
+    url: endpoint,
+    ...config,
+  });
+  return response.data;
 }
 
 /**
  * GET request helper
  */
-export async function get<T>(endpoint: string, config?: ApiClientConfig): Promise<T> {
-    return fetchAPI<T>(endpoint, { method: 'GET' }, config);
+export async function get<T>(
+  endpoint: string,
+  config?: ApiClientConfig,
+): Promise<T> {
+  const response = await axiosInstance.get<T>(endpoint, config);
+  return response.data;
 }
 
 /**
  * POST request helper
  */
 export async function post<T>(
-    endpoint: string,
-    data?: unknown,
-    config?: ApiClientConfig
+  endpoint: string,
+  data?: unknown,
+  config?: ApiClientConfig,
 ): Promise<T> {
-    return fetchAPI<T>(
-        endpoint,
-        {
-            method: 'POST',
-            body: data ? JSON.stringify(data) : undefined,
-        },
-        config
-    );
+  const response = await axiosInstance.post<T>(endpoint, data, config);
+  return response.data;
 }
 
 /**
  * PUT request helper
  */
 export async function put<T>(
-    endpoint: string,
-    data?: unknown,
-    config?: ApiClientConfig
+  endpoint: string,
+  data?: unknown,
+  config?: ApiClientConfig,
 ): Promise<T> {
-    return fetchAPI<T>(
-        endpoint,
-        {
-            method: 'PUT',
-            body: data ? JSON.stringify(data) : undefined,
-        },
-        config
-    );
+  const response = await axiosInstance.put<T>(endpoint, data, config);
+  return response.data;
 }
 
 /**
  * PATCH request helper
  */
 export async function patch<T>(
-    endpoint: string,
-    data?: unknown,
-    config?: ApiClientConfig
+  endpoint: string,
+  data?: unknown,
+  config?: ApiClientConfig,
 ): Promise<T> {
-    return fetchAPI<T>(
-        endpoint,
-        {
-            method: 'PATCH',
-            body: data ? JSON.stringify(data) : undefined,
-        },
-        config
-    );
+  const response = await axiosInstance.patch<T>(endpoint, data, config);
+  return response.data;
 }
 
 /**
  * DELETE request helper
  */
-export async function del<T>(endpoint: string, config?: ApiClientConfig): Promise<T> {
-    return fetchAPI<T>(endpoint, { method: 'DELETE' }, config);
+export async function del<T>(
+  endpoint: string,
+  config?: ApiClientConfig,
+): Promise<T> {
+  const response = await axiosInstance.delete<T>(endpoint, config);
+  return response.data;
 }
 
 export const apiClient = {
-    get,
-    post,
-    put,
-    patch,
-    delete: del,
-    fetchAPI,
+  get,
+  post,
+  put,
+  patch,
+  delete: del,
+  fetchAPI,
 };

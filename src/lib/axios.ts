@@ -1,6 +1,12 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import axios, {
+  AxiosError,
+  InternalAxiosRequestConfig,
+  AxiosResponse,
+} from "axios";
+import { ApiResponse } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 /**
  * Token Manager - Lưu access token trong memory (không dùng localStorage)
@@ -36,7 +42,10 @@ let failedQueue: Array<{
   reject: (reason?: unknown) => void;
 }> = [];
 
-const processQueue = (error: AxiosError | null, token: string | null = null) => {
+const processQueue = (
+  error: AxiosError | null,
+  token: string | null = null,
+) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -59,24 +68,54 @@ axiosInstance.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor - xử lý lỗi và auto-refresh
 axiosInstance.interceptors.response.use(
-  (response) => {
+  (response: AxiosResponse) => {
+    // Normalization for legacy endpoints (e.g. /ping returns text)
+    if (typeof response.data === "string") {
+      const normalized: ApiResponse<string> = {
+        success: true,
+        message: response.data,
+        data: response.data,
+      };
+      response.data = normalized;
+    }
+    // Normalization for legacy JSON (e.g. middleware returning { message: "..." })
+    else if (response.data && typeof response.data === "object") {
+      if (
+        "message" in response.data &&
+        !("success" in response.data) &&
+        !("data" in response.data)
+      ) {
+        // Assume success if status is 2xx
+        const normalized: ApiResponse<null> = {
+          success: true,
+          message: response.data.message,
+          data: null,
+        };
+        response.data = normalized;
+      }
+    }
+
     return response;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
     // Xử lý lỗi 401 - Token hết hạn
     // Theo auth-flow.md: "Khi access token hết hạn → gọi /api/auth/refresh"
     if (error.response?.status === 401 && !originalRequest._retry) {
       // Không refresh cho các auth endpoints
-      if (originalRequest.url?.includes('/auth/login') || 
-          originalRequest.url?.includes('/auth/register') ||
-          originalRequest.url?.includes('/auth/refresh')) {
+      if (
+        originalRequest.url?.includes("/auth/login") ||
+        originalRequest.url?.includes("/auth/register") ||
+        originalRequest.url?.includes("/auth/refresh")
+      ) {
         return Promise.reject(error);
       }
 
@@ -102,15 +141,15 @@ axiosInstance.interceptors.response.use(
         const response = await axios.post(
           `${API_BASE_URL}/auth/refresh`,
           {},
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
         const newToken = response.data.accessToken;
         tokenManager.setToken(newToken);
-        
+
         // Process queued requests
         processQueue(null, newToken);
-        
+
         // Retry original request với token mới
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return axiosInstance(originalRequest);
@@ -119,11 +158,11 @@ axiosInstance.interceptors.response.use(
         // Theo auth-flow.md: "Session không tồn tại → Redirect đến trang Login"
         processQueue(refreshError as AxiosError, null);
         tokenManager.clearToken();
-        
+
         if (typeof window !== "undefined") {
           window.location.href = "/login";
         }
-        
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -140,8 +179,31 @@ axiosInstance.interceptors.response.use(
     //   console.error("Lỗi server, vui lòng thử lại sau");
     // }
 
+    // Normalize error response if possible
+    if (error.response?.data) {
+      const data = error.response.data as any;
+      // Check if it's a legacy error format { message: "..." }
+      if (
+        typeof data === "object" &&
+        "message" in data &&
+        !("success" in data)
+      ) {
+        const normalized: ApiResponse<null> = {
+          success: false,
+          message: data.message,
+          data: null,
+          error: {
+            code: "LEGACY_ERROR",
+            details: [],
+          },
+        };
+        error.response.data = normalized;
+      }
+    }
+
+    // Xử lý lỗi 403, 500 - Log handled by UI/Caller as per request
     return Promise.reject(error);
-  }
+  },
 );
 
 export default axiosInstance;

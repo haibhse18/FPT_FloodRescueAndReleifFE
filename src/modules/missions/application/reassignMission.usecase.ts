@@ -1,11 +1,11 @@
-import { ICoordinatorRepository } from "../domain/coordinator.repository";
+import { IMissionRepository } from "../domain/mission.repository";
 
 /**
  * Use Case: Reassign Mission
  * Coordinator reassign mission to different team
  */
 export class ReassignMissionUseCase {
-  constructor(private coordinatorRepository: ICoordinatorRepository) {}
+  constructor(private missionRepository: IMissionRepository) {}
 
   async execute(missionId: string, newTeamId: string): Promise<void> {
     if (!missionId) {
@@ -16,6 +16,6 @@ export class ReassignMissionUseCase {
       throw new Error("New team ID is required");
     }
 
-    await this.coordinatorRepository.reassignMission(missionId, newTeamId);
+    await this.missionRepository.reassignMission(missionId, newTeamId);
   }
 }

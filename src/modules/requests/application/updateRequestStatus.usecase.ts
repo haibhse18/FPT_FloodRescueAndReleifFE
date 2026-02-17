@@ -1,11 +1,11 @@
-import { ICoordinatorRepository } from "../domain/coordinator.repository";
+import { IRequestRepository } from "../domain/request.repository";
 
 /**
  * Use Case: Update Request Status
  * Coordinator verify request hoặc mark as spam/rejected
  */
 export class UpdateRequestStatusUseCase {
-  constructor(private coordinatorRepository: ICoordinatorRepository) {}
+  constructor(private requestRepository: IRequestRepository) {}
 
   async execute(requestId: string, status: string): Promise<void> {
     if (!requestId) {
@@ -26,6 +26,6 @@ export class UpdateRequestStatusUseCase {
       throw new Error(`Invalid status: ${status}`);
     }
 
-    await this.coordinatorRepository.updateRequestStatus(requestId, status);
+    await this.requestRepository.updateRequestStatus(requestId, status);
   }
 }

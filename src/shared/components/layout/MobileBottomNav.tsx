@@ -1,44 +1,74 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface NavItem {
-    icon: string;
-    label: string;
-    href: string;
+  icon: string;
+  label: string;
+  href: string;
 }
 
 interface MobileBottomNavProps {
-    items?: NavItem[];
-    currentPath?: string;
+  items?: NavItem[];
 }
 
-export default function MobileBottomNav({ items, currentPath = "/citizen" }: MobileBottomNavProps) {
-    const defaultItems: NavItem[] = [
-        { icon: "🏠", label: "TRANG CHỦ", href: "/citizen" },
-        { icon: "📜", label: "LỊCH SỬ", href: "/citizen/history" },
-        { icon: "🔔", label: "THÔNG BÁO", href: "/citizen/notifications" },
-        { icon: "👤", label: "CÁ NHÂN", href: "/citizen/profile" },
-    ];
+const DEFAULT_ITEMS: NavItem[] = [
+  { icon: "🏠", label: "Home", href: "/home" },
+  { icon: "📜", label: "Lịch sử", href: "/history" },
+  { icon: "🔔", label: "Thông báo", href: "/notifications" },
+  { icon: "👤", label: "Tôi", href: "/profile" },
+];
 
-    const navItems = items || defaultItems;
+export default function MobileBottomNav({
+  items = DEFAULT_ITEMS,
+}: MobileBottomNavProps) {
+  const pathname = usePathname();
 
-    return (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[var(--color-primary)]/90 backdrop-blur-lg border-t border-white/10 pb-6 pt-2">
-            <div className="flex justify-around items-center">
-                {navItems.map((item, index) => (
-                    <Link
-                        key={index}
-                        href={item.href}
-                        className={`flex flex-col items-center gap-1 ${
-                            currentPath === item.href ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"
-                        }`}
-                    >
-                        <span className="text-2xl">{item.icon}</span>
-                        <span className="text-[10px] font-bold">{item.label}</span>
-                    </Link>
-                ))}
-            </div>
-        </nav>
-    );
+  return (
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0f2a3f]/95 backdrop-blur-md border-t border-white/10 pb-safe z-50">
+      <ul className="flex justify-around items-center h-16">
+        {items.map((item) => {
+          // Check if active (exact match or parent path match, handling root / specially)
+          const isActive =
+            pathname === item.href ||
+            (pathname !== "/" &&
+              pathname.startsWith(item.href) &&
+              item.href !== "/");
+
+          return (
+            <li key={item.href} className="w-full">
+              <Link
+                href={item.href}
+                className={`flex flex-col items-center justify-center h-full w-full py-2 transition-all duration-300 ${
+                  isActive ? "text-[#FF7700]" : (
+                    "text-gray-400 hover:text-gray-200"
+                  )
+                }`}
+              >
+                <div
+                  className={`text-2xl transition-transform duration-300 mb-1 ${
+                    isActive ? "scale-110 -translate-y-1" : ""
+                  }`}
+                >
+                  {item.icon}
+                </div>
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-wide transition-opacity duration-300 ${
+                    isActive ? "opacity-100" : "opacity-70"
+                  }`}
+                >
+                  {item.label}
+                </span>
+
+                {isActive && (
+                  <span className="absolute bottom-1 w-1 h-1 rounded-full bg-[#FF7700] animate-pulse" />
+                )}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
 }

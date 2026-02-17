@@ -8,91 +8,102 @@
 // USER & AUTH TYPES
 // ==============================================
 
-export type UserRole = 'admin' | 'manager' | 'coordinator' | 'rescue_team' | 'citizen';
+export type UserRole =
+  | "admin"
+  | "manager"
+  | "coordinator"
+  | "rescue_team"
+  | "citizen";
 
 export interface User {
-    id: string;
-    email: string;
-    fullName: string;
-    phone: string;
-    role: UserRole;
-    avatar?: string;
-    address?: string;
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  email: string;
+  fullName: string;
+  phone: string;
+  role: UserRole;
+  avatar?: string;
+  address?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthResponse {
-    user: User;
-    token: string;
+  user: User;
+  token: string;
 }
 
 // ==============================================
 // RESCUE REQUEST TYPES
 // ==============================================
 
-export type UrgencyLevel = 'low' | 'medium' | 'high' | 'critical';
-export type RequestStatus = 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled' | 'failed';
+export type UrgencyLevel = "low" | "medium" | "high" | "critical";
+export type RequestStatus =
+  | "pending"
+  | "assigned"
+  | "in_progress"
+  | "completed"
+  | "cancelled"
+  | "failed";
 
 export interface Location {
-    lat: number;
-    lng: number;
+  lat: number;
+  lng: number;
 }
 
 export interface RescueRequest {
-    id: string;
-    citizenId: string;
-    citizen: User;
-    location: Location;
-    address: string;
-    description: string;
-    urgencyLevel: UrgencyLevel;
-    status: RequestStatus;
-    peopleCount: number;
-    hasInjuries: boolean;
-    hasChildren: boolean;
-    hasElderly: boolean;
-    phone: string;
-    assignedTeamId?: string;
-    assignedTeam?: RescueTeam;
-    createdAt: string;
-    updatedAt: string;
-    completedAt?: string;
+  id: string;
+  citizenId: string;
+  citizen: User;
+  location: Location;
+  address: string;
+  description: string;
+  urgencyLevel: UrgencyLevel;
+  status: RequestStatus;
+  peopleCount: number;
+  hasInjuries: boolean;
+  hasChildren: boolean;
+  hasElderly: boolean;
+  phone: string;
+  assignedTeamId?: string;
+  assignedTeam?: RescueTeam;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
 }
 
 // ==============================================
 // RESCUE TEAM TYPES
 // ==============================================
 
-export type TeamStatus = 'available' | 'busy' | 'offline';
+export type TeamStatus = "available" | "busy" | "offline";
 
 export interface RescueTeam {
-    id: string;
-    name: string;
-    leaderId: string;
-    leader: User;
-    members: User[];
-    status: TeamStatus;
-    currentLocation?: Location;
-    assignedRequests: RescueRequest[];
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  name: string;
+  leaderId: string;
+  leader: User;
+  members: User[];
+  status: TeamStatus;
+  currentLocation?: Location;
+  assignedRequests: RescueRequest[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ==============================================
 // NOTIFICATION TYPES
 // ==============================================
 
-export type NotificationType = 'info' | 'warning' | 'success' | 'error';
+export type NotificationType = "info" | "warning" | "success" | "error";
 
 export interface Notification {
-    id: string;
-    userId: string;
-    type: NotificationType;
-    title: string;
-    message: string;
-    read: boolean;
-    createdAt: string;
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
 }
 
 // ==============================================
@@ -100,20 +111,20 @@ export interface Notification {
 // ==============================================
 
 export interface FloodZone {
-    id: string;
-    name: string;
-    coordinates: Location[];
-    riskLevel: 'low' | 'medium' | 'high';
-    affectedArea: number; // km²
+  id: string;
+  name: string;
+  coordinates: Location[];
+  riskLevel: "low" | "medium" | "high";
+  affectedArea: number; // km²
 }
 
 export interface SafeZone {
-    id: string;
-    name: string;
-    location: Location;
-    capacity: number;
-    currentOccupancy: number;
-    facilities: string[];
+  id: string;
+  name: string;
+  location: Location;
+  capacity: number;
+  currentOccupancy: number;
+  facilities: string[];
 }
 
 // ==============================================
@@ -121,39 +132,53 @@ export interface SafeZone {
 // ==============================================
 
 export interface DashboardStats {
-    totalRequests: number;
-    pendingRequests: number;
-    inProgressRequests: number;
-    completedRequests: number;
-    totalCitizens: number;
-    totalRescueTeams: number;
-    availableTeams: number;
-    busyTeams: number;
+  totalRequests: number;
+  pendingRequests: number;
+  inProgressRequests: number;
+  completedRequests: number;
+  totalCitizens: number;
+  totalRescueTeams: number;
+  availableTeams: number;
+  busyTeams: number;
 }
 
 export interface Report {
-    id: string;
-    type: 'daily' | 'weekly' | 'monthly';
-    date: string;
-    stats: DashboardStats;
-    generatedAt: string;
+  id: string;
+  type: "daily" | "weekly" | "monthly";
+  date: string;
+  stats: DashboardStats;
+  generatedAt: string;
 }
 
 // ==============================================
 // API RESPONSE TYPES
 // ==============================================
 
-export interface ApiResponse<T = any> {
-    success: boolean;
-    data?: T;
-    message?: string;
-    error?: string;
+export interface ApiMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
-export interface PaginatedResponse<T> {
-    data: T[];
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
+export interface ApiErrorDetail {
+  field?: string;
+  message: string;
+}
+
+export interface ApiError {
+  code: string;
+  details?: string[] | ApiErrorDetail[]; // Support both string[] and object[] details as per docs
+}
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data: T | null;
+  meta?: ApiMeta;
+  error?: ApiError;
+}
+
+export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  meta: ApiMeta;
 }

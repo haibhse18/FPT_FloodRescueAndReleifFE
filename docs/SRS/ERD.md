@@ -205,7 +205,8 @@ Người dùng hệ thống với các roles: Citizen, Rescue Team, Coordinator,
 | `status`   | Enum     | AVAILABLE, BUSY         |
 
 > [!NOTE]
-> **Team Capacity:** Một Rescue Team có thể xử lý nhiều nhiệm vụ song song tùy theo điều phối của Rescue Coordinator. Hệ thống không giới hạn số lượng Timeline active per Team.
+> [!IMPORTANT]
+> **Team Capacity:** Một Rescue Team chỉ được xử lý **1 nhiệm vụ (Timeline)** tại một thời điểm. Trạng thái Team sẽ chuyển sang `BUSY` khi nhận nhiệm vụ và về `AVAILABLE` khi hoàn thành.
 
 ---
 

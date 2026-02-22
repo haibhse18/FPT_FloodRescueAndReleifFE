@@ -54,7 +54,7 @@ export const rescueRequestSchema = z.object({
         .int('Số người phải là số nguyên')
         .min(1, 'Số người phải ít nhất là 1')
         .max(1000, 'Số người không hợp lệ'),
-    urgencyLevel: z.enum(['low', 'medium', 'high', 'critical']),
+    urgencyLevel: z.enum(['normal', 'high', 'critical']),
     latitude: z.number()
         .min(-90, 'Vĩ độ không hợp lệ')
         .max(90, 'Vĩ độ không hợp lệ'),

@@ -2,15 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import SuccessPopup from "@/shared/ui/components/SuccessPopup";
 import { CreateRescueRequestUseCase } from "@/modules/requests/application/createRescueRequest.usecase";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
-import EmergencyButton from "../components/EmergencyButton";
-import LocationInfoCard from "../components/LocationInfoCard";
-import QuickActionsList from "../components/QuickActionsList";
-import RescueRequestModal from "../components/RescueRequestModal";
 
 // Initialize use case with repository
 const createRescueRequestUseCase = new CreateRescueRequestUseCase(
@@ -31,13 +28,13 @@ const OpenMap = dynamic(
 );
 
 export default function CitizenRequestPage() {
+  const searchParams = useSearchParams();
   const [currentLocation, setCurrentLocation] = useState("Đang tải vị trí...");
   const [coordinates, setCoordinates] = useState<{
     lat: number;
     lon: number;
   } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  const [showRescueModal, setShowRescueModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedQuickAction, setSelectedQuickAction] = useState<string | null>(
     null,
@@ -46,11 +43,12 @@ export default function CitizenRequestPage() {
     dangerType: "",
     description: "",
     numberOfPeople: 1,
-    urgencyLevel: "high",
+    urgencyLevel: "high", // backend enum: critical | high | normal
   });
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadImageError, setUploadImageError] = useState<string | null>(null);
 
   // Quick action templates
   const quickRescueActions = [
@@ -84,6 +82,18 @@ export default function CitizenRequestPage() {
     },
   ];
 
+  // Đọc type từ URL query param và pre-select
+  useEffect(() => {
+    const typeParam = searchParams.get("type");
+    if (typeParam === "rescue") {
+      setSelectedQuickAction("flood");
+      setRescueRequest((prev) => ({ ...prev, dangerType: "flood" }));
+    } else if (typeParam === "report") {
+      setSelectedQuickAction("landslide");
+      setRescueRequest((prev) => ({ ...prev, dangerType: "landslide" }));
+    }
+  }, [searchParams]);
+
   // Lấy vị trí hiện tại khi component mount
   useEffect(() => {
     getCurrentLocation();
@@ -116,23 +126,28 @@ export default function CitizenRequestPage() {
     }
   };
 
-  // Hàm gọi API OpenMap.vn để lấy địa chỉ từ tọa độ
+  // Hàm gọi API OpenMap.vn để lấy địa chỉ từ tọa độ (proxy qua Next.js để tránh CORS)
   const getAddressFromOpenMap = async (lat: number, lon: number) => {
     try {
       const response = await fetch(
-        `https://api.openmap.vn/api/v1/reverse?lat=${lat}&lon=${lon}`,
+        `/api/reverse-geocode?lat=${lat}&lon=${lon}`,
       );
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
+      // Nominatim field order: road > suburb > city_district > city > county (district) > state (province) > display_name
       const location =
+        data.address?.road ||
+        data.address?.suburb ||
+        data.address?.city_district ||
         data.address?.city ||
-        data.address?.district ||
-        data.address?.province ||
+        data.address?.county ||
+        data.address?.state ||
         data.display_name ||
-        `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+        `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
       setCurrentLocation(location);
     } catch (error) {
       console.error("Error fetching address:", error);
-      setCurrentLocation(`${lat.toFixed(2)}, ${lon.toFixed(2)}`);
+      setCurrentLocation(`${lat.toFixed(4)}, ${lon.toFixed(4)}`);
     }
   };
 
@@ -145,32 +160,62 @@ export default function CitizenRequestPage() {
 
     setIsSubmitting(true);
     try {
+      // API contract: POST /requests/addRequest
+      // type = "Rescue" (category), incidentType = danger scenario (flood/trapped/...)
+      // priority = urgency level, peopleCount = number of people
+      // Backend priority enum: critical | high | normal
+      // Map frontend levels to backend values
+      const priorityMap: Record<string, string> = {
+        critical: "critical",
+        high: "high",
+        medium: "normal",
+        low: "normal",
+        normal: "normal",
+      };
       const payload = {
-        ...rescueRequest,
+        type: "Rescue",
+        incidentType: rescueRequest.dangerType,
+        description: rescueRequest.description,
+        peopleCount: rescueRequest.numberOfPeople,
+        priority: priorityMap[rescueRequest.urgencyLevel] ?? "normal",
         location: currentLocation,
         latitude: coordinates.lat,
         longitude: coordinates.lon,
-        images: uploadedImages,
+        imageUrls: uploadedImages,
+        requestSupply: [],
       };
 
       // Use CreateRescueRequestUseCase instead of direct API call
       await createRescueRequestUseCase.execute(payload);
-      setShowRescueModal(false);
       setShowSuccessPopup(true);
       setRescueRequest({
         dangerType: "",
         description: "",
         numberOfPeople: 1,
-        urgencyLevel: "high",
+        urgencyLevel: "high", // reset to valid default
       });
       setUploadedImages([]);
       // Delay reset để user thấy popup
       setTimeout(() => {
         setShowSuccessPopup(false);
       }, 2000);
-    } catch (error) {
-      console.error("Error submitting rescue request:", error);
-      alert("Lỗi khi gửi yêu cầu cứu hộ");
+    } catch (error: any) {
+      const rawMsg: string =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Lỗi khi gửi yêu cầu cứu hộ";
+      console.error("Error submitting rescue request:", rawMsg, error?.response?.data);
+      // Translate common backend error messages to Vietnamese
+      let displayMsg = rawMsg;
+      if (/already has an? active request/i.test(rawMsg) || /active.*request/i.test(rawMsg)) {
+        displayMsg = "Bạn đang có một yêu cầu cứu hộ đang xử lý. Vui lòng chờ yêu cầu hiện tại hoàn thành trước khi gửi yêu cầu mới.";
+      } else if (/validation failed/i.test(rawMsg) || /valid/i.test(rawMsg)) {
+        displayMsg = `Dữ liệu không hợp lệ: ${rawMsg}. Vui lòng kiểm tra thông tin và thử lại.`;
+      } else if (/unauthorized/i.test(rawMsg) || /401/.test(rawMsg)) {
+        displayMsg = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+      }
+      alert(`❌ ${displayMsg}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -179,6 +224,7 @@ export default function CitizenRequestPage() {
   // Hàm upload ảnh lên server (server-side upload to Cloudinary)
   const handleImageUpload = async (file: File) => {
     setIsUploadingImage(true);
+    setUploadImageError(null);
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -188,17 +234,29 @@ export default function CitizenRequestPage() {
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error("Upload failed");
+      // Read as text first to handle non-JSON error pages
+      const text = await response.text();
+      let data: { success: boolean; url?: string; error?: string };
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Lỗi server (${response.status}) — vui lòng thử lại`);
       }
 
-      const data: { success: boolean; url: string } = await response.json();
-      if (data.success && data.url) {
-        setUploadedImages([...uploadedImages, data.url]);
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || `Lỗi HTTP ${response.status}`);
+      }
+
+      if (data.url) {
+        // Use functional update to avoid stale closure
+        setUploadedImages((prev) => [...prev, data.url!]);
       }
     } catch (error) {
-      console.error("Error uploading image:", error);
-      alert("Lỗi khi tải ảnh lên. Vui lòng thử lại!");
+      const msg = error instanceof Error ? error.message : "Lỗi không xác định";
+      console.error("Error uploading image:", msg);
+      setUploadImageError(msg);
+      // Auto-clear error after 5 seconds
+      setTimeout(() => setUploadImageError(null), 5000);
     } finally {
       setIsUploadingImage(false);
     }
@@ -234,12 +292,14 @@ export default function CitizenRequestPage() {
               {quickRescueActions.map((type) => (
                 <div
                   key={type.id}
-                  onClick={() => setSelectedQuickAction(type.id)}
-                  className={`cursor-pointer rounded-xl p-4 border-2 transition-all ${
-                    selectedQuickAction === type.id ?
-                      "bg-[#FF7700]/10 border-[#FF7700]"
+                  onClick={() => {
+                    setSelectedQuickAction(type.id);
+                    setRescueRequest((prev) => ({ ...prev, dangerType: type.id }));
+                  }}
+                  className={`cursor-pointer rounded-xl p-4 border-2 transition-all ${selectedQuickAction === type.id ?
+                    "bg-[#FF7700]/10 border-[#FF7700]"
                     : "bg-white/5 border-white/10 hover:bg-white/10"
-                  }`}
+                    }`}
                 >
                   <div className="text-3xl mb-2">{type.icon}</div>
                   <div className="font-bold text-white mb-1">{type.label}</div>
@@ -331,31 +391,25 @@ export default function CitizenRequestPage() {
                 <label className="block text-gray-400 text-sm font-bold mb-2">
                   Mức độ khẩn cấp
                 </label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   {[
                     {
-                      value: "low",
-                      label: "Thấp",
-                      color: "bg-blue-500",
+                      value: "normal",
+                      label: "Bình thường",
                       icon: "ℹ️",
-                    },
-                    {
-                      value: "medium",
-                      label: "Trung bình",
-                      color: "bg-yellow-500",
-                      icon: "⚠️",
+                      selectedClass: "bg-blue-500/20 border-blue-500 ring-1 ring-blue-500",
                     },
                     {
                       value: "high",
                       label: "Cao",
-                      color: "bg-orange-500",
-                      icon: "🚨",
+                      icon: "⚠️",
+                      selectedClass: "bg-orange-500/20 border-orange-500 ring-1 ring-orange-500",
                     },
                     {
                       value: "critical",
-                      label: "Nguy kịch",
-                      color: "bg-red-500",
+                      label: "Khẩn cấp",
                       icon: "🆘",
+                      selectedClass: "bg-red-500/20 border-red-500 ring-1 ring-red-500",
                     },
                   ].map((level) => (
                     <div
@@ -366,19 +420,17 @@ export default function CitizenRequestPage() {
                           urgencyLevel: level.value,
                         })
                       }
-                      className={`cursor-pointer rounded-lg p-3 border transition-all flex items-center gap-2 ${
-                        rescueRequest.urgencyLevel === level.value ?
-                          `${level.color}/20 border-${level.color.split("-")[1]}-500 ring-1 ring-${level.color.split("-")[1]}-500`
-                        : "bg-white/5 border-white/10 hover:bg-white/10"
-                      }`}
+                      className={`cursor-pointer rounded-lg p-3 border transition-all flex items-center gap-2 ${rescueRequest.urgencyLevel === level.value
+                          ? level.selectedClass
+                          : "bg-white/5 border-white/10 hover:bg-white/10"
+                        }`}
                     >
                       <span>{level.icon}</span>
                       <span
-                        className={`font-bold ${
-                          rescueRequest.urgencyLevel === level.value ?
-                            "text-white"
-                          : "text-gray-400"
-                        }`}
+                        className={`font-bold ${rescueRequest.urgencyLevel === level.value
+                            ? "text-white"
+                            : "text-gray-400"
+                          }`}
                       >
                         {level.label}
                       </span>
@@ -396,7 +448,7 @@ export default function CitizenRequestPage() {
                     <span className="text-white font-bold">
                       {isLoadingLocation ?
                         "Đang lấy vị trí..."
-                      : currentLocation}
+                        : currentLocation}
                     </span>
                     <button
                       type="button"
@@ -423,6 +475,94 @@ export default function CitizenRequestPage() {
               </div>
             </div>
 
+            {/* Image Upload Section */}
+            <div className="bg-black/20 border border-white/10 rounded-xl p-4 space-y-3">
+              <label className="block text-gray-400 text-sm font-bold">
+                📸 Hình ảnh hiện trường{" "}
+                <span className="text-gray-500 font-normal">(tùy chọn)</span>
+              </label>
+
+              <label
+                className={`flex flex-col items-center justify-center gap-2 w-full py-6 border-2 border-dashed rounded-xl cursor-pointer transition-all ${isUploadingImage
+                  ? "border-[#FF7700]/40 bg-[#FF7700]/5 cursor-not-allowed"
+                  : "border-white/20 hover:border-[#FF7700]/50 bg-white/5 hover:bg-white/10"
+                  }`}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  disabled={isUploadingImage}
+                  onChange={(e) => {
+                    Array.from(e.target.files || []).forEach(handleImageUpload);
+                    e.target.value = "";
+                  }}
+                />
+                {isUploadingImage ? (
+                  <>
+                    <div className="w-6 h-6 border-2 border-[#FF7700] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-[#FF7700] text-sm font-bold">
+                      Đang tải ảnh lên...
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-3xl">📷</span>
+                    <span className="text-gray-300 text-sm font-bold">
+                      Nhấn để chọn ảnh
+                    </span>
+                    <span className="text-gray-500 text-xs">
+                      Hỗ trợ JPG, PNG, HEIC · Tối đa 10MB mỗi ảnh
+                    </span>
+                  </>
+                )}
+              </label>
+
+              {/* Inline error message */}
+              {uploadImageError && (
+                <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-sm">
+                  <span className="text-base shrink-0">⚠️</span>
+                  <span>{uploadImageError}</span>
+                </div>
+              )}
+
+              {uploadedImages.length > 0 && (
+                <div>
+                  <p className="text-gray-400 text-xs font-bold mb-2">
+                    ĐÃ TẢI LÊN ({uploadedImages.length} ảnh)
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {uploadedImages.map((url, i) => (
+                      <div
+                        key={i}
+                        className="relative aspect-square rounded-lg overflow-hidden group border border-white/10"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt={`Ảnh hiện trường ${i + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setUploadedImages((prev) =>
+                              prev.filter((_, j) => j !== i)
+                            )
+                          }
+                          className="absolute top-1 right-1 w-6 h-6 bg-red-600 rounded-full hidden group-hover:flex items-center justify-center text-white text-xs font-bold shadow-lg"
+                        >
+                          ✕
+                        </button>
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Submit Button */}
             {/* {error && (
                 <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-500 text-sm font-bold text-center">
@@ -440,7 +580,7 @@ export default function CitizenRequestPage() {
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ĐANG GỬI...
                 </>
-              : <>
+                : <>
                   <span>🚀</span> GỬI YÊU CẦU NGAY
                 </>
               }

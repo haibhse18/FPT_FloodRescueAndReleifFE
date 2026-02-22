@@ -9,6 +9,7 @@ import type { ApiResponse } from "@/shared/types/api";
 
 export interface CreateRescueRequestDTO {
   type?: string;
+  incidentType?: string;
   latitude: number;
   longitude: number;
   description: string;
@@ -47,12 +48,14 @@ export interface GetRequestsParams {
 export const requestsApi = {
   /**
    * Create a rescue request
-   * POST /requests/addRequest
+   * POST /requests
    */
   createRescueRequest: async (
     data: CreateRescueRequestDTO,
   ): Promise<ApiResponse> => {
-    return apiClient.post("/requests/addRequest", data);
+    return apiClient.post("/requests", data, {
+      headers: authSession.getAuthHeaders(),
+    });
   },
 
   /**
@@ -75,7 +78,7 @@ export const requestsApi = {
     const queryString =
       params ?
         "?" + new URLSearchParams(params as Record<string, string>).toString()
-      : "";
+        : "";
     return apiClient.get(`/requests/my${queryString}`, {
       headers: authSession.getAuthHeaders(),
     });

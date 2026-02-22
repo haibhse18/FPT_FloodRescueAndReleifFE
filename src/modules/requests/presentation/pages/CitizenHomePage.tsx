@@ -83,22 +83,20 @@ export default function CitizenHomePage() {
         setCoordinates({ lat: latitude, lon: longitude });
 
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-          // Sử dụng OpenMap.vn API cho reverse geocoding
+          // Proxy qua Next.js để tránh CORS (Nominatim)
           const response = await fetch(
-            `https://api.openmap.vn/api/v1/reverse?lat=${latitude}&lon=${longitude}`,
-            { signal: controller.signal },
+            `/api/reverse-geocode?lat=${latitude}&lon=${longitude}`,
           );
-          clearTimeout(timeoutId);
-
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
           const data = await response.json();
-          // OpenMap.vn trả về address trong data.address
+          // Nominatim field order: road > suburb > city_district > city > county > state
           const location =
+            data.address?.road ||
+            data.address?.suburb ||
+            data.address?.city_district ||
             data.address?.city ||
-            data.address?.district ||
-            data.address?.province ||
+            data.address?.county ||
+            data.address?.state ||
             data.display_name ||
             `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
           setCurrentLocation(location);
@@ -126,7 +124,7 @@ export default function CitizenHomePage() {
       icon: "🚑",
       title: "Yêu cầu cứu trợ",
       subtitle: "Thực phẩm, thuốc men",
-      href: "/request",
+      href: "/request?type=rescue",
       color: "bg-[#FF7700] hover:bg-[#FF8820]",
     },
     {
@@ -134,8 +132,8 @@ export default function CitizenHomePage() {
       icon: "⚠️",
       title: "Báo cáo nguy hiểm",
       subtitle: "Sạt lở, nước dâng",
-      href: "/request",
-      color: "bg-[#FF7700] hover:bg-[#FF8820]",
+      href: "/request?type=report",
+      color: "bg-red-600 hover:bg-red-700",
     },
     {
       id: "guide",
@@ -143,24 +141,42 @@ export default function CitizenHomePage() {
       title: "Hướng dẫn an toàn",
       subtitle: "Kỹ năng sinh tồn",
       href: "/guide",
-      color: "bg-[#FF7700] hover:bg-[#FF8820]",
+      color: "bg-blue-600 hover:bg-blue-700",
     },
   ];
 
   return (
     <>
       {/* Fixed Header Banner */}
-      <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
+      <header className="sticky top-0 z-50 p-4 lg:p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-white text-2xl lg:text-3xl font-extrabold tracking-tight leading-tight uppercase">
-              Cứu hộ Lũ lụt
-            </h1>
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full w-fit">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-              <span className="text-xs font-semibold text-white">
-                Hệ thống trực tuyến
-              </span>
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1">
+              <h1 className="text-white text-xl lg:text-2xl font-extrabold tracking-tight leading-tight uppercase">
+                Cứu hộ Lũ lụt
+              </h1>
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full w-fit">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                <span className="text-xs font-semibold text-white">
+                  Hệ thống trực tuyến
+                </span>
+              </div>
+            </div>
+            {/* User Greeting */}
+            <div className="flex items-center gap-3">
+              <div className="text-right hidden sm:block">
+                <p className="text-xs text-white/60">Xin chào,</p>
+                <p className="text-sm font-bold text-white truncate max-w-[140px]">
+                  {isLoading ? (
+                    <span className="inline-block w-24 h-4 bg-white/20 rounded animate-pulse" />
+                  ) : (
+                    userName
+                  )}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-[#FF7700]/30 border-2 border-[#FF7700]/50 flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
+                {isLoading ? "?" : userName.charAt(0).toUpperCase()}
+              </div>
             </div>
           </div>
         </div>
@@ -173,6 +189,13 @@ export default function CitizenHomePage() {
           {/* Hero SOS Section */}
           <div className="flex flex-col items-center justify-center py-8 lg:py-12">
             <div className="text-center mb-8">
+              {/* Mobile greeting (hidden on sm+) */}
+              <p className="text-white/60 text-sm mb-1 sm:hidden">
+                Xin chào,{" "}
+                <span className="text-white font-bold">
+                  {isLoading ? "..." : userName}
+                </span>
+              </p>
               <p className="text-[#FF7700] font-bold text-2xl lg:text-3xl mb-2">
                 CẦN HỖ TRỢ NGAY?
               </p>
@@ -290,7 +313,7 @@ export default function CitizenHomePage() {
                   <span className="w-4 h-4 border-2 border-slate-800 border-t-transparent rounded-full animate-spin"></span>
                   Đang tải...
                 </span>
-              : currentLocation}
+                : currentLocation}
             </p>
             {coordinates && (
               <div className="text-xs text-slate-500 font-mono mb-3">

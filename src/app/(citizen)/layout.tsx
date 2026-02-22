@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { AuthGuard } from "@/shared/components/AuthGuard";
 import CitizenSidebar from "./components/CitizenSidebar";
 import MobileBottomNav from "@/shared/components/layout/MobileBottomNav";
+import { notificationsApi } from "@/modules/notifications/infrastructure/notifications.api";
 
 /**
  * Layout cho Citizen routes
@@ -14,6 +16,21 @@ export default function CitizenLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    notificationsApi
+      .getUnreadCount()
+      .then((res: any) => {
+        const count =
+          res?.data?.count ?? res?.data?.unreadCount ?? res?.count ?? 0;
+        setUnreadCount(Number(count) || 0);
+      })
+      .catch(() => {
+        // silently ignore — badge is non-critical
+      });
+  }, []);
+
   return (
     <AuthGuard allowedRoles={["Citizen"]}>
       <div className="min-h-screen bg-[#133249] flex flex-col lg:flex-row">
@@ -30,7 +47,9 @@ export default function CitizenLayout({
 
           {children}
 
-          <MobileBottomNav />
+          <MobileBottomNav
+            badges={unreadCount > 0 ? { "/notifications": unreadCount } : {}}
+          />
         </div>
       </div>
     </AuthGuard>

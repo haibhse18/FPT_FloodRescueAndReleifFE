@@ -119,6 +119,18 @@ export const requestsApi = {
   },
 
   /**
+   * Citizen cancel request (chỉ khi status=Submitted)
+   * PATCH /requests/{id}/status { status: "Cancelled" }
+   */
+  cancelRequest: async (requestId: string): Promise<ApiResponse> => {
+    return apiClient.patch(
+      `/requests/${requestId}/status`,
+      { status: "Cancelled" },
+      { headers: authSession.getAuthHeaders() },
+    );
+  },
+
+  /**
    * Get all requests (Coordinator)
    * GET /requests/getAll
    */

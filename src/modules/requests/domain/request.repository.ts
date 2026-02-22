@@ -43,6 +43,11 @@ export interface IRequestRepository {
   confirmRequest(requestId: string): Promise<void>;
 
   /**
+   * Citizen hủy yêu cầu (chỉ khi status=Submitted)
+   */
+  cancelRequest(requestId: string): Promise<void>;
+
+  /**
    * Lấy tất cả requests với filters (Coordinator)
    */
   getAllRequests(filters?: GetRequestsFilter): Promise<PaginatedRequests>;

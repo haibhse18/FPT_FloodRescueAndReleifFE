@@ -122,6 +122,8 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+    const [actionLoading, setActionLoading] = useState<"cancel" | "confirm" | null>(null);
+    const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
     useEffect(() => {
         fetchDetail();
@@ -138,6 +140,34 @@ export default function CitizenRequestDetailPage({ id }: Props) {
             setError(err.message || "Không thể tải thông tin yêu cầu");
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleCancel = async () => {
+        if (!window.confirm("Bạn có chắc muốn hủy yêu cầu này không?")) return;
+        setActionLoading("cancel");
+        try {
+            await requestRepository.cancelRequest(id);
+            setRequest((prev: any) => ({ ...prev, status: "Cancelled" }));
+            setActionSuccess("Đã hủy yêu cầu thành công.");
+        } catch (err: any) {
+            alert(`❌ ${err?.response?.data?.message || err.message || "Không thể hủy yêu cầu"}`);
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleConfirmSafe = async () => {
+        if (!window.confirm("Xác nhận bạn đã được cứu hộ / nhận hỗ trợ an toàn?")) return;
+        setActionLoading("confirm");
+        try {
+            await requestRepository.confirmRequest(id);
+            setRequest((prev: any) => ({ ...prev, status: "Closed" }));
+            setActionSuccess("Xác nhận thành công! Cảm ơn bạn đã sử dụng hệ thống.");
+        } catch (err: any) {
+            alert(`❌ ${err?.response?.data?.message || err.message || "Không thể xác nhận"}`);
+        } finally {
+            setActionLoading(null);
         }
     };
 
@@ -394,6 +424,48 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                                 </button>
                             ))}
                         </div>
+                    </div>
+                )}
+
+                {/* Action Buttons */}
+                {actionSuccess ? (
+                    <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 font-semibold">
+                        <span className="text-xl">✅</span>
+                        <span>{actionSuccess}</span>
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-3">
+                        {/* Cancel: only when Submitted */}
+                        {(request.status === "Submitted" || request.status === "SUBMITTED") && (
+                            <button
+                                onClick={handleCancel}
+                                disabled={actionLoading !== null}
+                                className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 rounded-xl text-red-400 font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {actionLoading === "cancel" ? (
+                                    <><div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> Đang hủy...</>
+                                ) : (
+                                    <>🚫 Hủy yêu cầu này</>
+                                )}
+                            </button>
+                        )}
+
+                        {/* Confirm safe: when Completed or Fulfilled or In Progress (rescue done) */}
+                        {(request.status === "Completed" || request.status === "COMPLETED" ||
+                            request.status === "Fulfilled" || request.status === "FULFILLED" ||
+                            request.status === "In Progress" || request.status === "IN_PROGRESS") && (
+                                <button
+                                    onClick={handleConfirmSafe}
+                                    disabled={actionLoading !== null}
+                                    className="w-full py-3 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 hover:border-green-500/60 rounded-xl text-green-300 font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {actionLoading === "confirm" ? (
+                                        <><div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin" /> Đang xác nhận...</>
+                                    ) : (
+                                        <>✅ Xác nhận đã an toàn / đã nhận</>
+                                    )}
+                                </button>
+                            )}
                     </div>
                 )}
 

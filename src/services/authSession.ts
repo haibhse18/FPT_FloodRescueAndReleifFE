@@ -65,7 +65,7 @@ export function setRefreshToken(token: string): void {
  * Get authorization headers with Bearer token
  * @returns Headers object with Authorization header if token exists
  */
-export function getAuthHeaders(): HeadersInit {
+export function getAuthHeaders(): Record<string, string> {
     const token = getAuthToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, Input, Button, Skeleton } from "@/shared/ui/components";
+import { Card, Input, Skeleton } from "@/shared/ui/components";
 
 export interface CitizenProfile {
   name: string;
@@ -47,10 +47,10 @@ export default function ProfileForm({
   }
 
   return (
-    <Card className="mb-6 bg-white border-gray-200 shadow-sm p-8">
-      <div className="flex items-center gap-3 mb-8 border-b border-gray-100 pb-4">
-        <span className="text-2xl bg-blue-50 p-2 rounded-lg">📋</span>
-        <h3 className="text-xl font-bold text-gray-900">Thông tin cá nhân</h3>
+    <Card className="mb-6 bg-white/5 border-white/10 p-6 lg:p-8">
+      <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
+        <span className="text-2xl bg-white/10 p-2 rounded-lg">📋</span>
+        <h3 className="text-xl font-bold text-white">Thông tin cá nhân</h3>
       </div>
 
       <div className="space-y-8">
@@ -65,13 +65,10 @@ export default function ProfileForm({
             disabled={!isEditMode || isSaving}
             readOnly={!isEditMode}
             className={
-              !isEditMode ?
-                "bg-transparent border-0 border-b border-gray-200 rounded-none px-0 text-gray-900 font-bold text-lg focus:ring-0"
-              : "bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
+              !isEditMode
+                ? "bg-transparent border-0 border-b border-white/20 rounded-none px-0 text-white font-bold text-base focus:ring-0"
+                : "bg-white/10 border-white/20 text-white focus:border-[#FF7700] rounded-lg"
             }
-            // Add labelClassName if supported, otherwise styling relies on global Input styles or we wrap it.
-            // Assuming Input component accepts className for the input element itself.
-            // We desire "Label xám - Value đậm".
           />
 
           {/* Phone */}
@@ -84,9 +81,9 @@ export default function ProfileForm({
             disabled={!isEditMode || isSaving}
             readOnly={!isEditMode}
             className={
-              !isEditMode ?
-                "bg-transparent border-0 border-b border-gray-200 rounded-none px-0 text-gray-900 font-bold text-lg focus:ring-0"
-              : "bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
+              !isEditMode
+                ? "bg-transparent border-0 border-b border-white/20 rounded-none px-0 text-white font-bold text-base focus:ring-0"
+                : "bg-white/10 border-white/20 text-white focus:border-[#FF7700] rounded-lg"
             }
           />
 
@@ -101,17 +98,17 @@ export default function ProfileForm({
             readOnly={!isEditMode}
             type="email"
             className={
-              !isEditMode ?
-                "bg-transparent border-0 border-b border-gray-200 rounded-none px-0 text-gray-900 font-bold text-lg focus:ring-0"
-              : "bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-500 rounded-lg"
+              !isEditMode
+                ? "bg-transparent border-0 border-b border-white/20 rounded-none px-0 text-white font-bold text-base focus:ring-0"
+                : "bg-white/10 border-white/20 text-white focus:border-[#FF7700] rounded-lg"
             }
           />
 
-          {/* Address - Spans full width */}
+          {/* Address */}
           <div className="md:col-span-2">
-            {isEditMode ?
+            {isEditMode ? (
               <div className="w-full">
-                <label className="block text-sm font-medium mb-2 text-gray-500">
+                <label className="block text-sm font-medium mb-2 text-gray-400">
                   📍 Địa chỉ
                 </label>
                 <textarea
@@ -123,39 +120,45 @@ export default function ProfileForm({
                     })
                   }
                   rows={2}
-                  className="w-full px-4 py-3 rounded-lg bg-white border border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition resize-none"
+                  className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white focus:border-[#FF7700] focus:ring-2 focus:ring-[#FF7700]/20 outline-none transition resize-none"
                 />
               </div>
-            : <Input
+            ) : (
+              <Input
                 label="📍 Địa chỉ"
                 value={profile.address}
                 readOnly={true}
                 disabled={true}
-                className="bg-transparent border-0 border-b border-gray-200 rounded-none px-0 text-gray-900 font-bold text-lg focus:ring-0"
+                className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 text-white font-bold text-base focus:ring-0"
               />
-            }
+            )}
           </div>
         </div>
 
         {/* Save/Cancel Buttons */}
         {isEditMode && (
-          <div className="flex gap-4 pt-6 border-t border-gray-100 justify-end">
-            <Button
+          <div className="flex gap-3 pt-5 border-t border-white/10 justify-end">
+            <button
               onClick={onCancel}
-              variant="secondary"
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 border-0 min-w-[120px]"
               disabled={isSaving}
+              className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-gray-300 font-bold rounded-xl transition-all disabled:opacity-50"
             >
               Hủy bỏ
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={onSave}
-              isLoading={isSaving}
-              variant="primary"
-              className="bg-blue-600 hover:bg-blue-700 min-w-[140px]"
+              disabled={isSaving}
+              className="px-6 py-2.5 bg-[#FF7700] hover:bg-[#FF8800] text-white font-bold rounded-xl transition-all disabled:opacity-60 flex items-center gap-2 shadow-lg shadow-[#FF7700]/20"
             >
-              {isSaving ? "Đang lưu..." : "💾 Lưu thay đổi"}
-            </Button>
+              {isSaving ? (
+                <>
+                  <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Đang lưu...
+                </>
+              ) : (
+                "💾 Lưu thay đổi"
+              )}
+            </button>
           </div>
         )}
       </div>

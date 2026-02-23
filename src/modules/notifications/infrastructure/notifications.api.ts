@@ -14,7 +14,7 @@ export const notificationsApi = {
      */
     getNotifications: async (): Promise<ApiResponse> => {
         return apiClient.get('/notifications', {
-            headers: authSession.getAuthHeaders(),
+            headers: authSession.getAuthHeaders() as Record<string, string>,
         });
     },
 
@@ -24,7 +24,7 @@ export const notificationsApi = {
      */
     markNotificationAsRead: async (notificationId: string): Promise<ApiResponse> => {
         return apiClient.patch(`/notifications/${notificationId}/read`, undefined, {
-            headers: authSession.getAuthHeaders(),
+            headers: authSession.getAuthHeaders() as Record<string, string>,
         });
     },
 
@@ -34,7 +34,7 @@ export const notificationsApi = {
      */
     markAllNotificationsAsRead: async (): Promise<ApiResponse> => {
         return apiClient.patch('/notifications/mark-all-read', undefined, {
-            headers: authSession.getAuthHeaders(),
+            headers: authSession.getAuthHeaders() as Record<string, string>,
         });
     },
 
@@ -44,7 +44,7 @@ export const notificationsApi = {
      */
     getUnreadCount: async (): Promise<ApiResponse> => {
         return apiClient.get('/notifications/unread-count', {
-            headers: authSession.getAuthHeaders(),
+            headers: authSession.getAuthHeaders() as Record<string, string>,
         });
     },
 };

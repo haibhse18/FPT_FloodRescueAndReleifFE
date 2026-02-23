@@ -46,6 +46,10 @@ export class RequestRepositoryImpl implements IRequestRepository {
     await requestsApi.confirmRequest(requestId);
   }
 
+  async cancelRequest(requestId: string): Promise<void> {
+    await requestsApi.cancelRequest(requestId);
+  }
+
   async getAllRequests(filters?: GetRequestsFilter): Promise<any> {
     const response = await requestsApi.getAllRequests(filters);
     return (response as any).data;

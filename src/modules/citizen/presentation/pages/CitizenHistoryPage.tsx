@@ -38,6 +38,7 @@ export default function CitizenHistoryPage() {
       const data = await requestRepository.getMyRequests();
 
       // Map API response to UI format
+      if (data.length > 0) console.log("[CitizenHistory] sample response item:", JSON.stringify(data[0]));
       const mappedRequests: Request[] = data.map((req: any) => {
         const statusMap: Record<
           string,
@@ -78,7 +79,7 @@ export default function CitizenHistoryPage() {
         const status = statusMap[req.status] || statusMap["Submitted"];
 
         return {
-          id: req.requestId || req.id,
+          id: req.requestId || req._id || req.id || "unknown",
           type:
             req.type === "Rescue" || req.type === "rescue" ? "Cứu hộ"
               : req.type === "Relief" || req.type === "supply" ? "Cứu trợ"
@@ -87,8 +88,12 @@ export default function CitizenHistoryPage() {
                   : "Yêu cầu",
           status: status.filter,
           location:
-            req.location ||
-            `${req.latitude?.toFixed(4)}, ${req.longitude?.toFixed(4)}`,
+            typeof req.location === "string" ? req.location
+              : req.location?.coordinates ?
+                `${req.location.coordinates[1]?.toFixed(4)}, ${req.location.coordinates[0]?.toFixed(4)}`
+                : req.latitude != null && req.longitude != null ?
+                  `${Number(req.latitude).toFixed(4)}, ${Number(req.longitude).toFixed(4)}`
+                  : "Không xác định",
           createdAt: new Date(req.createdAt).toLocaleString("vi-VN"),
           completedAt:
             req.completedAt ?
@@ -380,7 +385,7 @@ export default function CitizenHistoryPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <span className="font-mono text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded">
-                              #{request.id.length > 8 ? request.id.slice(-8).toUpperCase() : request.id}
+                              #{(request.id?.length ?? 0) > 8 ? request.id.slice(-8).toUpperCase() : (request.id ?? "N/A")}
                             </span>
                             <span
                               className={`px-3 py-1 rounded-lg text-xs font-bold border ${request.statusColor}`}

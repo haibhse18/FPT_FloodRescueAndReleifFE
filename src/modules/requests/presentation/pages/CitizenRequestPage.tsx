@@ -146,7 +146,8 @@ export default function CitizenRequestPage() {
         `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
       setCurrentLocation(location);
     } catch (error) {
-      console.error("Error fetching address:", error);
+      // Geocoding failure is non-critical — coordinates are still captured via GPS
+      console.warn("Address lookup failed, falling back to coordinates:", error);
       setCurrentLocation(`${lat.toFixed(4)}, ${lon.toFixed(4)}`);
     }
   };
@@ -158,31 +159,43 @@ export default function CitizenRequestPage() {
       return;
     }
 
+    if (!rescueRequest.description.trim()) {
+      alert("Vui lòng mô tả tình huống trước khi gửi yêu cầu");
+      return;
+    }
+
+    if (rescueRequest.description.trim().length < 10) {
+      alert("Mô tả tình huống phải có ít nhất 10 ký tự");
+      return;
+    }
+
+    if (uploadedImages.length === 0) {
+      alert("Vui lòng tải lên ít nhất 1 ảnh hiện trường");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // API contract: POST /requests/addRequest
-      // type = "Rescue" (category), incidentType = danger scenario (flood/trapped/...)
-      // priority = urgency level, peopleCount = number of people
-      // Backend priority enum: critical | high | normal
-      // Map frontend levels to backend values
-      const priorityMap: Record<string, string> = {
-        critical: "critical",
-        high: "high",
-        medium: "normal",
-        low: "normal",
-        normal: "normal",
+      // Backend chỉ chấp nhận: type, location, description, imageUrls[], peopleCount, incidentType
+      // Các field bị từ chối: priority, latitude, longitude, requestSupply
+      // incidentType phải viết hoa chữ cái đầu
+      const incidentTypeMap: Record<string, string> = {
+        flood: "Flood",
+        trapped: "Trapped",
+        injury: "Injury",
+        landslide: "Landslide",
+        other: "Other",
       };
       const payload = {
         type: "Rescue",
-        incidentType: rescueRequest.dangerType,
+        incidentType: incidentTypeMap[rescueRequest.dangerType] ?? rescueRequest.dangerType,
         description: rescueRequest.description,
         peopleCount: rescueRequest.numberOfPeople,
-        priority: priorityMap[rescueRequest.urgencyLevel] ?? "normal",
-        location: currentLocation,
-        latitude: coordinates.lat,
-        longitude: coordinates.lon,
+        location: {
+          type: "Point",
+          coordinates: [coordinates.lon, coordinates.lat] as [number, number], // GeoJSON: [longitude, latitude]
+        },
         imageUrls: uploadedImages,
-        requestSupply: [],
       };
 
       // Use CreateRescueRequestUseCase instead of direct API call
@@ -200,12 +213,19 @@ export default function CitizenRequestPage() {
         setShowSuccessPopup(false);
       }, 2000);
     } catch (error: any) {
+      // NestJS có thể trả về message là string hoặc array (class-validator)
+      const msgField = error?.response?.data?.message;
       const rawMsg: string =
-        error?.response?.data?.message ||
+        (Array.isArray(msgField) ? msgField.join(", ") : msgField) ||
         error?.response?.data?.error ||
         error?.message ||
         "Lỗi khi gửi yêu cầu cứu hộ";
-      console.error("Error submitting rescue request:", rawMsg, error?.response?.data);
+      console.error(
+        "Error submitting rescue request:",
+        `HTTP ${error?.response?.status}`,
+        JSON.stringify(error?.response?.data ?? {}),
+        error?.message,
+      );
       // Translate common backend error messages to Vietnamese
       let displayMsg = rawMsg;
       if (/already has an? active request/i.test(rawMsg) || /active.*request/i.test(rawMsg)) {
@@ -421,15 +441,15 @@ export default function CitizenRequestPage() {
                         })
                       }
                       className={`cursor-pointer rounded-lg p-3 border transition-all flex items-center gap-2 ${rescueRequest.urgencyLevel === level.value
-                          ? level.selectedClass
-                          : "bg-white/5 border-white/10 hover:bg-white/10"
+                        ? level.selectedClass
+                        : "bg-white/5 border-white/10 hover:bg-white/10"
                         }`}
                     >
                       <span>{level.icon}</span>
                       <span
                         className={`font-bold ${rescueRequest.urgencyLevel === level.value
-                            ? "text-white"
-                            : "text-gray-400"
+                          ? "text-white"
+                          : "text-gray-400"
                           }`}
                       >
                         {level.label}

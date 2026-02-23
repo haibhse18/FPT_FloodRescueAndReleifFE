@@ -47,7 +47,7 @@ export default function LoginPage() {
       // Redirect based on user role
       const redirectMap: Record<string, string> = {
         Citizen: "/home",
-        "Rescue Team": "/team/missions",
+        "Rescue Team": "/missions",
         "Rescue Coordinator": "/dashboard",
         Manager: "/manager",
         Admin: "/admin/users",
@@ -57,7 +57,12 @@ export default function LoginPage() {
         currentUser?.role ? redirectMap[currentUser.role] : "/";
       router.push(redirectPath);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Đăng nhập thất bại");
+      const msg = err instanceof Error ? err.message : "";
+      if (/timeout/i.test(msg) || /ECONNABORTED/i.test(msg)) {
+        setError("Máy chủ đang khởi động lại, vui lòng đợi 30–60 giây rồi thử lại");
+      } else {
+        setError(msg || "Đăng nhập thất bại");
+      }
     }
   };
 

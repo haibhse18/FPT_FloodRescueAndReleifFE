@@ -10,14 +10,14 @@ import type { ApiResponse } from "@/shared/types/api";
 export interface CreateRescueRequestDTO {
   type?: string;
   incidentType?: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   description: string;
   imageUrls?: string[];
   priority?: string;
   peopleCount?: number;
   requestSupply?: unknown[];
-  location?: string;
+  location?: string | { type?: string; coordinates: [number, number] };
   dangerType?: string;
   numberOfPeople?: number;
   urgencyLevel?: string;

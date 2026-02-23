@@ -34,14 +34,14 @@ export interface RescueRequest {
 export interface CreateRescueRequestData {
   type?: string;
   incidentType?: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   description: string;
   imageUrls?: string[];
   priority?: string;
   peopleCount?: number;
   requestSupply?: unknown[];
-  location?: string;
+  location?: string | { type?: string; coordinates: [number, number] };
   dangerType?: string;
   numberOfPeople?: number;
   urgencyLevel?: string;

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
                 'User-Agent': 'FPT-FloodRescue/1.0 (contact@example.com)',
                 'Accept': 'application/json',
             },
-            signal: AbortSignal.timeout(5000),
+            signal: AbortSignal.timeout(10000),
         });
 
         if (!response.ok) {
@@ -36,10 +36,12 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(data);
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Reverse geocode proxy error:', message);
+        // TimeoutError is expected when Nominatim is slow — return 503 not 500
+        const isTimeout = error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
+        console.warn('Reverse geocode proxy error:', message);
         return NextResponse.json(
-            { error: message },
-            { status: 500 }
+            { error: isTimeout ? 'Geocoding service timeout' : message },
+            { status: isTimeout ? 503 : 500 }
         );
     }
 }

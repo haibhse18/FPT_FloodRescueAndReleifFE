@@ -14,8 +14,8 @@ export class CreateRescueRequestUseCase {
      */
     async execute(data: CreateRescueRequestData): Promise<RescueRequest> {
         // Validate required fields
-        if (!data.latitude || !data.longitude) {
-            throw new Error('Vị trí GPS là bắt buộc');
+        if (!data.location) {
+            throw new Error('Vị trí là bắt buộc');
         }
 
         if (!data.incidentType && !data.dangerType && !data.type) {

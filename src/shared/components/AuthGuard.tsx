@@ -30,7 +30,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
         const checkAuth = async () => {
             // Only run once on mount, avoid re-running on every state change
             if (hasInitialized) return;
-            
+
             // Nếu chưa authenticated, thử init auth (refresh token)
             if (!isAuthenticated && !loading) {
                 await initAuth();
@@ -57,9 +57,9 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
             if (!allowedRoles.includes(role)) {
                 // Redirect về trang mặc định theo role
                 const roleRedirects: Record<string, string> = {
-                    'Citizen': '/citizen',
-                    'Rescue Team': '/team/missions',
-                    'Rescue Coordinator': '/coordinator/dashboard',
+                    'Citizen': '/home',
+                    'Rescue Team': '/missions',
+                    'Rescue Coordinator': '/dashboard',
                     'Manager': '/manager',
                     'Admin': '/admin/users',
                 };

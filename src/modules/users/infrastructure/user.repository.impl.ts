@@ -3,15 +3,15 @@
  * Implement user repository interfaces using APIs
  */
 
-import { 
-    IUserRepository, 
-    IManagerRepository, 
-    IAdminRepository 
+import {
+    IUserRepository,
+    IManagerRepository,
+    IAdminRepository
 } from '../domain/user.repository';
-import { 
-    UpdateProfileData, 
-    DashboardStats, 
-    Report, 
+import {
+    UpdateProfileData,
+    DashboardStats,
+    Report,
     ReportType,
     UserListItem,
     SystemConfig,
@@ -21,7 +21,11 @@ import { usersApi, managerApi, adminApi } from './users.api';
 
 export class UserRepositoryImpl implements IUserRepository {
     async updateProfile(data: UpdateProfileData): Promise<void> {
-        await usersApi.updateProfile(data);
+        await usersApi.updateProfile({
+            displayName: data.displayName,
+            phoneNumber: data.phone,
+            address: data.address,
+        });
     }
 }
 

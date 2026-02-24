@@ -108,10 +108,6 @@ export const requestsApi = {
    * Citizen confirm safe / received
    * PATCH /requests/{id}/confirm
    */
-  /**
-   * Citizen confirm safe / received
-   * PATCH /requests/{id}/confirm
-   */
   confirmRequest: async (requestId: string): Promise<ApiResponse> => {
     return apiClient.patch(`/requests/${requestId}/confirm`, undefined, {
       headers: authSession.getAuthHeaders(),

@@ -10,6 +10,9 @@ import { notificationsApi } from './notifications.api';
 export class NotificationRepositoryImpl implements INotificationRepository {
     async getNotifications(): Promise<Notification[]> {
         const response = await notificationsApi.getNotifications();
+        // apiClient already unwraps axios response.data, so backend may return
+        // Notification[] directly OR { data: Notification[] } wrapped
+        if (Array.isArray(response)) return response as unknown as Notification[];
         return (response as any).data || [];
     }
 
@@ -18,12 +21,34 @@ export class NotificationRepositoryImpl implements INotificationRepository {
     }
 
     async markAllAsRead(): Promise<void> {
-        await notificationsApi.markAllNotificationsAsRead();
+        // No bulk endpoint in API — fall back to fetching list and marking each one
+        try {
+            const response = await notificationsApi.getNotifications();
+            const list: any[] = Array.isArray(response)
+                ? (response as any[])
+                : (response as any).data || [];
+            const unread = list.filter((n: any) => !(n.isRead ?? n.is_read));
+            await Promise.allSettled(
+                unread.map((n: any) =>
+                    notificationsApi.markNotificationAsRead(n._id || n.id || n.notificationId),
+                ),
+            );
+        } catch {
+            // silently fail — UI has already done optimistic update
+        }
     }
 
     async getUnreadCount(): Promise<number> {
-        const response = await notificationsApi.getUnreadCount();
-        return (response as any).count || 0;
+        // No dedicated endpoint — derive from notification list
+        try {
+            const response = await notificationsApi.getNotifications();
+            const list: any[] = Array.isArray(response)
+                ? (response as any[])
+                : (response as any).data || [];
+            return list.filter((n: any) => !(n.isRead ?? n.is_read)).length;
+        } catch {
+            return 0;
+        }
     }
 }
 

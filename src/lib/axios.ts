@@ -15,7 +15,8 @@ const TOKEN_STORAGE_KEY = "accessToken";
 
 export const tokenManager = {
   getToken: (): string | null => {
-    if (typeof window !== "undefined") return localStorage.getItem(TOKEN_STORAGE_KEY);
+    if (typeof window !== "undefined")
+      return localStorage.getItem(TOKEN_STORAGE_KEY);
     return null;
   },
   setToken: (token: string | null) => {
@@ -25,7 +26,8 @@ export const tokenManager = {
     }
   },
   clearToken: () => {
-    if (typeof window !== "undefined") localStorage.removeItem(TOKEN_STORAGE_KEY);
+    if (typeof window !== "undefined")
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
   },
 };
 
@@ -149,7 +151,11 @@ axiosInstance.interceptors.response.use(
           { withCredentials: true },
         );
 
-        const newToken = response.data.accessToken;
+        // Backend trả về wrapped: { success, data: { accessToken, user } }
+        const newToken = response.data?.data?.accessToken;
+        if (!newToken) {
+          throw new Error("No access token in refresh response");
+        }
         tokenManager.setToken(newToken);
 
         // Process queued requests

@@ -5,6 +5,7 @@ import { AuthGuard } from "@/shared/components/AuthGuard";
 import CitizenSidebar from "./components/CitizenSidebar";
 import MobileBottomNav from "@/shared/components/layout/MobileBottomNav";
 import { notificationsApi } from "@/modules/notifications/infrastructure/notifications.api";
+import { Toaster } from "@/components/ui/toaster";
 
 /**
  * Layout cho Citizen routes
@@ -46,6 +47,7 @@ export default function CitizenLayout({
           ></div>
 
           {children}
+          <Toaster />
 
           <MobileBottomNav
             badges={unreadCount > 0 ? { "/notifications": unreadCount } : {}}

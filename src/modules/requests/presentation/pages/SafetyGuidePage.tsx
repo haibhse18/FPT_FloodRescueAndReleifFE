@@ -164,11 +164,10 @@ export default function SafetyGuidePage() {
               </button>
 
               <div
-                className={`grid transition-all duration-300 ease-in-out ${
-                  isExpanded ?
+                className={`grid transition-all duration-300 ease-in-out ${isExpanded ?
                     "grid-rows-[1fr] opacity-100"
-                  : "grid-rows-[0fr] opacity-0"
-                }`}
+                    : "grid-rows-[0fr] opacity-0"
+                  }`}
               >
                 <div className="overflow-hidden">
                   <div className="p-5 pt-0 space-y-3">
@@ -203,7 +202,7 @@ export default function SafetyGuidePage() {
           dụng nút SOS trong ứng dụng.
         </p>
         <Link
-          href="/citizen/request/create"
+          href="/request"
           className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#FF7700] to-orange-600 hover:from-[#FF7700]/90 hover:to-orange-600/90 rounded-xl text-white font-bold transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
         >
           <span className="text-xl">🚨</span>

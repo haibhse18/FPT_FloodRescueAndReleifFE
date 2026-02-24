@@ -1,15 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Card } from "@/shared/ui/components/Card";
-import { Avatar } from "@/shared/ui/components/Avatar";
-import { Badge } from "@/shared/ui/components/Badge";
-import { Button } from "@/shared/ui/components/Button";
-
 interface ProfileHeaderProps {
   name: string;
   phone: string;
   email: string;
+  isLoading?: boolean;
   isEditMode: boolean;
   onEditToggle: () => void;
 }
@@ -18,77 +13,81 @@ export default function ProfileHeader({
   name,
   phone,
   email,
+  isLoading = false,
   isEditMode,
   onEditToggle,
 }: ProfileHeaderProps) {
+  const initial = name ? name.charAt(0).toUpperCase() : "?";
+
   return (
-    <Card className="mb-6 bg-white border-gray-200 shadow-sm">
-      <div className="flex flex-col lg:flex-row items-center gap-8 p-6">
+    <div className="bg-white/5 border border-white/10 rounded-2xl p-5 lg:p-8">
+      <div className="flex flex-col lg:flex-row items-center gap-6">
         {/* Avatar */}
-        <div className="relative group cursor-pointer">
-          <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-full border-4 border-white shadow-lg overflow-hidden bg-gray-100">
-            <Avatar
-              size="xl"
-              src="" // Add real src if available
-              fallback={name.charAt(0)}
-            />
+        <div className="relative flex-shrink-0">
+          <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-full bg-[#FF7700]/20 border-2 border-[#FF7700]/40 flex items-center justify-center">
+            {isLoading ? (
+              <span className="w-full h-full rounded-full bg-white/10 animate-pulse block" />
+            ) : (
+              <span className="text-4xl lg:text-5xl font-black text-[#FF7700]">{initial}</span>
+            )}
           </div>
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-            <span className="text-white text-3xl">📷</span>
-          </div>
+          <span className="absolute bottom-1 right-1 w-4 h-4 bg-green-400 border-2 border-[#133249] rounded-full" />
         </div>
 
         {/* Info */}
-        <div className="flex-1 text-center lg:text-left space-y-4">
-          <div>
-            <h3 className="text-3xl lg:text-4xl font-bold text-gray-900">
-              {name}
-            </h3>
-            <p className="text-gray-500 font-medium mt-1">Cư dân</p>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
-            <div className="flex items-center gap-2 text-gray-600 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
-              <span className="text-lg">📱</span>
-              <span className="font-semibold">{phone}</span>
+        <div className="flex-1 text-center lg:text-left space-y-3">
+          {isLoading ? (
+            <div className="space-y-2 animate-pulse">
+              <div className="h-8 bg-white/10 rounded w-48 mx-auto lg:mx-0" />
+              <div className="h-4 bg-white/10 rounded w-32 mx-auto lg:mx-0" />
             </div>
-            <div className="flex items-center gap-2 text-gray-600 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
-              <span className="text-lg">✉️</span>
-              <span className="font-semibold">{email}</span>
-            </div>
-          </div>
+          ) : (
+            <>
+              <h3 className="text-2xl lg:text-3xl font-black text-white">{name || "Người dùng"}</h3>
+              <p className="text-[#FF7700] font-semibold text-sm">Cư dân</p>
+            </>
+          )}
 
-          <div className="pt-1">
-            <Badge
-              variant="success"
-              className="px-3 py-1 text-sm font-semibold bg-green-100 text-green-700 border-green-200"
-            >
-              ● Đang hoạt động
-            </Badge>
+          <div className="flex flex-wrap justify-center lg:justify-start gap-3">
+            {isLoading ? (
+              <>
+                <div className="h-8 bg-white/10 rounded-lg w-36 animate-pulse" />
+                <div className="h-8 bg-white/10 rounded-lg w-48 animate-pulse" />
+              </>
+            ) : (
+              <>
+                {phone && (
+                  <span className="flex items-center gap-2 text-gray-300 text-sm bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
+                    <span>📱</span>{phone}
+                  </span>
+                )}
+                {email && (
+                  <span className="flex items-center gap-2 text-gray-300 text-sm bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
+                    <span>✉️</span>{email}
+                  </span>
+                )}
+                <span className="flex items-center gap-1.5 text-green-400 text-xs font-bold bg-green-400/10 border border-green-400/20 px-3 py-1.5 rounded-lg">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                  Đang hoạt động
+                </span>
+              </>
+            )}
           </div>
         </div>
 
         {/* Edit Button */}
-        <div className="flex flex-col gap-3">
-          <Button
+        <div className="flex flex-col gap-2">
+          <button
             onClick={onEditToggle}
-            variant={isEditMode ? "danger" : "primary"}
-            className={`min-w-[160px] py-3 text-base font-medium shadow-sm transition-all ${
-              !isEditMode ? "bg-blue-600 hover:bg-blue-700 text-white" : ""
-            }`}
+            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${isEditMode
+                ? "bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400"
+                : "bg-[#FF7700] hover:bg-[#FF8800] text-white shadow-lg shadow-[#FF7700]/20"
+              }`}
           >
             {isEditMode ? "❌ Hủy chỉnh sửa" : "✏️ Chỉnh sửa hồ sơ"}
-          </Button>
-          {!isEditMode && (
-            <Button
-              variant="outline"
-              className="min-w-[160px] border-gray-300 text-gray-700 hover:bg-gray-50"
-            >
-              🔒 Đổi mật khẩu
-            </Button>
-          )}
+          </button>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }

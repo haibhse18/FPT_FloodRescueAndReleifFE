@@ -64,11 +64,11 @@
 | Property | Value |
 |----------|-------|
 | **Method** | `POST` |
-| **Endpoint** | `/api/requests/addRequest` |
+| **Endpoint** | `/api/requests` |
 | **Description** | Gửi yêu cầu cứu hộ / cứu trợ với URL ảnh từ Frontend |
 | **Request** | `{ type, latitude, longitude, description, imageUrls[], priority, peopleCount, requestSupply[] }` |
 | **Response** | `{ requestId, requestMedia[] }` |
-| **Auth** | ❌ Không |
+| **Auth** | ✅ Citizen |
 | **Note** | Frontend upload files trước, gửi URLs. Backend chỉ lưu URLs. |
 
 ### Get All Requests

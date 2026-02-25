@@ -79,7 +79,7 @@ export default function CoordinatorRequestDetailPage({ params }: Props) {
         userName: (data as any).userName,
         displayName: (data as any).displayName,
         peopleCount: data.numberOfPeople,
-        requestSupply: (data as any).requestSupply,
+        requestSupplies: (data as any).requestSupplies ?? (data as any).requestSupply,
       } as unknown as CoordinatorRequest;
 
       setSelectedPriority(coordinatorData.priority); // Set initial priority
@@ -100,13 +100,12 @@ export default function CoordinatorRequestDetailPage({ params }: Props) {
       await updateRequestStatusUseCase.execute(request.requestId, newStatus);
 
       // Show success and refresh
-      alert(
-        `✅ Đã cập nhật trạng thái thành: ${
-          newStatus === "Verified" ? "Đã xác minh"
-          : newStatus === "Spam" ? "Spam"
-          : "Từ chối"
-        }`,
-      );
+      const label =
+        (newStatus === "Verified" || newStatus === "VERIFIED") ? "Đã xác minh" :
+          (newStatus === "Rejected" || newStatus === "REJECTED" || newStatus === "Spam") ? "Từ chối" :
+            (newStatus === "Closed" || newStatus === "CLOSED") ? "Đã đóng" :
+              newStatus;
+      alert(`✅ Đã cập nhật trạng thái thành: ${label}`);
 
       // Refresh data
       await fetchRequestDetail();
@@ -152,11 +151,12 @@ export default function CoordinatorRequestDetailPage({ params }: Props) {
 
   const confirmAction = () => {
     if (actionType === "verify") {
-      handleStatusUpdate("Verified");
+      handleStatusUpdate("VERIFIED");
     } else if (actionType === "spam") {
-      handleStatusUpdate("Spam");
+      // No "Spam" endpoint in swagger — treat as REJECTED
+      handleStatusUpdate("REJECTED");
     } else if (actionType === "reject") {
-      handleStatusUpdate("Rejected");
+      handleStatusUpdate("REJECTED");
     }
   };
 
@@ -251,9 +251,8 @@ export default function CoordinatorRequestDetailPage({ params }: Props) {
               </select>
 
               <div
-                className={`px-4 py-2 rounded-lg text-sm font-bold ${
-                  PRIORITY_COLORS[request.priority]
-                } ring-2 ring-offset-2 ring-offset-[#133249]`}
+                className={`px-4 py-2 rounded-lg text-sm font-bold ${PRIORITY_COLORS[request.priority]
+                  } ring-2 ring-offset-2 ring-offset-[#133249]`}
               >
                 {PRIORITY_LABELS[request.priority]}
               </div>
@@ -321,13 +320,13 @@ export default function CoordinatorRequestDetailPage({ params }: Props) {
           </section>
 
           {/* Supplies Requested */}
-          {request.requestSupply && request.requestSupply.length > 0 && (
+          {((request.requestSupplies ?? (request as any).requestSupply) || []).length > 0 && (
             <section className="bg-white/5 border border-white/10 rounded-xl p-6">
               <h2 className="text-white font-bold text-xl mb-4">
                 Vật tư yêu cầu
               </h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                {request.requestSupply.map((supply, idx) => (
+                {(request.requestSupplies ?? (request as any).requestSupply ?? []).map((supply: any, idx: number) => (
                   <div
                     key={idx}
                     className="bg-white/5 border border-white/10 rounded-lg p-4"
@@ -336,7 +335,7 @@ export default function CoordinatorRequestDetailPage({ params }: Props) {
                       {supply.supplyName || `Supply ${supply.supplyId}`}
                     </div>
                     <div className="text-gray-400 text-sm">
-                      Số lượng: {supply.quantity}
+                      Số lượng: {supply.requestedQty ?? supply.quantity ?? "?"}
                     </div>
                   </div>
                 ))}
@@ -439,11 +438,10 @@ export default function CoordinatorRequestDetailPage({ params }: Props) {
               <button
                 onClick={confirmAction}
                 disabled={isUpdating}
-                className={`flex-1 px-4 py-3 rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                  actionType === "verify" ?
+                className={`flex-1 px-4 py-3 rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${actionType === "verify" ?
                     "bg-green-500 hover:bg-green-600 text-white"
-                  : "bg-red-500 hover:bg-red-600 text-white"
-                }`}
+                    : "bg-red-500 hover:bg-red-600 text-white"
+                  }`}
               >
                 {isUpdating ? "Đang xử lý..." : "Xác nhận"}
               </button>

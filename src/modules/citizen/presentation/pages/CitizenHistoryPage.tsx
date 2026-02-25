@@ -26,10 +26,39 @@ export default function CitizenHistoryPage() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRequests();
   }, []);
+
+  const handleCancelRequest = async (requestId: string) => {
+    if (!window.confirm("Bạn có chắc muốn hủy yêu cầu này không?")) return;
+    setCancellingId(requestId);
+    try {
+      await requestRepository.cancelRequest(requestId);
+      // Optimistically update local state so UI refreshes instantly
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === requestId
+            ? {
+              ...r,
+              originalStatus: "CANCELLED",
+              status: "completed",
+              statusText: "Đã hủy",
+              statusColor: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+            }
+            : r,
+        ),
+      );
+    } catch (err: any) {
+      alert(
+        `❌ ${err?.response?.data?.message || err.message || "Không thể hủy yêu cầu. Vui lòng thử lại."}`,
+      );
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   const fetchRequests = async () => {
     setIsLoading(true);
@@ -43,36 +72,24 @@ export default function CitizenHistoryPage() {
           string,
           { text: string; color: string; filter: string }
         > = {
-          Submitted: {
-            text: "Chờ xử lý",
-            color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
-            filter: "pending",
-          },
-          Accepted: {
-            text: "Đã chấp nhận",
-            color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-            filter: "in_progress",
-          },
-          Rejected: {
-            text: "Bị từ chối",
-            color: "bg-red-500/20 text-red-400 border-red-500/30",
-            filter: "completed",
-          },
-          "In Progress": {
-            text: "Đang xử lý",
-            color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-            filter: "in_progress",
-          },
-          Completed: {
-            text: "Hoàn thành",
-            color: "bg-green-500/20 text-green-400 border-green-500/30",
-            filter: "completed",
-          },
-          Cancelled: {
-            text: "Đã hủy",
-            color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
-            filter: "completed",
-          },
+          // ── Canonical UPPERCASE (swagger enum) ──
+          SUBMITTED: { text: "Chờ xử lý", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "pending" },
+          VERIFIED: { text: "Đã xác nhận", color: "bg-blue-500/20 text-blue-400 border-blue-500/30", filter: "in_progress" },
+          REJECTED: { text: "Bị từ chối", color: "bg-red-500/20 text-red-400 border-red-500/30", filter: "completed" },
+          IN_PROGRESS: { text: "Đang xử lý", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", filter: "in_progress" },
+          PARTIALLY_FULFILLED: { text: "Hoàn thành một phần", color: "bg-orange-500/20 text-orange-400 border-orange-500/30", filter: "in_progress" },
+          FULFILLED: { text: "Hoàn thành", color: "bg-green-500/20 text-green-400 border-green-500/30", filter: "completed" },
+          CLOSED: { text: "Đã đóng", color: "bg-green-700/20 text-green-500 border-green-700/30", filter: "completed" },
+          CANCELLED: { text: "Đã hủy", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "completed" },
+          // ── Legacy / mixed-case fallbacks ──
+          Submitted: { text: "Chờ xử lý", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "pending" },
+          Accepted: { text: "Đã chấp nhận", color: "bg-blue-500/20 text-blue-400 border-blue-500/30", filter: "in_progress" },
+          Verified: { text: "Đã xác nhận", color: "bg-blue-500/20 text-blue-400 border-blue-500/30", filter: "in_progress" },
+          Rejected: { text: "Bị từ chối", color: "bg-red-500/20 text-red-400 border-red-500/30", filter: "completed" },
+          "In Progress": { text: "Đang xử lý", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", filter: "in_progress" },
+          Fulfilled: { text: "Hoàn thành", color: "bg-green-500/20 text-green-400 border-green-500/30", filter: "completed" },
+          Completed: { text: "Hoàn thành", color: "bg-green-500/20 text-green-400 border-green-500/30", filter: "completed" },
+          Cancelled: { text: "Đã hủy", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "completed" },
         };
 
         const status = statusMap[req.status] || statusMap["Submitted"];
@@ -106,7 +123,7 @@ export default function CitizenHistoryPage() {
             "medium",
           peopleCount: req.peopleCount || req.numberOfPeople || 1,
           description: req.description,
-          originalStatus: req.status || "Submitted",
+          originalStatus: req.status || "SUBMITTED",
         };
       });
 
@@ -440,23 +457,29 @@ export default function CitizenHistoryPage() {
                         </div>
                       </div>
                       <div className="flex gap-2 mt-4">
-                        {/* Mini 4-step status progress */}
+                        {/* Mini 6-step status progress — matches swagger lifecycle */}
                         <div className="flex-1">
                           {(() => {
                             const isCancelled =
-                              request.originalStatus === "Rejected" ||
-                              request.originalStatus === "Cancelled";
+                              ["Rejected", "REJECTED", "Cancelled", "CANCELLED"].includes(
+                                request.originalStatus,
+                              );
+                            // 6 steps matching swagger: SUBMITTED→VERIFIED→IN_PROGRESS→PARTIALLY_FULFILLED→FULFILLED→CLOSED
                             const steps = [
-                              { label: "Gửi" },
-                              { label: "Tiếp nhận" },
-                              { label: "Xử lý" },
-                              { label: "Xong" },
+                              { label: "Gửi" },         // 0
+                              { label: "Xác nhận" },    // 1
+                              { label: "Xử lý" },       // 2
+                              { label: "Cứu trợ" },     // 3
+                              { label: "Xong" },         // 4
+                              { label: "Đóng" },         // 5
                             ];
                             const stepIndex =
-                              request.originalStatus === "Completed" ? 3
-                                : request.originalStatus === "In Progress" ? 2
-                                  : request.originalStatus === "Accepted" ? 1
-                                    : 0;
+                              ["CLOSED"].includes(request.originalStatus) ? 5
+                                : ["FULFILLED", "Fulfilled", "Completed"].includes(request.originalStatus) ? 4
+                                  : ["PARTIALLY_FULFILLED"].includes(request.originalStatus) ? 3
+                                    : ["IN_PROGRESS", "In Progress"].includes(request.originalStatus) ? 2
+                                      : ["VERIFIED", "Verified", "Accepted"].includes(request.originalStatus) ? 1
+                                        : 0; // SUBMITTED / Submitted / Pending / unknown
                             return (
                               <div className="space-y-1 mb-3">
                                 {/* Step nodes + connectors */}
@@ -530,6 +553,26 @@ export default function CitizenHistoryPage() {
                         >
                           👁️ Xem chi tiết
                         </Link>
+
+                        {/* Cancel button — only for SUBMITTED requests */}
+                        {["SUBMITTED", "Submitted", "Pending", "pending"].includes(
+                          request.originalStatus,
+                        ) && (
+                            <button
+                              onClick={() => handleCancelRequest(request.id)}
+                              disabled={cancellingId === request.id}
+                              className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 rounded-xl text-red-400 hover:text-red-300 text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                            >
+                              {cancellingId === request.id ? (
+                                <>
+                                  <span className="w-3.5 h-3.5 border-2 border-red-400 border-t-transparent rounded-full animate-spin inline-block" />
+                                  Hủy...
+                                </>
+                              ) : (
+                                "🚫 Hủy"
+                              )}
+                            </button>
+                          )}
                       </div>
                     </div>
                   ))

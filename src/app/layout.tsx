@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   description: "Flood Rescue and Relief Management System",
 };
 
+import { Toaster as SonnerToaster } from "@/shared/ui/components/sonner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,6 +24,7 @@ export default function RootLayout({
         <ErrorBoundary>
           <AuthInitializer />
           {children}
+          <SonnerToaster position="top-right" />
         </ErrorBoundary>
       </body>
     </html>

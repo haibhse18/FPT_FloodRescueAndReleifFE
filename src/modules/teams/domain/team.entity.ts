@@ -1,48 +1,68 @@
 /**
  * Team Entity - Domain layer
- * Định nghĩa cấu trúc dữ liệu Team, không phụ thuộc framework
+ * Định nghĩa cấu trúc dữ liệu Team theo ERD v2.2
  */
 
-export type TeamStatus = 'available' | 'busy' | 'offline';
+// ─── Enums ───────────────────────────────────────────────
 
-export type RequestStatus = 'in_progress' | 'completed' | 'failed';
+export type TeamStatus = "AVAILABLE" | "BUSY";
+
+// ─── Team Member (populated user) ───────────────────────
 
 export interface TeamMember {
-    id: string;
-    name: string;
-    role: string;
-    phone?: string;
+  _id: string;
+  userName: string;
+  displayName?: string;
+  email: string;
+  phoneNumber?: string;
+  role: string;
 }
+
+// ─── Main Team Entity ────────────────────────────────────
 
 export interface Team {
-    id: string;
-    name: string;
-    status: TeamStatus;
-    currentLocation?: {
-        latitude: number;
-        longitude: number;
-    };
-    members: TeamMember[];
+  _id: string;
+  name: string;
+  leaderId?: string | null;
+  status: TeamStatus;
+  members?: TeamMember[];
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface AssignedRequest {
-    id: string;
-    type: string;
-    location: string;
-    latitude: number;
-    longitude: number;
-    description: string;
-    urgencyLevel: string;
-    status: string;
-    assignedAt: Date;
+// ─── Paginated ───────────────────────────────────────────
+
+export interface PaginatedTeams {
+  data: Team[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
-export interface UpdateRequestStatusData {
-    status: RequestStatus;
-    note?: string;
+// ─── Filter ──────────────────────────────────────────────
+
+export interface GetTeamsFilter {
+  status?: TeamStatus;
+  page?: number;
+  limit?: number;
 }
 
-export interface LocationData {
-    lat: number;
-    lng: number;
+// ─── Input DTOs ──────────────────────────────────────────
+
+export interface CreateTeamInput {
+  name: string;
+  leaderId?: string;
+}
+
+export interface UpdateTeamInput {
+  name?: string;
+}
+
+export interface ChangeLeaderInput {
+  leaderId: string;
+}
+
+export interface AddMemberInput {
+  userId: string;
 }

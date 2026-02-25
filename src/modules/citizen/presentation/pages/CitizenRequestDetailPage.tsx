@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -27,6 +27,14 @@ const STATUS_META: Record<
     string,
     { label: string; color: string; icon: string; step: number }
 > = {
+    // Backend enum: Pending | Accepted | In Progress | Completed | Rejected | Cancelled
+    Pending: {
+        label: "Chờ xử lý",
+        color: "bg-gray-500/20 text-gray-300 border-gray-500/30",
+        icon: "⏳",
+        step: 0,
+    },
+    // Legacy / fallback alias
     Submitted: {
         label: "Chờ xử lý",
         color: "bg-gray-500/20 text-gray-300 border-gray-500/30",
@@ -91,12 +99,20 @@ const URGENCY_META: Record<string, { label: string; color: string }> = {
 };
 
 const TYPE_LABELS: Record<string, string> = {
+    // Lowercase (legacy)
     flood: "🌊 Lũ lụt",
     trapped: "🆘 Mắc kẹt",
     injury: "🩹 Chấn thương",
     landslide: "⛰️ Sạt lở",
     other: "⚠️ Khác",
-    // API category values
+    // Backend enum values (capitalized)
+    Flood: "🌊 Lũ lụt",
+    Trapped: "🆘 Mắc kẹt",
+    Injured: "🩹 Chấn thương",
+    Injury: "🩹 Chấn thương",
+    Landslide: "⛰️ Sạt lở",
+    Other: "⚠️ Khác",
+    // Request type
     Rescue: "🚁 Cứu hộ",
     rescue: "🚁 Cứu hộ",
     Relief: "📦 Cứu trợ",
@@ -122,7 +138,9 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-    const [actionLoading, setActionLoading] = useState<"cancel" | "confirm" | null>(null);
+    const [imgLoaded, setImgLoaded] = useState(false);
+    const touchStartX = useRef<number | null>(null);
+    const [actionLoading, setActionLoading] = useState<"confirm" | null>(null);
     const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
     useEffect(() => {
@@ -143,19 +161,42 @@ export default function CitizenRequestDetailPage({ id }: Props) {
         }
     };
 
-    const handleCancel = async () => {
-        if (!window.confirm("Bạn có chắc muốn hủy yêu cầu này không?")) return;
-        setActionLoading("cancel");
-        try {
-            await requestRepository.cancelRequest(id);
-            setRequest((prev: any) => ({ ...prev, status: "Cancelled" }));
-            setActionSuccess("Đã hủy yêu cầu thành công.");
-        } catch (err: any) {
-            alert(`❌ ${err?.response?.data?.message || err.message || "Không thể hủy yêu cầu"}`);
-        } finally {
-            setActionLoading(null);
+    /* ─── Lightbox helpers ─── */
+    const openLightbox = useCallback((i: number) => {
+        setImgLoaded(false);
+        setLightboxIndex(i);
+    }, []);
+
+    const closeLightbox = useCallback(() => setLightboxIndex(null), []);
+
+    const goPrev = useCallback(() =>
+        setLightboxIndex((prev) => (prev !== null && prev > 0 ? (setImgLoaded(false), prev - 1) : prev)), []);
+
+    const goNext = useCallback((total: number) =>
+        setLightboxIndex((prev) => (prev !== null && prev < total - 1 ? (setImgLoaded(false), prev + 1) : prev)), []);
+
+    // Keyboard navigation
+    useEffect(() => {
+        if (lightboxIndex === null) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") closeLightbox();
+            if (e.key === "ArrowLeft") goPrev();
+            if (e.key === "ArrowRight") goNext(images.length);
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [lightboxIndex]);
+
+    // Lock body scroll when lightbox open
+    useEffect(() => {
+        if (lightboxIndex !== null) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "";
         }
-    };
+        return () => { document.body.style.overflow = ""; };
+    }, [lightboxIndex]);
 
     const handleConfirmSafe = async () => {
         if (!window.confirm("Xác nhận bạn đã được cứu hộ / nhận hỗ trợ an toàn?")) return;
@@ -217,8 +258,29 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     const urgencyMeta =
         URGENCY_META[request.priority || request.urgencyLevel || "normal"] || URGENCY_META["normal"];
     const currentStep = meta.step;
-    const shortId = (request.id || "").slice(-8).toUpperCase();
-    const images: string[] = request.imageUrls || request.images || [];
+    const shortId = (request._id || request.requestId || request.id || "").slice(-8).toUpperCase();
+    // Images: backend stores as imageUrls[] or in requestMedia[].url
+    const images: string[] =
+        request.imageUrls?.length > 0 ? request.imageUrls :
+            request.images?.length > 0 ? request.images :
+                Array.isArray(request.requestMedia)
+                    ? (request.requestMedia as any[]).map((m) => m?.url || m?.fileUrl || m?.path || (typeof m === "string" ? m : "")).filter(Boolean)
+                    : [];
+
+    // Parse location: backend trả về GeoJSON { type:"Point", coordinates:[lon,lat] }
+    const parsedLoc = (() => {
+        const loc = request.location;
+        if (!loc) return null;
+        if (typeof loc === "string") return { lat: null as number | null, lon: null as number | null, text: loc };
+        if (loc.type === "Point" && Array.isArray(loc.coordinates) && loc.coordinates.length >= 2) {
+            const [lon, lat] = loc.coordinates as [number, number];
+            return { lat, lon, text: `${lat.toFixed(5)}, ${lon.toFixed(5)}` };
+        }
+        return null;
+    })();
+    const mapLat: number | null = parsedLoc?.lat ?? request.latitude ?? null;
+    const mapLon: number | null = parsedLoc?.lon ?? request.longitude ?? null;
+    const locationText: string | null = parsedLoc?.text ?? (mapLat != null ? `${(mapLat as number).toFixed(5)}, ${(mapLon as number).toFixed(5)}` : null);
 
     return (
         <div className="min-h-screen bg-[#133249] text-white">
@@ -380,26 +442,25 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                 )}
 
                 {/* Location + Map */}
-                {(request.location ||
-                    (request.latitude && request.longitude)) && (
-                        <div className="bg-black/20 border border-white/10 rounded-xl p-4 space-y-3">
-                            <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">
-                                📍 Vị trí
-                            </p>
-                            {request.location && (
-                                <p className="text-gray-100 text-sm">{request.location}</p>
-                            )}
-                            {request.latitude && request.longitude && (
-                                <div className="h-48 rounded-xl overflow-hidden border border-white/10">
-                                    <OpenMap
-                                        latitude={request.latitude}
-                                        longitude={request.longitude}
-                                        address={request.location || "Vị trí yêu cầu"}
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    )}
+                {(locationText || (mapLat !== null && mapLon !== null)) && (
+                    <div className="bg-black/20 border border-white/10 rounded-xl p-4 space-y-3">
+                        <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">
+                            📍 Vị trí
+                        </p>
+                        {locationText && (
+                            <p className="text-gray-100 text-sm">{locationText}</p>
+                        )}
+                        {mapLat !== null && mapLon !== null && (
+                            <div className="h-48 rounded-xl overflow-hidden border border-white/10">
+                                <OpenMap
+                                    latitude={mapLat}
+                                    longitude={mapLon}
+                                    address={locationText || "Vị trí yêu cầu"}
+                                />
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Images */}
                 {images.length > 0 && (
@@ -412,15 +473,24 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                                 <button
                                     key={i}
                                     type="button"
-                                    onClick={() => setLightboxIndex(i)}
-                                    className="aspect-square rounded-lg overflow-hidden border border-white/10 hover:border-[#FF7700]/50 transition-all group focus:outline-none focus:ring-2 focus:ring-[#FF7700]"
+                                    onClick={() => openLightbox(i)}
+                                    className="relative aspect-square rounded-lg overflow-hidden border border-white/10 hover:border-[#FF7700]/60 transition-all group focus:outline-none focus:ring-2 focus:ring-[#FF7700]"
+                                    aria-label={`Xem ảnh ${i + 1}`}
                                 >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         src={url}
                                         alt={`Ảnh hiện trường ${i + 1}`}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                                     />
+                                    {/* overlay on hover */}
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 flex items-center justify-center">
+                                        <span className="text-white text-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 drop-shadow-lg">🔍</span>
+                                    </div>
+                                    {/* index badge */}
+                                    <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+                                        {i + 1}
+                                    </span>
                                 </button>
                             ))}
                         </div>
@@ -435,19 +505,14 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                     </div>
                 ) : (
                     <div className="flex flex-col gap-3">
-                        {/* Cancel: only when Submitted */}
-                        {(request.status === "Submitted" || request.status === "SUBMITTED") && (
-                            <button
-                                onClick={handleCancel}
-                                disabled={actionLoading !== null}
-                                className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 rounded-xl text-red-400 font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {actionLoading === "cancel" ? (
-                                    <><div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> Đang hủy...</>
-                                ) : (
-                                    <>🚫 Hủy yêu cầu này</>
-                                )}
-                            </button>
+                        {/* Cancel: show info for Pending/Submitted — citizen cannot self-cancel via API (Coordinator-only endpoint) */}
+                        {["Pending", "PENDING", "pending", "Submitted", "SUBMITTED"].includes(request.status) && (
+                            <div className="flex items-start gap-3 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-yellow-300 text-sm">
+                                <span className="text-lg leading-none mt-0.5">ℹ️</span>
+                                <span>
+                                    Yêu cầu đang chờ xử lý. Nếu muốn hủy, vui lòng liên hệ điều phối viên hoặc hotline hỗ trợ.
+                                </span>
+                            </div>
                         )}
 
                         {/* Confirm safe: when Completed or Fulfilled or In Progress (rescue done) */}
@@ -478,49 +543,106 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                 </Link>
             </main>
 
-            {/* Lightbox */}
+            {/* ─── Lightbox ─── */}
             {lightboxIndex !== null && (
                 <div
-                    className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-                    onClick={() => setLightboxIndex(null)}
+                    className="fixed inset-0 z-[9999] flex flex-col"
+                    style={{ background: "rgba(0,0,0,0.95)" }}
+                    // touch swipe
+                    onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+                    onTouchEnd={(e) => {
+                        if (touchStartX.current === null) return;
+                        const delta = e.changedTouches[0].clientX - touchStartX.current;
+                        if (delta > 60) goPrev();
+                        else if (delta < -60) goNext(images.length);
+                        touchStartX.current = null;
+                    }}
                 >
-                    <button
-                        onClick={() => setLightboxIndex(null)}
-                        className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                    {/* ── Top bar ── */}
+                    <div className="flex items-center justify-between px-4 py-3 flex-shrink-0">
+                        <span className="text-white/70 text-sm font-medium">
+                            📸 {lightboxIndex + 1} / {images.length}
+                        </span>
+                        <button
+                            onClick={closeLightbox}
+                            className="w-9 h-9 bg-white/10 hover:bg-white/25 rounded-full flex items-center justify-center text-white font-bold text-lg transition-colors"
+                            aria-label="Đóng"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    {/* ── Image area ── */}
+                    <div
+                        className="flex-1 flex items-center justify-center px-2 relative min-h-0"
+                        onClick={closeLightbox}
                     >
-                        ✕
-                    </button>
-                    {lightboxIndex > 0 && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setLightboxIndex(lightboxIndex - 1);
-                            }}
-                            className="absolute left-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                        >
-                            ←
-                        </button>
+                        {/* Prev */}
+                        {lightboxIndex > 0 && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                                className="absolute left-2 z-10 w-11 h-11 bg-white/10 hover:bg-white/25 rounded-full flex items-center justify-center text-white text-xl font-bold transition-colors shadow-lg"
+                                aria-label="Ảnh trước"
+                            >
+                                ‹
+                            </button>
+                        )}
+
+                        {/* Loading spinner */}
+                        {!imgLoaded && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                            </div>
+                        )}
+
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            key={lightboxIndex}
+                            src={images[lightboxIndex]}
+                            alt={`Ảnh hiện trường ${lightboxIndex + 1}`}
+                            onLoad={() => setImgLoaded(true)}
+                            onClick={(e) => e.stopPropagation()}
+                            className={`max-w-full max-h-full object-contain rounded-xl select-none transition-opacity duration-200 ${imgLoaded ? "opacity-100" : "opacity-0"
+                                }`}
+                            style={{ maxHeight: "calc(100vh - 180px)" }}
+                            draggable={false}
+                        />
+
+                        {/* Next */}
+                        {lightboxIndex < images.length - 1 && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); goNext(images.length); }}
+                                className="absolute right-2 z-10 w-11 h-11 bg-white/10 hover:bg-white/25 rounded-full flex items-center justify-center text-white text-xl font-bold transition-colors shadow-lg"
+                                aria-label="Ảnh tiếp"
+                            >
+                                ›
+                            </button>
+                        )}
+                    </div>
+
+                    {/* ── Thumbnail strip ── */}
+                    {images.length > 1 && (
+                        <div className="flex-shrink-0 px-4 py-3 flex gap-2 justify-center overflow-x-auto">
+                            {images.map((url, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => openLightbox(i)}
+                                    className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${i === lightboxIndex
+                                            ? "border-[#FF7700] scale-110 shadow-lg shadow-orange-500/30"
+                                            : "border-white/20 hover:border-white/50 opacity-60 hover:opacity-100"
+                                        }`}
+                                    aria-label={`Chuyển sang ảnh ${i + 1}`}
+                                >
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={url} alt={`thumb ${i + 1}`} className="w-full h-full object-cover" />
+                                </button>
+                            ))}
+                        </div>
                     )}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                        src={images[lightboxIndex]}
-                        alt={`Ảnh ${lightboxIndex + 1}`}
-                        className="max-w-full max-h-full object-contain rounded-xl"
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                    {lightboxIndex < images.length - 1 && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setLightboxIndex(lightboxIndex + 1);
-                            }}
-                            className="absolute right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                        >
-                            →
-                        </button>
-                    )}
-                    <p className="absolute bottom-4 text-gray-400 text-sm">
-                        {lightboxIndex + 1} / {images.length}
+
+                    {/* ── Hint ── */}
+                    <p className="text-center text-white/30 text-xs pb-3 flex-shrink-0">
+                        Bấm ngoài ảnh để đóng · Phím ← → để chuyển · Vuốt để lướt
                     </p>
                 </div>
             )}

@@ -1,97 +1,106 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { GetAllRequestsUseCase } from "@/modules/requests/application/getAllCoordinatorRequests.usecase";
+import { useSearchParams } from "next/navigation";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
-import { CoordinatorRequest } from "@/modules/requests/domain/request.entity";
+import type {
+  CoordinatorRequest,
+  RequestStatus,
+  GetRequestsFilter,
+} from "@/modules/requests/domain/request.entity";
 
-const getAllRequestsUseCase = new GetAllRequestsUseCase(requestRepository);
+// ─── Constants ────────────────────────────────────────────
 
-// Priority badge colors
-const PRIORITY_COLORS: Record<string, string> = {
-  critical: "bg-red-500 text-white ring-red-500",
-  high: "bg-[#FF7700] text-white ring-[#FF7700]",
-  medium: "bg-yellow-500 text-white ring-yellow-500",
-  low: "bg-green-500 text-white ring-green-500",
-  normal: "bg-blue-500 text-white ring-blue-500",
+const STATUS_TABS: { label: string; value: RequestStatus | "ALL" }[] = [
+  { label: "Tất cả", value: "ALL" },
+  { label: "📩 Chờ xử lý", value: "SUBMITTED" },
+  { label: "✅ Đã xác minh", value: "VERIFIED" },
+  { label: "🔄 Đang xử lý", value: "IN_PROGRESS" },
+  { label: "⚠️ Một phần", value: "PARTIALLY_FULFILLED" },
+  { label: "✔️ Hoàn thành", value: "FULFILLED" },
+  { label: "📁 Đã đóng", value: "CLOSED" },
+  { label: "🚫 Đã hủy", value: "CANCELLED" },
+  { label: "❌ Từ chối", value: "REJECTED" },
+];
+
+const STATUS_COLORS: Record<string, string> = {
+  SUBMITTED: "bg-gray-500/20 text-gray-300 border-gray-500/30",
+  VERIFIED: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+  REJECTED: "bg-red-600/20 text-red-300 border-red-600/30",
+  IN_PROGRESS: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
+  PARTIALLY_FULFILLED: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+  FULFILLED: "bg-green-500/20 text-green-300 border-green-500/30",
+  CLOSED: "bg-gray-600/20 text-gray-400 border-gray-600/30",
+  CANCELLED: "bg-gray-500/20 text-gray-400 border-gray-500/30",
 };
 
-// Status badge colors
-const STATUS_COLORS = {
-  Submitted: "bg-gray-500 text-white",
-  Verified: "bg-blue-500 text-white",
-  "In Progress": "bg-yellow-500 text-white",
-  Completed: "bg-green-500 text-white",
-  Spam: "bg-red-500 text-white line-through",
-  Rejected: "bg-red-600 text-white",
-  Cancelled: "bg-gray-400 text-white",
-} as const;
+const PRIORITY_COLORS: Record<string, string> = {
+  Critical: "bg-red-500 text-white ring-red-500",
+  High: "bg-orange-500 text-white ring-orange-500",
+  Normal: "bg-blue-500 text-white ring-blue-500",
+};
 
 const PRIORITY_LABELS: Record<string, string> = {
-  critical: "🔴 KHẨN CẤP",
-  high: "🟠 CAO",
-  medium: "🟡 TRUNG BÌNH",
-  low: "🟢 THẤP",
-  normal: "🔵 BÌNH THƯỜNG",
+  Critical: "🔴 KHẨN CẤP",
+  High: "🟠 CAO",
+  Normal: "🔵 BÌNH THƯỜNG",
 };
 
-export default function CoordinatorDashboardPage() {
+// ─── Component ────────────────────────────────────────────
+
+export default function CoordinatorRequestsPage() {
+  const searchParams = useSearchParams();
+  const initStatus = (searchParams?.get("status") as RequestStatus) || "ALL";
+
   const [requests, setRequests] = useState<CoordinatorRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [filterPriority, setFilterPriority] = useState<string>("all");
-
-  // Stats
-  const [stats, setStats] = useState({
-    total: 0,
-    submitted: 0,
-    verified: 0,
-    inProgress: 0,
-    completed: 0,
-    critical: 0,
-  });
+  const [activeTab, setActiveTab] = useState<RequestStatus | "ALL">(initStatus);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    fetchRequests();
-  }, [filterStatus, filterPriority]);
+    const status = searchParams?.get("status") as RequestStatus;
+    // Only update if it's a valid tab and differs
+    if (status && STATUS_TABS.some((t) => t.value === status)) {
+      setActiveTab(status);
+      setPage(1);
+    }
+  }, [searchParams]);
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-
     try {
-      const filters: any = {};
-      if (filterStatus !== "all") filters.status = filterStatus;
-      if (filterPriority !== "all") filters.priority = filterPriority;
+      const filters: GetRequestsFilter = { page, limit: 15 };
+      if (activeTab !== "ALL") filters.status = activeTab;
 
-      const result = await getAllRequestsUseCase.execute(filters);
+      const result = await requestRepository.getAllRequests(filters);
       setRequests(result.data || []);
-
-      // Calculate stats
-      const allRequests = result.data || [];
-      setStats({
-        total: allRequests.length,
-        submitted: allRequests.filter((r) => r.status === "Submitted").length,
-        verified: allRequests.filter((r) => r.status === "Verified").length,
-        inProgress: allRequests.filter((r) => r.status === "In Progress")
-          .length,
-        completed: allRequests.filter((r) => r.status === "Completed").length,
-        critical: allRequests.filter((r) => r.priority === "critical").length,
-      });
+      setTotalPages(result.totalPages || 1);
+      setTotal(result.total || 0);
     } catch (err: any) {
       setError(err.message || "Không thể tải danh sách yêu cầu");
       console.error("Error fetching requests:", err);
     } finally {
       setIsLoading(false);
     }
+  }, [activeTab, page]);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
+
+  const handleTabChange = (tab: RequestStatus | "ALL") => {
+    setActiveTab(tab);
+    setPage(1);
   };
 
   const formatDate = (date: string | Date | undefined) => {
     if (!date) return "N/A";
-    const d = new Date(date);
-    return d.toLocaleString("vi-VN", {
+    return new Date(date).toLocaleString("vi-VN", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -102,129 +111,59 @@ export default function CoordinatorDashboardPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Fixed Header */}
+      {/* Header */}
       <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-white text-2xl lg:text-3xl font-extrabold tracking-tight leading-tight uppercase">
-              Bảng điều phối
-            </h1>
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full w-fit">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-              <span className="text-xs font-semibold text-white">
-                Coordinator Dashboard
-              </span>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-white text-2xl lg:text-3xl font-extrabold tracking-tight uppercase">
+                Yêu cầu cứu trợ
+              </h1>
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full w-fit mt-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                <span className="text-xs font-semibold text-white">
+                  {total} yêu cầu
+                </span>
+              </div>
             </div>
+            <button
+              onClick={fetchRequests}
+              disabled={isLoading}
+              className="bg-[#FF7700] hover:bg-[#FF8820] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors disabled:opacity-50"
+            >
+              {isLoading ?
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  Đang tải...
+                </span>
+              : "🔄 Làm mới"}
+            </button>
           </div>
         </div>
       </header>
 
       <main className="pb-24 lg:pb-0 overflow-auto">
-        {/* Background Pattern - Removed as it is in layout */}
-
         <div className="relative p-4 lg:p-8 space-y-6 max-w-7xl mx-auto">
-          {/* Quick Stats */}
-          <section
-            className="grid grid-cols-2 lg:grid-cols-6 gap-4"
-            aria-label="Thống kê tổng quan"
-          >
-            <div className="bg-white/10 border border-white/20 rounded-xl p-4 backdrop-blur-sm">
-              <div className="text-3xl font-black text-white">
-                {stats.total}
-              </div>
-              <div className="text-sm text-gray-300 mt-1">Tổng yêu cầu</div>
-            </div>
-            <div className="bg-gray-500/20 border border-gray-500/30 rounded-xl p-4">
-              <div className="text-3xl font-black text-white">
-                {stats.submitted}
-              </div>
-              <div className="text-sm text-gray-300 mt-1">Chờ xử lý</div>
-            </div>
-            <div className="bg-blue-500/20 border border-blue-500/30 rounded-xl p-4">
-              <div className="text-3xl font-black text-white">
-                {stats.verified}
-              </div>
-              <div className="text-sm text-gray-300 mt-1">Đã xác minh</div>
-            </div>
-            <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-xl p-4">
-              <div className="text-3xl font-black text-white">
-                {stats.inProgress}
-              </div>
-              <div className="text-sm text-gray-300 mt-1">Đang xử lý</div>
-            </div>
-            <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-4">
-              <div className="text-3xl font-black text-white">
-                {stats.completed}
-              </div>
-              <div className="text-sm text-gray-300 mt-1">Hoàn thành</div>
-            </div>
-            <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-4 animate-pulse">
-              <div className="text-3xl font-black text-red-400">
-                {stats.critical}
-              </div>
-              <div className="text-sm text-red-300 mt-1">🔴 Khẩn cấp</div>
-            </div>
-          </section>
+          {/* Status Tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {STATUS_TABS.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => handleTabChange(tab.value)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeTab === tab.value ?
+                    "bg-[#FF7700] text-white"
+                  : "bg-white/5 text-gray-300 hover:bg-white/10"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-          {/* Filters */}
-          <section
-            className="bg-white/5 border border-white/10 rounded-xl p-5"
-            aria-label="Bộ lọc"
-          >
-            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-              <h2 className="text-white font-bold text-lg">Bộ lọc</h2>
-
-              <div className="flex flex-wrap gap-3 w-full lg:w-auto">
-                {/* Status Filter */}
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="bg-[#1a3a52] text-white border border-white/20 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50"
-                >
-                  <option value="all">Tất cả trạng thái</option>
-                  <option value="Submitted">Chờ xử lý</option>
-                  <option value="Verified">Đã xác minh</option>
-                  <option value="In Progress">Đang xử lý</option>
-                  <option value="Completed">Hoàn thành</option>
-                  <option value="Spam">Spam</option>
-                </select>
-
-                {/* Priority Filter */}
-                <select
-                  value={filterPriority}
-                  onChange={(e) => setFilterPriority(e.target.value)}
-                  className="bg-[#1a3a52] text-white border border-white/20 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50"
-                >
-                  <option value="all">Tất cả mức độ</option>
-                  <option value="critical">🔴 Khẩn cấp</option>
-                  <option value="high">🟠 Cao</option>
-                  <option value="normal">🟡 Bình thường</option>
-                </select>
-
-                {/* Refresh Button */}
-                <button
-                  onClick={fetchRequests}
-                  disabled={isLoading}
-                  className="bg-[#FF7700] hover:bg-[#FF8820] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50"
-                  aria-label="Làm mới danh sách"
-                >
-                  {isLoading ?
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                      Đang tải...
-                    </span>
-                  : "🔄 Làm mới"}
-                </button>
-              </div>
-            </div>
-          </section>
-
-          {/* Error State */}
+          {/* Error */}
           {error && (
-            <div
-              className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-red-200"
-              role="alert"
-            >
+            <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-red-200">
               <p className="flex items-center gap-2">
                 <span>⚠️</span>
                 <span>{error}</span>
@@ -238,7 +177,7 @@ export default function CoordinatorDashboardPage() {
             </div>
           )}
 
-          {/* Loading State */}
+          {/* Loading */}
           {isLoading && !error && (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="w-16 h-16 border-4 border-[#FF7700] border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -250,7 +189,7 @@ export default function CoordinatorDashboardPage() {
 
           {/* Requests List */}
           {!isLoading && !error && (
-            <section aria-label="Danh sách yêu cầu cứu hộ">
+            <section>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-white font-bold text-xl">
                   Danh sách yêu cầu ({requests.length})
@@ -268,18 +207,20 @@ export default function CoordinatorDashboardPage() {
               : <div className="space-y-3">
                   {requests.map((request) => (
                     <Link
-                      key={request.requestId}
-                      href={`/coordinator/requests/${request.requestId}`}
+                      key={request._id}
+                      href={`/requests/${request._id}`}
                       className="block bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-5 transition-all hover:shadow-xl hover:border-[#FF7700]/50 group"
                     >
                       <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                         {/* Priority Badge */}
                         <div
                           className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold ${
-                            PRIORITY_COLORS[request.priority]
+                            PRIORITY_COLORS[request.priority] ||
+                            PRIORITY_COLORS.Normal
                           } ring-2 ring-offset-2 ring-offset-[#133249]`}
                         >
-                          {PRIORITY_LABELS[request.priority]}
+                          {PRIORITY_LABELS[request.priority] ||
+                            request.priority}
                         </div>
 
                         {/* Request Info */}
@@ -290,7 +231,9 @@ export default function CoordinatorDashboardPage() {
                             </div>
                             <div className="flex-1">
                               <h3 className="text-white font-bold text-lg group-hover:text-[#FF7700] transition-colors">
-                                {request.displayName || request.userName}
+                                {request.userName ||
+                                  request.displayName ||
+                                  "Ẩn danh"}
                               </h3>
                               <p className="text-gray-300 text-sm line-clamp-2">
                                 {request.description}
@@ -310,23 +253,40 @@ export default function CoordinatorDashboardPage() {
                                 <span>👥 {request.peopleCount} người</span>
                               </>
                             )}
+                            {request.isDuplicated && (
+                              <>
+                                <span>•</span>
+                                <span className="text-yellow-400">
+                                  📎 Trùng lặp
+                                </span>
+                              </>
+                            )}
+                            {request.source && (
+                              <>
+                                <span>•</span>
+                                <span className="text-gray-500 text-xs">
+                                  {request.source === "COORDINATOR" ?
+                                    "Coord"
+                                  : "Citizen"}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
 
                         {/* Status Badge */}
                         <div className="flex-shrink-0">
                           <span
-                            className={`inline-block px-4 py-2 rounded-lg text-sm font-bold ${
-                              STATUS_COLORS[
-                                request.status as keyof typeof STATUS_COLORS
-                              ]
+                            className={`inline-block px-4 py-2 rounded-lg text-sm font-bold border ${
+                              STATUS_COLORS[request.status] ||
+                              STATUS_COLORS.SUBMITTED
                             }`}
                           >
                             {request.status}
                           </span>
                         </div>
 
-                        {/* Arrow Icon */}
+                        {/* Arrow */}
                         <div className="text-white/50 text-2xl group-hover:text-[#FF7700] transition-colors">
                           →
                         </div>
@@ -335,6 +295,29 @@ export default function CoordinatorDashboardPage() {
                   ))}
                 </div>
               }
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center gap-2 mt-6">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-300 disabled:opacity-30 hover:bg-white/10"
+                  >
+                    ←
+                  </button>
+                  <span className="px-3 py-1.5 text-gray-400 text-sm">
+                    {page} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-300 disabled:opacity-30 hover:bg-white/10"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
             </section>
           )}
         </div>

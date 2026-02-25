@@ -120,8 +120,8 @@ export const usersApi = {
      * PUT /citizen/profile
      */
     updateProfile: async (data: {
-        fullName?: string;
-        phone?: string;
+        displayName?: string;
+        phoneNumber?: string;
         address?: string;
     }): Promise<ApiResponse> => {
         return apiClient.put('/citizen/profile', data, {

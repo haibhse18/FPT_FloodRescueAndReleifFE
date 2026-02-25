@@ -1,6 +1,6 @@
 /**
  * Request Repository Interface - Domain layer
- * Định nghĩa contract cho request operations, không phụ thuộc implementation
+ * Định nghĩa contract cho request operations
  */
 
 import {
@@ -9,56 +9,51 @@ import {
   EmergencyRequestData,
   GetRequestsFilter,
   PaginatedRequests,
+  CoordinatorRequest,
+  VerifyRequestInput,
+  MarkDuplicateInput,
+  UpdateLocationInput,
+  UpdatePriorityInput,
+  CancelRequestInput,
+  CreateOnBehalfInput,
+  CitizenSearchResult,
 } from "./request.entity";
 
 export interface IRequestRepository {
-  /**
-   * Tạo yêu cầu cứu hộ mới
-   */
+  // ─── Citizen Operations ──────────────────────────────────
   createRescueRequest(data: CreateRescueRequestData): Promise<RescueRequest>;
-
-  /**
-   * Tạo yêu cầu khẩn cấp
-   */
   createEmergencyRequest(data: EmergencyRequestData): Promise<RescueRequest>;
-
-  /**
-   * Lấy danh sách yêu cầu của user
-   */
   getMyRequests(filters?: GetRequestsFilter): Promise<RescueRequest[]>;
-
-  /**
-   * Lấy lịch sử yêu cầu
-   */
   getHistory(): Promise<RescueRequest[]>;
-
-  /**
-   * Lấy chi tiết yêu cầu
-   */
-  getRequestDetail(requestId: string): Promise<RescueRequest>;
-
-  /**
-   * Xác nhận an toàn / đã nhận
-   */
+  getRequestDetail(requestId: string): Promise<CoordinatorRequest>;
   confirmRequest(requestId: string): Promise<void>;
 
-  /**
-   * Citizen hủy yêu cầu (chỉ khi status=Submitted)
-   */
-  cancelRequest(requestId: string): Promise<void>;
-
-  /**
-   * Lấy tất cả requests với filters (Coordinator)
-   */
+  // ─── Coordinator Operations ──────────────────────────────
   getAllRequests(filters?: GetRequestsFilter): Promise<PaginatedRequests>;
+  verifyRequest(
+    requestId: string,
+    input: VerifyRequestInput,
+  ): Promise<CoordinatorRequest>;
+  closeRequest(requestId: string): Promise<CoordinatorRequest>;
+  markDuplicate(
+    requestId: string,
+    input: MarkDuplicateInput,
+  ): Promise<CoordinatorRequest>;
+  updateLocation(
+    requestId: string,
+    input: UpdateLocationInput,
+  ): Promise<CoordinatorRequest>;
+  updateRequestPriority(
+    requestId: string,
+    input: UpdatePriorityInput,
+  ): Promise<CoordinatorRequest>;
+  cancelRequest(
+    requestId: string,
+    input?: CancelRequestInput,
+  ): Promise<CoordinatorRequest>;
+  createOnBehalf(input: CreateOnBehalfInput): Promise<CoordinatorRequest>;
+  searchCitizens(query: string): Promise<CitizenSearchResult[]>;
 
-  /**
-   * Update status của request (Coordinator)
-   */
+  /** @deprecated Use verifyRequest instead */
   updateRequestStatus(requestId: string, status: string): Promise<void>;
-
-  /**
-   * Update priority của request (Coordinator)
-   */
-  updateRequestPriority(requestId: string, priority: string): Promise<void>;
 }

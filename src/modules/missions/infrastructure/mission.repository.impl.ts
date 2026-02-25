@@ -1,68 +1,93 @@
 /**
  * Mission Repository Implementation - Infrastructure layer
- * Implement IMissionRepository interface using coordinatorApi
+ * Implement IMissionRepository using missionApi
  */
 
 import { IMissionRepository } from "../domain/mission.repository";
 import {
-  CoordinatorRequest,
+  Mission,
+  PaginatedMissions,
+  GetMissionsFilter,
+  CreateMissionInput,
+  UpdateMissionInput,
+  AssignTeamInput,
   RescueTeam,
-  GetAllRequestsFilter,
-  PriorityLevel,
 } from "../domain/mission.entity";
+import { Timeline } from "@/modules/timelines/domain/timeline.entity";
 import { missionApi } from "./mission.api";
 
 export class MissionRepositoryImpl implements IMissionRepository {
-  async getAllRequests(
-    filters?: GetAllRequestsFilter,
-  ): Promise<CoordinatorRequest[]> {
-    const response = await missionApi.getAllRequests(filters);
-    return (response as any).data || [];
+  // ─── CRUD ────────────────────────────────────────────────
+
+  async createMission(input: CreateMissionInput): Promise<Mission> {
+    const response = await missionApi.createMission(input);
+    return ((response as any).data ?? response) as Mission;
   }
 
-  async assignRescueTeam(requestId: string, teamId: string): Promise<void> {
-    await missionApi.assignRescueTeam(requestId, teamId);
+  async getMissions(filters?: GetMissionsFilter): Promise<PaginatedMissions> {
+    const response = await missionApi.getMissions(filters);
+    // Backend may return { data: [...], meta: {...} }
+    const result = response as any;
+    return {
+      data: result.data ?? [],
+      total: result.meta?.total ?? 0,
+      page: result.meta?.page ?? 1,
+      limit: result.meta?.limit ?? 10,
+      totalPages: result.meta?.totalPages ?? 1,
+    };
   }
 
-  async getRescueTeams(): Promise<RescueTeam[]> {
-    const response = await missionApi.getRescueTeams();
-    return (response as any).data || [];
+  async getMissionDetail(missionId: string): Promise<Mission> {
+    const response = await missionApi.getMissionDetail(missionId);
+    return ((response as any).data ?? response) as Mission;
   }
 
-  async updateRequestPriority(
-    requestId: string,
-    priority: PriorityLevel,
-  ): Promise<void> {
-    await missionApi.updateRequestPriority(requestId, priority);
+  async updateMission(
+    missionId: string,
+    input: UpdateMissionInput,
+  ): Promise<Mission> {
+    const response = await missionApi.updateMission(missionId, input);
+    return ((response as any).data ?? response) as Mission;
   }
 
-  async createMission(data: {
-    teamId: string;
-    requestIds: string[];
-    vehicleId?: string;
-  }): Promise<string> {
-    const response = await missionApi.createMission(data);
-    return (response as any).missionId;
+  async deleteMission(missionId: string): Promise<void> {
+    await missionApi.deleteMission(missionId);
   }
 
-  async reassignMission(missionId: string, teamId: string): Promise<void> {
-    await missionApi.reassignMission(missionId, teamId);
+  // ─── Assignment ──────────────────────────────────────────
+
+  async assignTeam(
+    missionId: string,
+    input: AssignTeamInput,
+  ): Promise<Timeline> {
+    const response = await missionApi.assignTeam(missionId, input);
+    return ((response as any).data ?? response) as Timeline;
   }
 
-  async getMissionPositions(missionId: string): Promise<any[]> {
-    const response = await missionApi.getMissionPositions(missionId);
-    return (response as any).data || response;
+  // ─── Status Control ──────────────────────────────────────
+
+  async pauseMission(missionId: string): Promise<Mission> {
+    const response = await missionApi.pauseMission(missionId);
+    return ((response as any).data ?? response) as Mission;
   }
 
-  async getAllMissions(params?: {
-    status?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<any[]> {
-    const response = await missionApi.getAllMissions(params);
-    return (response as any).data || response;
+  async resumeMission(missionId: string): Promise<Mission> {
+    const response = await missionApi.resumeMission(missionId);
+    return ((response as any).data ?? response) as Mission;
+  }
+
+  async abortMission(missionId: string): Promise<Mission> {
+    const response = await missionApi.abortMission(missionId);
+    return ((response as any).data ?? response) as Mission;
+  }
+
+  // ─── Teams ───────────────────────────────────────────────
+
+  async getTeams(params?: { status?: string }): Promise<RescueTeam[]> {
+    const response = await missionApi.getTeams(params);
+    return ((response as any).data ?? []) as RescueTeam[];
   }
 }
 
-// Singleton instance for easy access
+// Singleton instance
 export const missionRepository = new MissionRepositoryImpl();

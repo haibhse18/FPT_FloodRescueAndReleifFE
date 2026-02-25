@@ -57,16 +57,16 @@ export default function CitizenProfilePage() {
       // Fetch profile and request history in parallel
       const [userData, requests] = await Promise.allSettled([
         getCurrentUserUseCase.execute(),
-        requestRepository.getHistory(),
+        requestRepository.getMyRequests(),
       ]);
 
       if (userData.status === "fulfilled" && userData.value) {
         const u = userData.value;
         const newProfile: CitizenProfile = {
           name: u.displayName || u.userName || "Người dùng",
-          phone: (u as any).phoneNumber || "",
+          phone: u.phoneNumber || "",
           email: u.email || "",
-          address: (u as any).address || "",
+          address: u.address || "",
         };
         setProfile(newProfile);
         setEditedProfile(newProfile);

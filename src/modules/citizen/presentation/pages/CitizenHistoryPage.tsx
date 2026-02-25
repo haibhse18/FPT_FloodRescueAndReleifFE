@@ -38,7 +38,6 @@ export default function CitizenHistoryPage() {
       const data = await requestRepository.getMyRequests();
 
       // Map API response to UI format
-      if (data.length > 0) console.log("[CitizenHistory] sample response item:", JSON.stringify(data[0]));
       const mappedRequests: Request[] = data.map((req: any) => {
         const statusMap: Record<
           string,

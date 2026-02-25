@@ -13,6 +13,7 @@ import {
   RefreshResponse,
 } from "../domain/user.entity";
 import { ApiResponse } from "@/types";
+import axios from "axios";
 import axiosInstance from "@/lib/axios";
 
 /**
@@ -80,12 +81,18 @@ export const authApi = {
 
   /**
    * POST /auth/refresh
-   * Sử dụng '/auth/refresh' để khớp với logic trong interceptor của axios.ts
-   * Cookie refreshToken sẽ được tự động gửi kèm
+   * Sử dụng bare axios (KHÔNG dùng axiosInstance) để tránh interceptor tự thêm
+   * Authorization header với token hết hạn và gây vòng lặp 401.
+   * Cookie refreshToken sẽ được tự động gửi kèm (withCredentials: true).
    */
   refreshToken: async (): Promise<RefreshResponse> => {
-    const response =
-      await axiosInstance.post<ApiResponse<RefreshResponse>>("/auth/refresh");
+    const baseURL =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+    const response = await axios.post<ApiResponse<RefreshResponse>>(
+      `${baseURL}/auth/refresh`,
+      {},
+      { withCredentials: true },
+    );
     if (!response.data.data) {
       throw new Error("No data received from refresh");
     }

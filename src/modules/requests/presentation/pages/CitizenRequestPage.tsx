@@ -261,6 +261,16 @@ export default function CitizenRequestPage() {
       return;
     }
 
+    // Validate: bắt buộc phải có ít nhất 1 ảnh minh chứng
+    if (uploadedImages.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Thiếu ảnh minh chứng",
+        description: "Vui lòng tải lên ít nhất 1 ảnh để gửi yêu cầu.",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Backend enum: Flood | Trapped | Injured | Landslide | Other
@@ -423,11 +433,10 @@ export default function CitizenRequestPage() {
                         defaultDescriptionMap[type.id] || prev.description,
                     }));
                   }}
-                  className={`cursor-pointer rounded-xl p-4 border-2 transition-all ${
-                    selectedQuickAction === type.id ?
+                  className={`cursor-pointer rounded-xl p-4 border-2 transition-all ${selectedQuickAction === type.id ?
                       "bg-[#FF7700]/10 border-[#FF7700]"
-                    : "bg-white/5 border-white/10 hover:bg-white/10"
-                  }`}
+                      : "bg-white/5 border-white/10 hover:bg-white/10"
+                    }`}
                 >
                   <div className="text-3xl mb-2">{type.icon}</div>
                   <div className="font-bold text-white mb-1">{type.label}</div>
@@ -457,9 +466,8 @@ export default function CitizenRequestPage() {
                     <span className="text-red-400 font-normal">*</span>
                   </label>
                   <span
-                    className={`text-xs font-mono ${
-                      descOverLimit ? "text-red-400 font-bold" : "text-gray-500"
-                    }`}
+                    className={`text-xs font-mono ${descOverLimit ? "text-red-400 font-bold" : "text-gray-500"
+                      }`}
                   >
                     {descLen}/{MAX_DESCRIPTION}
                   </span>
@@ -472,11 +480,10 @@ export default function CitizenRequestPage() {
                       description: e.target.value,
                     })
                   }
-                  className={`w-full bg-black/20 border rounded-xl p-4 text-white placeholder-gray-500 focus:outline-none min-h-[120px] transition-colors ${
-                    descOverLimit ?
+                  className={`w-full bg-black/20 border rounded-xl p-4 text-white placeholder-gray-500 focus:outline-none min-h-[120px] transition-colors ${descOverLimit ?
                       "border-red-500 focus:border-red-400"
-                    : "border-white/10 focus:border-[#FF7700]"
-                  }`}
+                      : "border-white/10 focus:border-[#FF7700]"
+                    }`}
                   placeholder="Mô tả chi tiết tình huống (số lượng người, tình trạng sức khỏe, mức nước...)"
                 />
                 {descOverLimit && (
@@ -551,7 +558,7 @@ export default function CitizenRequestPage() {
                     <span className="text-white font-bold">
                       {isLoadingLocation ?
                         "Đang lấy vị trí..."
-                      : currentLocation}
+                        : currentLocation}
                     </span>
                     <button
                       type="button"
@@ -588,11 +595,10 @@ export default function CitizenRequestPage() {
               </label>
 
               <label
-                className={`flex flex-col items-center justify-center gap-2 w-full py-6 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
-                  isUploadingImage ?
+                className={`flex flex-col items-center justify-center gap-2 w-full py-6 border-2 border-dashed rounded-xl cursor-pointer transition-all ${isUploadingImage ?
                     "border-[#FF7700]/40 bg-[#FF7700]/5 cursor-not-allowed"
-                  : "border-white/20 hover:border-[#FF7700]/50 bg-white/5 hover:bg-white/10"
-                }`}
+                    : "border-white/20 hover:border-[#FF7700]/50 bg-white/5 hover:bg-white/10"
+                  }`}
               >
                 <input
                   type="file"
@@ -612,7 +618,7 @@ export default function CitizenRequestPage() {
                       Đang tải ảnh lên...
                     </span>
                   </>
-                : <>
+                  : <>
                     <span className="text-3xl">📷</span>
                     <span className="text-gray-300 text-sm font-bold">
                       Nhấn để chọn ảnh
@@ -679,7 +685,7 @@ export default function CitizenRequestPage() {
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ĐANG GỬI...
                 </>
-              : <>
+                : <>
                   <span>🚀</span> GỬI YÊU CẦU NGAY
                 </>
               }

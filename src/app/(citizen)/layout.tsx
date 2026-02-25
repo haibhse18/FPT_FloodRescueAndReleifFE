@@ -5,7 +5,7 @@ import { AuthGuard } from "@/shared/components/AuthGuard";
 import CitizenSidebar from "./components/CitizenSidebar";
 import MobileBottomNav from "@/shared/components/layout/MobileBottomNav";
 import { notificationsApi } from "@/modules/notifications/infrastructure/notifications.api";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "@/shared/ui/components/toaster";
 
 /**
  * Layout cho Citizen routes

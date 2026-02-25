@@ -58,7 +58,19 @@ export class RequestRepositoryImpl implements IRequestRepository {
   }
 
   async updateRequestStatus(requestId: string, status: string): Promise<void> {
-    await requestsApi.updateRequestStatus(requestId, status);
+    // Map legacy status calls to the correct swagger endpoints
+    if (status === "VERIFIED" || status === "Verified" || status === "approved") {
+      await requestsApi.verifyRequest(requestId, true);
+    } else if (status === "REJECTED" || status === "Rejected" || status === "rejected") {
+      await requestsApi.verifyRequest(requestId, false);
+    } else if (status === "CLOSED" || status === "Closed") {
+      await requestsApi.closeRequest(requestId);
+    } else if (status === "CANCELLED" || status === "Cancelled") {
+      await requestsApi.cancelRequest(requestId);
+    } else {
+      // Fallback: try verify with approved=true for any other forward transition
+      await requestsApi.verifyRequest(requestId, true);
+    }
   }
 
   async updateRequestPriority(

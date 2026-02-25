@@ -3,49 +3,59 @@
  * Định nghĩa cấu trúc dữ liệu Request, không phụ thuộc framework
  */
 
-export type UrgencyLevel = "low" | "medium" | "high" | "critical";
-
+// Actual backend status enum (UPPERCASE) per swagger
 export type RequestStatus =
-  | "pending"
-  | "assigned"
-  | "in_progress"
-  | "completed"
-  | "cancelled";
+  | "SUBMITTED"
+  | "VERIFIED"
+  | "REJECTED"
+  | "IN_PROGRESS"
+  | "PARTIALLY_FULFILLED"
+  | "FULFILLED"
+  | "CLOSED"
+  | "CANCELLED";
 
-export type DangerType = "flood" | "trapped" | "injury" | "landslide" | "other";
+// Actual backend priority enum (Title Case) per swagger
+export type UrgencyLevel = "Critical" | "High" | "Normal";
+
+export type DangerType = "Flood" | "Trapped" | "Injured" | "Landslide" | "Other";
 
 export interface RescueRequest {
-  id: string;
-  userId: string;
-  type: DangerType;
-  latitude: number;
-  longitude: number;
-  location: string;
-  description: string;
-  imageUrls: string[];
-  urgencyLevel: UrgencyLevel;
-  numberOfPeople: number;
-  status: RequestStatus;
-  assignedTeamId?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface CreateRescueRequestData {
-  type?: string;
+  _id?: string;
+  id?: string;
+  requestId?: string;
+  userId?: string;
+  userName?: string;
+  type: string;
   incidentType?: string;
+  location: { type: "Point"; coordinates: [number, number] } | string;
   latitude?: number;
   longitude?: number;
   description: string;
   imageUrls?: string[];
-  priority?: string;
+  media?: Array<{ imageUrl: string; description?: string; uploadedAt?: string }>;
+  priority?: UrgencyLevel;
   peopleCount?: number;
-  requestSupply?: unknown[];
-  location?: string | { type?: string; coordinates: [number, number] };
-  dangerType?: string;
-  numberOfPeople?: number;
-  urgencyLevel?: string;
-  images?: string[];
+  status: RequestStatus | string;
+  source?: "CITIZEN" | "COORDINATOR";
+  createdBy?: string;
+  assignedTeamId?: string;
+  assignedTeamName?: string;
+  missionId?: string;
+  isDuplicated?: boolean;
+  isLocationVerified?: boolean;
+  requestSupplies?: Array<{ supplyId: string; requestedQty: number }>;
+  createdAt: string | Date;
+  updatedAt?: string | Date;
+}
+
+export interface CreateRescueRequestData {
+  type: "Rescue" | "Relief";
+  incidentType?: "Flood" | "Trapped" | "Injured" | "Landslide" | "Other";
+  location: { type: "Point"; coordinates: [number, number] };
+  description: string;
+  imageUrls?: string[];
+  peopleCount?: number;
+  requestSupplies?: Array<{ supplyId: string; requestedQty: number }>;
 }
 
 export interface EmergencyRequestData {
@@ -71,33 +81,28 @@ export interface GetRequestsFilter {
 }
 
 export interface CoordinatorRequest {
-  requestId: string;
-  userId: string;
+  requestId?: string;
+  _id?: string;
+  id?: string;
+  userId?: string;
   userName?: string;
   displayName?: string;
-  type: DangerType | "Rescue" | "Relief";
+  source?: "CITIZEN" | "COORDINATOR";
+  type: string;
   incidentType?: string;
-  latitude: number;
-  longitude: number;
+  location?: { type: "Point"; coordinates: [number, number] };
+  latitude?: number;
+  longitude?: number;
   address?: string;
   description: string;
   peopleCount?: number;
-  priority: UrgencyLevel | "critical" | "high" | "normal";
-  status:
-  | RequestStatus
-  | "Submitted"
-  | "Verified"
-  | "In Progress"
-  | "Completed"
-  | "Spam"
-  | "Rejected"
-  | "Cancelled";
+  priority?: "Critical" | "High" | "Normal";
+  status: RequestStatus | string;
   imageUrls?: string[];
-  requestSupply?: Array<{
-    supplyId: string;
-    supplyName?: string;
-    quantity: number;
-  }>;
+  media?: Array<{ imageUrl: string; description?: string; uploadedAt?: string }>;
+  requestSupplies?: Array<{ supplyId: string; requestedQty: number }>;
+  isDuplicated?: boolean;
+  isLocationVerified?: boolean;
   createdAt: string | Date;
   updatedAt?: string | Date;
   assignedTeamId?: string;

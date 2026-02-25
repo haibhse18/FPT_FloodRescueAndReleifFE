@@ -8,20 +8,13 @@ import { authSession } from "@/services/authSession";
 import type { ApiResponse } from "@/shared/types/api";
 
 export interface CreateRescueRequestDTO {
-  type?: string;
-  incidentType?: string;
-  latitude?: number;
-  longitude?: number;
+  type: "Rescue" | "Relief";
+  incidentType?: "Flood" | "Trapped" | "Injured" | "Landslide" | "Other";
+  location: { type: "Point"; coordinates: [number, number] };
   description: string;
   imageUrls?: string[];
-  priority?: string;
   peopleCount?: number;
-  requestSupply?: unknown[];
-  location?: string | { type?: string; coordinates: [number, number] };
-  dangerType?: string;
-  numberOfPeople?: number;
-  urgencyLevel?: string;
-  images?: string[];
+  requestSupplies?: Array<{ supplyId: string; requestedQty: number }>;
 }
 
 export interface EmergencyRequestDTO {
@@ -115,23 +108,23 @@ export const requestsApi = {
   },
 
   /**
-   * Citizen cancel request (chỉ khi status=Submitted)
-   * PATCH /requests/{id}/status { status: "Cancelled" }
+   * Citizen cancel own request
+   * PATCH /requests/{requestId}/cancel
    */
   cancelRequest: async (requestId: string): Promise<ApiResponse> => {
     return apiClient.patch(
-      `/requests/${requestId}/status`,
-      { status: "Cancelled" },
+      `/requests/${requestId}/cancel`,
+      undefined,
       { headers: authSession.getAuthHeaders() },
     );
   },
 
   /**
    * Get all requests (Coordinator)
-   * GET /requests/getAll
+   * GET /requests  (with filters)
    */
   getAllRequests: async (
-    params?: GetRequestsParams & { userName?: string },
+    params?: GetRequestsParams & { userName?: string; source?: string },
   ): Promise<ApiResponse> => {
     const queryParams = new URLSearchParams();
     if (params) {
@@ -142,7 +135,7 @@ export const requestsApi = {
       });
     }
     const query = queryParams.toString();
-    const endpoint = query ? `/requests/getAll?${query}` : `/requests/getAll`;
+    const endpoint = query ? `/requests?${query}` : `/requests`;
 
     return apiClient.get(endpoint, {
       headers: authSession.getAuthHeaders(),
@@ -150,23 +143,8 @@ export const requestsApi = {
   },
 
   /**
-   * Update request status (Coordinator)
-   * PATCH /requests/{id}/status
-   */
-  updateRequestStatus: async (
-    requestId: string,
-    status: string,
-  ): Promise<ApiResponse> => {
-    return apiClient.patch(
-      `/requests/${requestId}/status`,
-      { status },
-      { headers: authSession.getAuthHeaders() },
-    );
-  },
-
-  /**
    * Update request priority (Coordinator)
-   * PATCH /requests/{id}/priority
+   * PATCH /requests/{requestId}/priority
    */
   updateRequestPriority: async (
     requestId: string,
@@ -175,6 +153,35 @@ export const requestsApi = {
     return apiClient.patch(
       `/requests/${requestId}/priority`,
       { priority },
+      { headers: authSession.getAuthHeaders() },
+    );
+  },
+
+  /**
+   * Verify (approve/reject) a request (Coordinator)
+   * PATCH /requests/{id}/verify
+   */
+  verifyRequest: async (
+    requestId: string,
+    approved: boolean,
+    priority?: string,
+    notes?: string,
+  ): Promise<ApiResponse> => {
+    return apiClient.patch(
+      `/requests/${requestId}/verify`,
+      { approved, ...(priority ? { priority } : {}), ...(notes ? { notes } : {}) },
+      { headers: authSession.getAuthHeaders() },
+    );
+  },
+
+  /**
+   * Close a fulfilled request (Coordinator)
+   * PATCH /requests/{id}/close
+   */
+  closeRequest: async (requestId: string): Promise<ApiResponse> => {
+    return apiClient.patch(
+      `/requests/${requestId}/close`,
+      undefined,
       { headers: authSession.getAuthHeaders() },
     );
   },

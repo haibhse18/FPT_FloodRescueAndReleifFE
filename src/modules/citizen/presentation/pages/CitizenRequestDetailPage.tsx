@@ -23,79 +23,87 @@ interface Props {
     id: string;
 }
 
+/**
+ * Swagger status lifecycle (forward path):
+ * SUBMITTED(0) → VERIFIED(1) → IN_PROGRESS(2) → PARTIALLY_FULFILLED(3) → FULFILLED(4) → CLOSED(5)
+ * Terminal failures: REJECTED(-1) | CANCELLED(-1)
+ */
 const STATUS_META: Record<
     string,
     { label: string; color: string; icon: string; step: number }
 > = {
-    // Backend enum: Pending | Accepted | In Progress | Completed | Rejected | Cancelled
-    Pending: {
-        label: "Chờ xử lý",
+    // ── Canonical UPPERCASE enum per swagger ──
+    SUBMITTED: {
+        label: "Đã gửi",
         color: "bg-gray-500/20 text-gray-300 border-gray-500/30",
         icon: "⏳",
         step: 0,
     },
-    // Legacy / fallback alias
-    Submitted: {
-        label: "Chờ xử lý",
-        color: "bg-gray-500/20 text-gray-300 border-gray-500/30",
-        icon: "⏳",
-        step: 0,
-    },
-    Accepted: {
-        label: "Đã chấp nhận",
+    VERIFIED: {
+        label: "Đã xác nhận",
         color: "bg-blue-500/20 text-blue-300 border-blue-500/30",
         icon: "✅",
         step: 1,
     },
-    "In Progress": {
+    IN_PROGRESS: {
         label: "Đang xử lý",
         color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
         icon: "🚀",
         step: 2,
     },
-    Completed: {
+    PARTIALLY_FULFILLED: {
+        label: "Đang cứu trợ",
+        color: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+        icon: "📦",
+        step: 3,
+    },
+    FULFILLED: {
         label: "Hoàn thành",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
         icon: "🎉",
-        step: 3,
+        step: 4,
     },
-    Rejected: {
+    CLOSED: {
+        label: "Đã đóng",
+        color: "bg-green-700/20 text-green-400 border-green-700/30",
+        icon: "🔒",
+        step: 5,
+    },
+    REJECTED: {
         label: "Bị từ chối",
         color: "bg-red-500/20 text-red-300 border-red-500/30",
         icon: "❌",
         step: -1,
     },
-    Cancelled: {
+    CANCELLED: {
         label: "Đã hủy",
         color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
         icon: "🚫",
         step: -1,
     },
+    // ── Legacy / mixed-case fallbacks ──
+    Pending: { label: "Đã gửi", color: "bg-gray-500/20 text-gray-300 border-gray-500/30", icon: "⏳", step: 0 },
+    Submitted: { label: "Đã gửi", color: "bg-gray-500/20 text-gray-300 border-gray-500/30", icon: "⏳", step: 0 },
+    Accepted: { label: "Đã xác nhận", color: "bg-blue-500/20 text-blue-300 border-blue-500/30", icon: "✅", step: 1 },
+    Verified: { label: "Đã xác nhận", color: "bg-blue-500/20 text-blue-300 border-blue-500/30", icon: "✅", step: 1 },
+    "In Progress": { label: "Đang xử lý", color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30", icon: "🚀", step: 2 },
+    Completed: { label: "Hoàn thành", color: "bg-green-500/20 text-green-300 border-green-500/30", icon: "🎉", step: 4 },
+    Fulfilled: { label: "Hoàn thành", color: "bg-green-500/20 text-green-300 border-green-500/30", icon: "🎉", step: 4 },
+    Rejected: { label: "Bị từ chối", color: "bg-red-500/20 text-red-300 border-red-500/30", icon: "❌", step: -1 },
+    Cancelled: { label: "Đã hủy", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", icon: "🚫", step: -1 },
 };
 
 const URGENCY_META: Record<string, { label: string; color: string }> = {
-    // Backend enum: critical | high | normal
-    critical: {
-        label: "Nguy kịch",
-        color: "bg-red-500/20 text-red-300 border-red-500/30",
-    },
-    high: {
-        label: "Cao",
-        color: "bg-orange-500/20 text-orange-300 border-orange-500/30",
-    },
-    normal: {
-        label: "Bình thường",
-        color: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-    },
-    // Legacy/fallback values
-    medium: {
-        label: "Trung bình",
-        color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
-    },
-    low: {
-        label: "Thấp",
-        color: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-    },
+    // Backend enum (Title Case) per swagger: Critical | High | Normal
+    Critical: { label: "Nguy kịch", color: "bg-red-500/20 text-red-300 border-red-500/30" },
+    High: { label: "Cao", color: "bg-orange-500/20 text-orange-300 border-orange-500/30" },
+    Normal: { label: "Bình thường", color: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
+    // Legacy lowercase fallbacks
+    critical: { label: "Nguy kịch", color: "bg-red-500/20 text-red-300 border-red-500/30" },
+    high: { label: "Cao", color: "bg-orange-500/20 text-orange-300 border-orange-500/30" },
+    normal: { label: "Bình thường", color: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
+    medium: { label: "Trung bình", color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30" },
+    low: { label: "Thấp", color: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -119,7 +127,16 @@ const TYPE_LABELS: Record<string, string> = {
     relief: "📦 Cứu trợ",
 };
 
-const STEPS = ["Đã gửi", "Chấp nhận", "Đang xử lý", "Hoàn thành"];
+// 6 steps matching the swagger status lifecycle:
+// SUBMITTED(0) → VERIFIED(1) → IN_PROGRESS(2) → PARTIALLY_FULFILLED(3) → FULFILLED(4) → CLOSED(5)
+const STEPS = [
+    "Đã gửi",        // 0 — SUBMITTED
+    "Xác nhận",      // 1 — VERIFIED
+    "Đang xử lý",   // 2 — IN_PROGRESS
+    "Đang cứu trợ", // 3 — PARTIALLY_FULFILLED
+    "Hoàn thành",   // 4 — FULFILLED
+    "Đã đóng",      // 5 — CLOSED
+];
 
 function formatDate(dateStr: string | Date) {
     const d = new Date(dateStr);
@@ -140,7 +157,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const [imgLoaded, setImgLoaded] = useState(false);
     const touchStartX = useRef<number | null>(null);
-    const [actionLoading, setActionLoading] = useState<"confirm" | null>(null);
+    const [actionLoading, setActionLoading] = useState<"cancel" | "confirm" | null>(null);
     const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
     useEffect(() => {
@@ -198,15 +215,15 @@ export default function CitizenRequestDetailPage({ id }: Props) {
         return () => { document.body.style.overflow = ""; };
     }, [lightboxIndex]);
 
-    const handleConfirmSafe = async () => {
-        if (!window.confirm("Xác nhận bạn đã được cứu hộ / nhận hỗ trợ an toàn?")) return;
-        setActionLoading("confirm");
+    const handleCancel = async () => {
+        if (!window.confirm("Bạn có chắc muốn hủy yêu cầu này không?")) return;
+        setActionLoading("cancel");
         try {
-            await requestRepository.confirmRequest(id);
-            setRequest((prev: any) => ({ ...prev, status: "Closed" }));
-            setActionSuccess("Xác nhận thành công! Cảm ơn bạn đã sử dụng hệ thống.");
+            await requestRepository.cancelRequest(id);
+            setRequest((prev: any) => ({ ...prev, status: "CANCELLED" }));
+            setActionSuccess("Yêu cầu đã được hủy thành công.");
         } catch (err: any) {
-            alert(`❌ ${err?.response?.data?.message || err.message || "Không thể xác nhận"}`);
+            alert(`❌ ${err?.response?.data?.message || err.message || "Không thể hủy yêu cầu"}`);
         } finally {
             setActionLoading(null);
         }
@@ -259,13 +276,15 @@ export default function CitizenRequestDetailPage({ id }: Props) {
         URGENCY_META[request.priority || request.urgencyLevel || "normal"] || URGENCY_META["normal"];
     const currentStep = meta.step;
     const shortId = (request._id || request.requestId || request.id || "").slice(-8).toUpperCase();
-    // Images: backend stores as imageUrls[] or in requestMedia[].url
+    // Images: backend stores in media[].imageUrl (swagger) OR legacy imageUrls[]
     const images: string[] =
         request.imageUrls?.length > 0 ? request.imageUrls :
             request.images?.length > 0 ? request.images :
-                Array.isArray(request.requestMedia)
-                    ? (request.requestMedia as any[]).map((m) => m?.url || m?.fileUrl || m?.path || (typeof m === "string" ? m : "")).filter(Boolean)
-                    : [];
+                Array.isArray(request.media)
+                    ? (request.media as any[]).map((m) => m?.imageUrl || m?.url || "").filter(Boolean)
+                    : Array.isArray(request.requestMedia)
+                        ? (request.requestMedia as any[]).map((m) => m?.url || m?.fileUrl || m?.imageUrl || (typeof m === "string" ? m : "")).filter(Boolean)
+                        : [];
 
     // Parse location: backend trả về GeoJSON { type:"Point", coordinates:[lon,lat] }
     const parsedLoc = (() => {
@@ -505,32 +524,28 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                     </div>
                 ) : (
                     <div className="flex flex-col gap-3">
-                        {/* Cancel: show info for Pending/Submitted — citizen cannot self-cancel via API (Coordinator-only endpoint) */}
-                        {["Pending", "PENDING", "pending", "Submitted", "SUBMITTED"].includes(request.status) && (
-                            <div className="flex items-start gap-3 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-yellow-300 text-sm">
-                                <span className="text-lg leading-none mt-0.5">ℹ️</span>
-                                <span>
-                                    Yêu cầu đang chờ xử lý. Nếu muốn hủy, vui lòng liên hệ điều phối viên hoặc hotline hỗ trợ.
-                                </span>
-                            </div>
+                        {/* Cancel: SUBMITTED status — citizen can cancel via PATCH /requests/{id}/cancel */}
+                        {["SUBMITTED", "Submitted", "Pending", "PENDING"].includes(request.status) && (
+                            <button
+                                onClick={handleCancel}
+                                disabled={actionLoading !== null}
+                                className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 rounded-xl text-red-400 font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {actionLoading === "cancel" ? (
+                                    <><div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> Đang hủy...</>
+                                ) : (
+                                    <>🚫 Hủy yêu cầu này</>
+                                )}
+                            </button>
                         )}
 
-                        {/* Confirm safe: when Completed or Fulfilled or In Progress (rescue done) */}
-                        {(request.status === "Completed" || request.status === "COMPLETED" ||
-                            request.status === "Fulfilled" || request.status === "FULFILLED" ||
-                            request.status === "In Progress" || request.status === "IN_PROGRESS") && (
-                                <button
-                                    onClick={handleConfirmSafe}
-                                    disabled={actionLoading !== null}
-                                    className="w-full py-3 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 hover:border-green-500/60 rounded-xl text-green-300 font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {actionLoading === "confirm" ? (
-                                        <><div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin" /> Đang xác nhận...</>
-                                    ) : (
-                                        <>✅ Xác nhận đã an toàn / đã nhận</>
-                                    )}
-                                </button>
-                            )}
+                        {/* No citizen confirm endpoint in swagger — show info when FULFILLED */}
+                        {["FULFILLED", "PARTIALLY_FULFILLED", "Fulfilled", "Completed"].includes(request.status) && (
+                            <div className="flex items-start gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-green-300 text-sm">
+                                <span className="text-lg leading-none mt-0.5">ℹ️</span>
+                                <span>Yêu cầu đã được xử lý. Điều phối viên sẽ đóng yêu cầu khi hoàn tất sàn lọc.</span>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -628,8 +643,8 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                                     key={i}
                                     onClick={() => openLightbox(i)}
                                     className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${i === lightboxIndex
-                                            ? "border-[#FF7700] scale-110 shadow-lg shadow-orange-500/30"
-                                            : "border-white/20 hover:border-white/50 opacity-60 hover:opacity-100"
+                                        ? "border-[#FF7700] scale-110 shadow-lg shadow-orange-500/30"
+                                        : "border-white/20 hover:border-white/50 opacity-60 hover:opacity-100"
                                         }`}
                                     aria-label={`Chuyển sang ảnh ${i + 1}`}
                                 >

@@ -60,7 +60,7 @@ export default function CoordinatorDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
           icon="📩"
-          title="Chờ xác minh"
+          title="Chờ xử lý"
           value={submittedCount}
           color="border-yellow-500/30"
           onClick={() => router.push("/requests?status=SUBMITTED")}

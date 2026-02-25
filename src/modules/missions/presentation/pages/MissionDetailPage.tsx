@@ -15,6 +15,7 @@ import AssignTeamModal from "../components/AssignTeamModal";
 import type { Mission, RescueTeam } from "../../domain/mission.entity";
 import type { Timeline } from "@/modules/timelines/domain/timeline.entity";
 import type { CoordinatorRequest } from "@/modules/requests/domain/request.entity";
+import { useToast } from "@/hooks/use-toast";
 
 // ─── Use Cases ────────────────────────────────────────────
 
@@ -64,6 +65,7 @@ export default function MissionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const missionId = params?.id as string;
+  const { toast } = useToast();
 
   const [mission, setMission] = useState<Mission | null>(null);
   const [timelines, setTimelines] = useState<Timeline[]>([]);
@@ -118,8 +120,18 @@ export default function MissionDetailPage() {
     requestId: string,
     note?: string,
   ) => {
-    await assignTeamUseCase.execute(missionId, { teamId, requestId, note });
-    await fetchData();
+    try {
+      await assignTeamUseCase.execute(missionId, { teamId, requestId, note });
+      toast({ title: "✅ Đã phân công đội thành công" });
+      await fetchData();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error.message || "Phân công thất bại",
+      });
+      throw error;
+    }
   };
 
   const handlePause = async () => {
@@ -127,9 +139,14 @@ export default function MissionDetailPage() {
     try {
       const updated = await pauseMissionUseCase.execute(missionId);
       setMission(updated);
+      toast({ title: "⏸️ Đã tạm dừng nhiệm vụ" });
     } catch (error) {
       console.error("Failed to pause:", error);
-      alert("Tạm dừng thất bại!");
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Tạm dừng thất bại!",
+      });
     } finally {
       setActionLoading(false);
     }
@@ -140,9 +157,14 @@ export default function MissionDetailPage() {
     try {
       const updated = await resumeMissionUseCase.execute(missionId);
       setMission(updated);
+      toast({ title: "▶️ Đã tiếp tục nhiệm vụ" });
     } catch (error) {
       console.error("Failed to resume:", error);
-      alert("Tiếp tục thất bại!");
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Tiếp tục thất bại!",
+      });
     } finally {
       setActionLoading(false);
     }
@@ -154,10 +176,15 @@ export default function MissionDetailPage() {
       const updated = await abortMissionUseCase.execute(missionId);
       setMission(updated);
       setShowAbortConfirm(false);
+      toast({ title: "🚫 Đã hủy nhiệm vụ" });
       await fetchData();
     } catch (error) {
       console.error("Failed to abort:", error);
-      alert("Hủy nhiệm vụ thất bại!");
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Hủy nhiệm vụ thất bại!",
+      });
     } finally {
       setActionLoading(false);
     }

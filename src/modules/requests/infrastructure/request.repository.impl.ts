@@ -64,7 +64,25 @@ export class RequestRepositoryImpl implements IRequestRepository {
     filters?: GetRequestsFilter,
   ): Promise<PaginatedRequests> {
     const response = await requestsApi.getAllRequests(filters);
-    return (response as any).data ?? response;
+    const result = response as any;
+
+    // If response already matches PaginatedRequests structure
+    if (
+      result &&
+      "total" in result &&
+      "totalPages" in result &&
+      !("meta" in result)
+    ) {
+      return result as PaginatedRequests;
+    }
+
+    return {
+      data: result.data ?? [],
+      total: result.meta?.total ?? 0,
+      page: result.meta?.page ?? 1,
+      limit: result.meta?.limit ?? 10,
+      totalPages: result.meta?.totalPages ?? 1,
+    };
   }
 
   async verifyRequest(

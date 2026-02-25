@@ -45,7 +45,6 @@ export default function AssignTeamModal({
       onClose();
     } catch (error) {
       console.error("Failed to assign team:", error);
-      alert("Phân công thất bại!");
     } finally {
       setSubmitting(false);
     }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 import type {
   CoordinatorRequest,
@@ -49,13 +50,25 @@ const PRIORITY_LABELS: Record<string, string> = {
 // ─── Component ────────────────────────────────────────────
 
 export default function CoordinatorRequestsPage() {
+  const searchParams = useSearchParams();
+  const initStatus = (searchParams?.get("status") as RequestStatus) || "ALL";
+
   const [requests, setRequests] = useState<CoordinatorRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<RequestStatus | "ALL">("ALL");
+  const [activeTab, setActiveTab] = useState<RequestStatus | "ALL">(initStatus);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    const status = searchParams?.get("status") as RequestStatus;
+    // Only update if it's a valid tab and differs
+    if (status && STATUS_TABS.some((t) => t.value === status)) {
+      setActiveTab(status);
+      setPage(1);
+    }
+  }, [searchParams]);
 
   const fetchRequests = useCallback(async () => {
     setIsLoading(true);

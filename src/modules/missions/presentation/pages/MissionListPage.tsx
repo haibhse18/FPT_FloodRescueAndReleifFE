@@ -11,6 +11,7 @@ import type {
   MissionType,
   GetMissionsFilter,
 } from "../../domain/mission.entity";
+import { useToast } from "@/hooks/use-toast";
 
 // ─── Constants ────────────────────────────────────────────
 
@@ -45,6 +46,7 @@ const createMissionUseCase = new CreateMissionUseCase(missionRepository);
 
 export default function MissionListPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<MissionStatus | "ALL">("ALL");
@@ -102,10 +104,15 @@ export default function MissionListPage() {
         description: "",
         priority: "Normal",
       });
+      toast({ title: "✅ Đã tạo nhiệm vụ thành công" });
       router.push(`/mission-control/${mission._id}`);
     } catch (error) {
       console.error("Failed to create mission:", error);
-      alert("Tạo nhiệm vụ thất bại!");
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Tạo nhiệm vụ thất bại!",
+      });
     } finally {
       setCreating(false);
     }

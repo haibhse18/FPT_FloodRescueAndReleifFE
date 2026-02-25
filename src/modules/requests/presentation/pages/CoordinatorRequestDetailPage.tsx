@@ -7,6 +7,7 @@ import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 import type { CoordinatorRequest } from "@/modules/requests/domain/request.entity";
+import { useToast } from "@/hooks/use-toast";
 
 const OpenMap = dynamic(
   () => import("@/modules/map/presentation/components/OpenMap"),
@@ -51,6 +52,7 @@ export default function CoordinatorRequestDetailPage() {
   const router = useRouter();
   const params = useParams();
   const requestId = params?.id as string;
+  const { toast } = useToast();
 
   const [request, setRequest] = useState<CoordinatorRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,7 +60,7 @@ export default function CoordinatorRequestDetailPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [actionType, setActionType] = useState<
-    "verify" | "reject" | "cancel" | "close" | null
+    "verify" | "reject" | "cancel" | "close" | "set_priority" | null
   >(null);
   const [selectedPriority, setSelectedPriority] = useState<string>("Normal");
 
@@ -91,13 +93,23 @@ export default function CoordinatorRequestDetailPage() {
         approved: true,
       });
       setRequest(updated);
-      alert("✅ Đã xác minh yêu cầu");
+      toast({
+        title: "✅ Đã xác minh yêu cầu",
+        description: "Vui lòng thiết lập mức độ ưu tiên",
+      });
+      // Prompt for priority right after successful verify
+      setActionType("set_priority");
+      // Keep modal open but change state
     } catch (err: any) {
-      alert(`❌ Lỗi: ${err.message}`);
-    } finally {
-      setIsUpdating(false);
+      toast({
+        variant: "destructive",
+        title: "Lỗi xác minh",
+        description: err.message,
+      });
       setShowConfirmDialog(false);
       setActionType(null);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -110,9 +122,13 @@ export default function CoordinatorRequestDetailPage() {
         reason: "Từ chối bởi Coordinator",
       });
       setRequest(updated);
-      alert("❌ Đã từ chối yêu cầu");
+      toast({ title: "❌ Đã từ chối yêu cầu" });
     } catch (err: any) {
-      alert(`❌ Lỗi: ${err.message}`);
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: err.message,
+      });
     } finally {
       setIsUpdating(false);
       setShowConfirmDialog(false);
@@ -128,9 +144,13 @@ export default function CoordinatorRequestDetailPage() {
         reason: "Hủy bởi Coordinator",
       });
       setRequest(updated);
-      alert("🚫 Đã hủy yêu cầu");
+      toast({ title: "🚫 Đã hủy yêu cầu" });
     } catch (err: any) {
-      alert(`❌ Lỗi: ${err.message}`);
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: err.message,
+      });
     } finally {
       setIsUpdating(false);
       setShowConfirmDialog(false);
@@ -144,9 +164,13 @@ export default function CoordinatorRequestDetailPage() {
     try {
       const updated = await requestRepository.closeRequest(request._id);
       setRequest(updated);
-      alert("📁 Đã đóng yêu cầu");
+      toast({ title: "📁 Đã đóng yêu cầu" });
     } catch (err: any) {
-      alert(`❌ Lỗi: ${err.message}`);
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: err.message,
+      });
     } finally {
       setIsUpdating(false);
       setShowConfirmDialog(false);
@@ -155,7 +179,9 @@ export default function CoordinatorRequestDetailPage() {
   };
 
   const handlePriorityUpdate = async (newPriority: string) => {
-    if (!request || newPriority === request.priority) return;
+    if (!request) return;
+
+    // Allow updating even if it's the same, so they can just "Confirm" the default Normal
     setIsUpdating(true);
     try {
       const updated = await requestRepository.updateRequestPriority(
@@ -165,12 +191,23 @@ export default function CoordinatorRequestDetailPage() {
         },
       );
       setRequest(updated);
-      alert("✅ Đã cập nhật mức độ ưu tiên");
+      toast({ title: "✅ Đã cập nhật mức độ ưu tiên" });
     } catch (err: any) {
-      alert(`❌ Lỗi: ${err.message}`);
-      setSelectedPriority(request.priority);
+      toast({
+        variant: "destructive",
+        title: "Lỗi cập nhật",
+        description: err.message,
+      });
+      // Revert select on error
+      if (document.getElementById("priority-select")) {
+        (
+          document.getElementById("priority-select") as HTMLSelectElement
+        ).value = request.priority;
+      }
     } finally {
       setIsUpdating(false);
+      setShowConfirmDialog(false);
+      setActionType(null);
     }
   };
 
@@ -179,6 +216,8 @@ export default function CoordinatorRequestDetailPage() {
     else if (actionType === "reject") handleReject();
     else if (actionType === "cancel") handleCancel();
     else if (actionType === "close") handleClose();
+    else if (actionType === "set_priority")
+      handlePriorityUpdate(selectedPriority);
   };
 
   const formatDate = (date: string | Date | undefined) => {
@@ -282,13 +321,20 @@ export default function CoordinatorRequestDetailPage() {
             </h3>
             <div className="flex flex-wrap gap-3 items-center">
               <select
+                id="priority-select"
                 value={selectedPriority}
                 onChange={(e) => {
                   setSelectedPriority(e.target.value);
-                  handlePriorityUpdate(e.target.value);
+                  if (
+                    request.status === "VERIFIED" ||
+                    request.status === "IN_PROGRESS" ||
+                    request.status === "PARTIALLY_FULFILLED"
+                  ) {
+                    handlePriorityUpdate(e.target.value);
+                  }
                 }}
-                disabled={isUpdating}
-                className="bg-[#1a3a52] text-white border border-white/20 rounded-lg px-4 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 disabled:opacity-50"
+                disabled={isUpdating || request.status === "SUBMITTED"}
+                className={`bg-[#1a3a52] text-white border border-white/20 rounded-lg px-4 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 ${request.status === "SUBMITTED" ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <option value="Critical">🔴 KHẨN CẤP</option>
                 <option value="High">🟠 CAO</option>
@@ -568,22 +614,42 @@ export default function CoordinatorRequestDetailPage() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] p-4">
           <div className="bg-[#1a3a52] rounded-xl p-6 max-w-md w-full border border-white/20">
             <h3 className="text-white font-bold text-xl mb-4">
-              Xác nhận hành động
+              {actionType === "set_priority" ?
+                "Thiết lập Mức độ Ưu tiên"
+              : "Xác nhận hành động"}
             </h3>
-            <p className="text-gray-300 mb-6">
-              {actionType === "verify" &&
-                "Bạn có chắc muốn xác minh yêu cầu này?"}
-              {actionType === "reject" &&
-                "Bạn có chắc muốn từ chối yêu cầu này?"}
-              {actionType === "cancel" && "Bạn có chắc muốn hủy yêu cầu này?"}
-              {actionType === "close" && "Bạn có chắc muốn đóng yêu cầu này?"}
-            </p>
+
+            {actionType === "set_priority" ?
+              <div className="mb-6">
+                <p className="text-gray-300 mb-4">
+                  Vui lòng chọn mức độ ưu tiên cho yêu cầu này:
+                </p>
+                <select
+                  value={selectedPriority}
+                  onChange={(e) => setSelectedPriority(e.target.value)}
+                  className="w-full bg-[#1a3a52] text-white border border-white/20 rounded-lg p-3 font-bold focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50"
+                >
+                  <option value="Critical">🔴 KHẨN CẤP</option>
+                  <option value="High">🟠 CAO</option>
+                  <option value="Normal">🔵 BÌNH THƯỜNG</option>
+                </select>
+              </div>
+            : <p className="text-gray-300 mb-6">
+                {actionType === "verify" &&
+                  "Bạn có chắc muốn xác minh yêu cầu này?"}
+                {actionType === "reject" &&
+                  "Bạn có chắc muốn từ chối yêu cầu này?"}
+                {actionType === "cancel" && "Bạn có chắc muốn hủy yêu cầu này?"}
+                {actionType === "close" && "Bạn có chắc muốn đóng yêu cầu này?"}
+              </p>
+            }
+
             <div className="flex gap-3">
               <button
                 onClick={confirmAction}
                 disabled={isUpdating}
                 className={`flex-1 px-4 py-3 rounded-lg font-bold transition-colors disabled:opacity-50 ${
-                  actionType === "verify" ?
+                  actionType === "verify" || actionType === "set_priority" ?
                     "bg-green-500 hover:bg-green-600 text-white"
                   : actionType === "close" ?
                     "bg-green-600 hover:bg-green-700 text-white"

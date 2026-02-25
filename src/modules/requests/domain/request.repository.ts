@@ -9,6 +9,7 @@ import {
   EmergencyRequestData,
   GetRequestsFilter,
   PaginatedRequests,
+  PaginatedRescueRequests,
 } from "./request.entity";
 
 export interface IRequestRepository {
@@ -23,9 +24,9 @@ export interface IRequestRepository {
   createEmergencyRequest(data: EmergencyRequestData): Promise<RescueRequest>;
 
   /**
-   * Lấy danh sách yêu cầu của user
+   * Lấy danh sách yêu cầu của user (có phân trang)
    */
-  getMyRequests(filters?: GetRequestsFilter): Promise<RescueRequest[]>;
+  getMyRequests(filters?: GetRequestsFilter): Promise<PaginatedRescueRequests>;
 
   /**
    * Lấy lịch sử yêu cầu

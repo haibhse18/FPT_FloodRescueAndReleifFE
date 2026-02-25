@@ -117,3 +117,11 @@ export interface PaginatedRequests {
   limit: number;
   totalPages: number;
 }
+
+export interface PaginatedRescueRequests {
+  data: RescueRequest[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}

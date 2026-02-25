@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 
@@ -20,17 +20,14 @@ interface Request {
 }
 
 export default function CitizenHistoryPage() {
-  const [filter, setFilter] = useState<
-    "all" | "pending" | "in_progress" | "completed"
-  >("all");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [requests, setRequests] = useState<Request[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchRequests();
-  }, []);
 
   const handleCancelRequest = async (requestId: string) => {
     if (!window.confirm("Bạn có chắc muốn hủy yêu cầu này không?")) return;
@@ -60,67 +57,58 @@ export default function CitizenHistoryPage() {
     }
   };
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async (targetPage: number, status: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await requestRepository.getMyRequests();
+      const result = await requestRepository.getMyRequests({
+        page: targetPage,
+        limit: 10,
+        ...(status ? { status } : {}),
+      });
 
-      // Map API response to UI format
-      const mappedRequests: Request[] = data.map((req: any) => {
-        const statusMap: Record<
-          string,
-          { text: string; color: string; filter: string }
-        > = {
-          // ── Canonical UPPERCASE (swagger enum) ──
-          SUBMITTED: { text: "Chờ xử lý", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "pending" },
-          VERIFIED: { text: "Đã xác nhận", color: "bg-blue-500/20 text-blue-400 border-blue-500/30", filter: "in_progress" },
-          REJECTED: { text: "Bị từ chối", color: "bg-red-500/20 text-red-400 border-red-500/30", filter: "completed" },
-          IN_PROGRESS: { text: "Đang xử lý", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", filter: "in_progress" },
-          PARTIALLY_FULFILLED: { text: "Hoàn thành một phần", color: "bg-orange-500/20 text-orange-400 border-orange-500/30", filter: "in_progress" },
-          FULFILLED: { text: "Hoàn thành", color: "bg-green-500/20 text-green-400 border-green-500/30", filter: "completed" },
-          CLOSED: { text: "Đã đóng", color: "bg-green-700/20 text-green-500 border-green-700/30", filter: "completed" },
-          CANCELLED: { text: "Đã hủy", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "completed" },
-          // ── Legacy / mixed-case fallbacks ──
-          Submitted: { text: "Chờ xử lý", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "pending" },
-          Accepted: { text: "Đã chấp nhận", color: "bg-blue-500/20 text-blue-400 border-blue-500/30", filter: "in_progress" },
-          Verified: { text: "Đã xác nhận", color: "bg-blue-500/20 text-blue-400 border-blue-500/30", filter: "in_progress" },
-          Rejected: { text: "Bị từ chối", color: "bg-red-500/20 text-red-400 border-red-500/30", filter: "completed" },
-          "In Progress": { text: "Đang xử lý", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", filter: "in_progress" },
-          Fulfilled: { text: "Hoàn thành", color: "bg-green-500/20 text-green-400 border-green-500/30", filter: "completed" },
-          Completed: { text: "Hoàn thành", color: "bg-green-500/20 text-green-400 border-green-500/30", filter: "completed" },
-          Cancelled: { text: "Đã hủy", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "completed" },
-        };
+      const statusMap: Record<string, { text: string; color: string; filter: string }> = {
+        SUBMITTED: { text: "Chờ xử lý", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "pending" },
+        VERIFIED: { text: "Đã xác nhận", color: "bg-blue-500/20 text-blue-400 border-blue-500/30", filter: "in_progress" },
+        REJECTED: { text: "Bị từ chối", color: "bg-red-500/20 text-red-400 border-red-500/30", filter: "completed" },
+        IN_PROGRESS: { text: "Đang xử lý", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", filter: "in_progress" },
+        PARTIALLY_FULFILLED: { text: "Chưa hoàn tất", color: "bg-orange-500/20 text-orange-400 border-orange-500/30", filter: "in_progress" },
+        FULFILLED: { text: "Hoàn thành", color: "bg-green-500/20 text-green-400 border-green-500/30", filter: "completed" },
+        CLOSED: { text: "Đã đóng", color: "bg-green-700/20 text-green-500 border-green-700/30", filter: "completed" },
+        CANCELLED: { text: "Đã hủy", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "completed" },
+        Submitted: { text: "Chờ xử lý", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "pending" },
+        Accepted: { text: "Đã chấp nhận", color: "bg-blue-500/20 text-blue-400 border-blue-500/30", filter: "in_progress" },
+        Verified: { text: "Đã xác nhận", color: "bg-blue-500/20 text-blue-400 border-blue-500/30", filter: "in_progress" },
+        Rejected: { text: "Bị từ chối", color: "bg-red-500/20 text-red-400 border-red-500/30", filter: "completed" },
+        "In Progress": { text: "Đang xử lý", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", filter: "in_progress" },
+        Fulfilled: { text: "Hoàn thành", color: "bg-green-500/20 text-green-400 border-green-500/30", filter: "completed" },
+        Completed: { text: "Hoàn thành", color: "bg-green-500/20 text-green-400 border-green-500/30", filter: "completed" },
+        Cancelled: { text: "Đã hủy", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "completed" },
+      };
 
-        const status = statusMap[req.status] || statusMap["Submitted"];
-
+      const mappedRequests: Request[] = result.data.map((req: any) => {
+        const st = statusMap[req.status] || statusMap["Submitted"];
         return {
           id: req.requestId || req._id || req.id || "unknown",
           type:
             req.type === "Rescue" || req.type === "rescue" ? "Cứu hộ"
-              : req.type === "Relief" || req.type === "supply" ? "Cứu trợ"
-                : req.incidentType
-                  ? `${req.incidentType}`
-                  : "Yêu cầu",
-          status: status.filter,
+              : req.type === "Relief" || req.type === "relief" ? "Cứu trợ"
+                : req.incidentType ? `${req.incidentType}` : "Yêu cầu",
+          status: st.filter,
           location:
             typeof req.location === "string" ? req.location
-              : req.location?.coordinates ?
-                `${req.location.coordinates[1]?.toFixed(4)}, ${req.location.coordinates[0]?.toFixed(4)}`
-                : req.latitude != null && req.longitude != null ?
-                  `${Number(req.latitude).toFixed(4)}, ${Number(req.longitude).toFixed(4)}`
+              : req.location?.coordinates
+                ? `${req.location.coordinates[1]?.toFixed(4)}, ${req.location.coordinates[0]?.toFixed(4)}`
+                : req.latitude != null && req.longitude != null
+                  ? `${Number(req.latitude).toFixed(4)}, ${Number(req.longitude).toFixed(4)}`
                   : "Không xác định",
           createdAt: new Date(req.createdAt).toLocaleString("vi-VN"),
-          completedAt:
-            req.completedAt ?
-              new Date(req.completedAt).toLocaleString("vi-VN")
-              : undefined,
-          statusText: status.text,
-          statusColor: status.color,
-          priority:
-            req.priority?.toLowerCase() ||
-            req.urgencyLevel?.toLowerCase() ||
-            "medium",
+          completedAt: req.completedAt
+            ? new Date(req.completedAt).toLocaleString("vi-VN")
+            : undefined,
+          statusText: st.text,
+          statusColor: st.color,
+          priority: req.priority?.toLowerCase() || req.urgencyLevel?.toLowerCase() || "medium",
           peopleCount: req.peopleCount || req.numberOfPeople || 1,
           description: req.description,
           originalStatus: req.status || "SUBMITTED",
@@ -128,50 +116,36 @@ export default function CitizenHistoryPage() {
       });
 
       setRequests(mappedRequests);
+      setTotal(result.total);
+      setTotalPages(result.totalPages || 1);
     } catch (err) {
       console.error("Error fetching requests:", err);
       setError("Không thể tải lịch sử yêu cầu. Vui lòng thử lại sau.");
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchRequests(page, statusFilter);
+  }, [fetchRequests, page, statusFilter]);
+
+  const handleFilterChange = (value: string) => {
+    setStatusFilter(value);
+    setPage(1);
   };
 
-  const filteredRequests = requests.filter(
-    (req) => filter === "all" || req.status === filter,
-  );
-
-  const stats = [
-    {
-      label: "Tổng cộng",
-      value: requests.length.toString(),
-      icon: "📊",
-      color: "from-blue-500/20 to-cyan-500/10 border-blue-500/30",
-      filterKey: "all" as const,
-    },
-    {
-      label: "Hoàn thành",
-      value: requests.filter((r) => r.status === "completed").length.toString(),
-      icon: "✅",
-      color: "from-green-500/20 to-emerald-500/10 border-green-500/30",
-      filterKey: "completed" as const,
-    },
-    {
-      label: "Đang xử lý",
-      value: requests
-        .filter((r) => r.status === "in_progress")
-        .length.toString(),
-      icon: "⏳",
-      color: "from-yellow-500/20 to-orange-500/10 border-yellow-500/30",
-      filterKey: "in_progress" as const,
-    },
-    {
-      label: "Chờ xử lý",
-      value: requests.filter((r) => r.status === "pending").length.toString(),
-      icon: "⏱️",
-      color: "from-gray-500/20 to-slate-500/10 border-gray-500/30",
-      filterKey: "pending" as const,
-    },
-  ];
+  // Tính số trang để hiển thị (dạng: 1 … 4 5 6 … 10)
+  const pageNumbers: (number | "…")[] = [];
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
+      pageNumbers.push(i);
+    } else if (pageNumbers[pageNumbers.length - 1] !== "…") {
+      pageNumbers.push("…");
+    }
+  }
+  const from = total === 0 ? 0 : (page - 1) * 10 + 1;
+  const to = Math.min(page * 10, total);
 
   return (
     <div className="flex flex-col h-full">
@@ -184,11 +158,11 @@ export default function CitizenHistoryPage() {
                 Lịch sử yêu cầu
               </h1>
               <p className="text-white/90 text-xs lg:text-sm">
-                Theo dõi trạng thái các yêu cầu của bạn
+                {total > 0 ? `Hiển thị ${from}\u2013${to} trong ${total} yêu cầu` : "Theo dõi trạng thái các yêu cầu của bạn"}
               </p>
             </div>
             <button
-              onClick={fetchRequests}
+              onClick={() => fetchRequests(page, statusFilter)}
               disabled={isLoading}
               className="p-2 lg:p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Làm mới"
@@ -207,140 +181,35 @@ export default function CitizenHistoryPage() {
         {/* Background Pattern - Removed as it is now in layout */}
 
         <div className="relative p-4 lg:p-8 space-y-6 max-w-7xl mx-auto">
-          {/* Stats Grid — clickable to filter */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-            {stats.map((stat, index) => (
-              <button
-                key={index}
-                onClick={() => setFilter(stat.filterKey)}
-                className={`bg-gradient-to-br ${stat.color} border rounded-2xl p-4 lg:p-5 text-center hover:scale-105 transition-transform cursor-pointer ${filter === stat.filterKey
-                  ? "ring-2 ring-[#FF7700] ring-offset-2 ring-offset-[#133249]"
-                  : ""
-                  }`}
-              >
-                <div className="text-3xl lg:text-4xl mb-2">{stat.icon}</div>
-                <div className="text-2xl lg:text-3xl font-bold text-white mb-1">
-                  {stat.value}
-                </div>
-                <div className="text-xs lg:text-sm text-gray-400">
-                  {stat.label}
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {/* Overall Completion Progress Bar */}
-          {!isLoading && !error && requests.length > 0 && (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-white font-bold text-sm">
-                    Tỉ lệ hoàn thành
-                  </p>
-                  <p className="text-gray-400 text-xs mt-0.5">
-                    {requests.filter((r) => r.status === "completed").length}/
-                    {requests.length} yêu cầu đã xử lý xong
-                  </p>
-                </div>
-                <span className="text-2xl font-black text-white">
-                  {requests.length > 0
-                    ? Math.round(
-                      (requests.filter((r) => r.status === "completed")
-                        .length /
-                        requests.length) *
-                      100,
-                    )
-                    : 0}
-                  %
-                </span>
-              </div>
-              {/* Segmented progress bar */}
-              <div className="relative h-3 rounded-full bg-white/10 overflow-hidden">
-                {/* Completed */}
-                <div
-                  className="absolute left-0 top-0 h-full bg-green-500 transition-all duration-700 ease-out rounded-full"
-                  style={{
-                    width: `${requests.length > 0
-                      ? (requests.filter((r) => r.status === "completed")
-                        .length /
-                        requests.length) *
-                      100
-                      : 0
-                      }%`,
-                  }}
-                />
-                {/* In progress (overlaid on top of completed) */}
-                <div
-                  className="absolute top-0 h-full bg-yellow-400 transition-all duration-700 ease-out"
-                  style={{
-                    left: `${requests.length > 0
-                      ? (requests.filter((r) => r.status === "completed")
-                        .length /
-                        requests.length) *
-                      100
-                      : 0
-                      }%`,
-                    width: `${requests.length > 0
-                      ? (requests.filter((r) => r.status === "in_progress")
-                        .length /
-                        requests.length) *
-                      100
-                      : 0
-                      }%`,
-                  }}
-                />
-              </div>
-              {/* Legend */}
-              <div className="flex items-center gap-4 mt-2.5 flex-wrap">
-                <span className="flex items-center gap-1.5 text-xs text-gray-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
-                  Hoàn thành (
-                  {requests.filter((r) => r.status === "completed").length})
-                </span>
-                <span className="flex items-center gap-1.5 text-xs text-gray-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block" />
-                  Đang xử lý (
-                  {requests.filter((r) => r.status === "in_progress").length})
-                </span>
-                <span className="flex items-center gap-1.5 text-xs text-gray-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-white/20 inline-block" />
-                  Chờ xử lý (
-                  {requests.filter((r) => r.status === "pending").length})
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Filters */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-gray-400 text-sm font-bold mr-2">
-                🔍 Lọc:
-              </span>
+          {/* Lọc theo trạng thái */}
+          <div className="overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0">
+            <div className="flex gap-2 w-max lg:w-auto lg:flex-wrap">
               {[
-                { value: "all", label: "Tất cả", icon: "📋", count: requests.length },
-                { value: "pending", label: "Chờ xử lý", icon: "⏱️", count: requests.filter((r) => r.status === "pending").length },
-                { value: "in_progress", label: "Đang xử lý", icon: "⏳", count: requests.filter((r) => r.status === "in_progress").length },
-                { value: "completed", label: "Hoàn thành", icon: "✅", count: requests.filter((r) => r.status === "completed").length },
-              ].map((btn) => (
+                { label: "Tất cả", icon: "📋", value: "" },
+                { label: "Chờ duyệt", icon: "⏱️", value: "SUBMITTED" },
+                { label: "Đã xác nhận", icon: "✅", value: "VERIFIED" },
+                { label: "Đang xử lý", icon: "⏳", value: "IN_PROGRESS" },
+                { label: "Chưa hoàn tất", icon: "🔶", value: "PARTIALLY_FULFILLED" },
+                { label: "Hoàn thành", icon: "🎉", value: "FULFILLED" },
+                { label: "Đã đóng", icon: "🔒", value: "CLOSED" },
+                { label: "Từ chối", icon: "❌", value: "REJECTED" },
+                { label: "Đã hủy", icon: "🚫", value: "CANCELLED" },
+              ].map((chip) => (
                 <button
-                  key={btn.value}
-                  onClick={() => setFilter(btn.value as typeof filter)}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === btn.value ?
-                    "bg-[#FF7700] text-white shadow-lg shadow-[#FF7700]/20"
-                    : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                  key={chip.value}
+                  onClick={() => handleFilterChange(chip.value)}
+                  className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${statusFilter === chip.value
+                      ? "bg-[#FF7700] text-white shadow-lg shadow-[#FF7700]/20 scale-105"
+                      : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
                     }`}
                 >
-                  <span>{btn.icon}</span>
-                  <span>{btn.label}</span>
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${filter === btn.value ? "bg-white/20" : "bg-white/10"
-                    }`}>
-                    {btn.count}
-                  </span>
+                  <span>{chip.icon}</span>
+                  <span>{chip.label}</span>
                 </button>
               ))}
             </div>
           </div>
+
 
           {/* Requests List */}
           <div className="space-y-3">
@@ -360,14 +229,14 @@ export default function CitizenHistoryPage() {
                   </h3>
                   <p className="text-gray-400 mb-4">{error}</p>
                   <button
-                    onClick={fetchRequests}
+                    onClick={() => fetchRequests(page, statusFilter)}
                     className="inline-flex items-center gap-2 px-6 py-3 bg-[#FF7700] hover:bg-[#FF8800] rounded-xl text-white font-bold transition-all"
                   >
                     <span>🔄</span>
                     <span>Thử lại</span>
                   </button>
                 </div>
-                : filteredRequests.length === 0 ?
+                : requests.length === 0 ?
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center">
                     <div className="text-6xl mb-4">
                       {requests.length === 0 ? "📭" : "🔭"}
@@ -392,7 +261,7 @@ export default function CitizenHistoryPage() {
                       </Link>
                     )}
                   </div>
-                  : filteredRequests.map((request) => (
+                  : requests.map((request) => (
                     <div
                       key={request.id}
                       className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-5 hover:bg-white/10 hover:border-white/20 transition-all"
@@ -578,6 +447,47 @@ export default function CitizenHistoryPage() {
                   ))
             }
           </div>
+
+          {/* Phân trang */}
+          {!isLoading && !error && totalPages > 1 && (
+            <div className="flex items-center justify-center gap-1 pt-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                ← Trước
+              </button>
+              {pageNumbers.map((p, i) =>
+                p === "…" ? (
+                  <span key={`e${i}`} className="px-2 text-gray-600">…</span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p as number)}
+                    className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${page === p
+                        ? "bg-[#FF7700] text-white shadow-lg shadow-[#FF7700]/20"
+                        : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                      }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Tiếp →
+              </button>
+            </div>
+          )}
+          {!isLoading && !error && total > 0 && (
+            <p className="text-center text-xs text-gray-500">
+              {from}–{to} / {total} yêu cầu
+            </p>
+          )}
         </div>
       </main>
     </div>

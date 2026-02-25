@@ -34,7 +34,7 @@ export default function CoordinatorSidebar() {
   const navItems: NavItem[] = [
     { icon: "🏠", label: "Dashboard", href: "/dashboard" },
     { icon: "🆘", label: "Yêu cầu", href: "/requests" },
-    { icon: "⚔️", label: "Nhiệm vụ", href: "/missions" },
+    { icon: "⚔️", label: "Nhiệm vụ", href: "/mission-control" },
     { icon: "👤", label: "Cá nhân", href: "/profile" },
   ];
 

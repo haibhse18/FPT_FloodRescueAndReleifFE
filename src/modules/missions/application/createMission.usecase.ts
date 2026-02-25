@@ -1,25 +1,15 @@
 import { IMissionRepository } from "../domain/mission.repository";
+import { Mission, CreateMissionInput } from "../domain/mission.entity";
 
 /**
- * Use Case: Create Mission
- * Coordinator assign team to request(s)
+ * Use Case: Create Mission (status = PLANNED)
  */
 export class CreateMissionUseCase {
   constructor(private missionRepository: IMissionRepository) {}
 
-  async execute(data: {
-    teamId: string;
-    requestIds: string[];
-    vehicleId?: string;
-  }): Promise<string> {
-    if (!data.teamId) {
-      throw new Error("Team ID is required");
-    }
-
-    if (!data.requestIds || data.requestIds.length === 0) {
-      throw new Error("At least one request ID is required");
-    }
-
-    return await this.missionRepository.createMission(data);
+  async execute(input: CreateMissionInput): Promise<Mission> {
+    if (!input.name?.trim()) throw new Error("Mission name is required");
+    if (!input.type) throw new Error("Mission type is required");
+    return await this.missionRepository.createMission(input);
   }
 }

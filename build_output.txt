@@ -1,0 +1,39 @@
+﻿Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 7.8s
+  Running TypeScript ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/17) ...
+  Generating static pages using 11 workers (4/17) 
+  Generating static pages using 11 workers (8/17) 
+  Generating static pages using 11 workers (12/17) 
+Γ£ô Generating static pages using 11 workers (17/17) in 953.2ms
+  Finalizing page optimization ...
+
+Route (app)
+Γöî Γùï /
+Γö£ Γùï /_not-found
+Γö£ ╞Æ /api/reverse-geocode
+Γö£ ╞Æ /api/upload
+Γö£ Γùï /dashboard
+Γö£ Γùï /guide
+Γö£ Γùï /history
+Γö£ ╞Æ /history/[id]
+Γö£ Γùï /home
+Γö£ Γùï /login
+Γö£ Γùï /mission-control
+Γö£ ╞Æ /mission-control/[id]
+Γö£ Γùï /missions
+Γö£ Γùï /notifications
+Γö£ Γùï /profile
+Γö£ Γùï /register
+Γö£ Γùï /request
+Γö£ Γùï /requests
+Γöö ╞Æ /requests/[id]
+
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

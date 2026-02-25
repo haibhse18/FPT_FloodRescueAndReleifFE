@@ -1,134 +1,34 @@
 /**
- * Missions/Coordinator API - Infrastructure Layer
- * Handles mission coordination and team assignment
+ * Missions API - Infrastructure Layer
+ * Handles mission CRUD, assignment, and status control (Unified v2.2)
  */
 
 import { apiClient } from "@/services/apiClient";
 import { authSession } from "@/services/authSession";
 import type { ApiResponse } from "@/shared/types/api";
 
-export interface GetAllRequestsParams {
-  status?: string;
-  urgency?: string;
-  dateFrom?: string;
-  dateTo?: string;
-}
-
-export interface AssignTeamDTO {
-  teamId: string;
-}
-
-export type PriorityLevel = "low" | "medium" | "high" | "critical";
-
-export interface UpdatePriorityDTO {
-  priority: PriorityLevel;
-}
-
 export const missionApi = {
-  /**
-   * Get all rescue requests for coordination
-   * GET /coordinator/requests
-   */
-  getAllRequests: async (
-    filters?: GetAllRequestsParams,
-  ): Promise<ApiResponse> => {
-    const params = new URLSearchParams(filters as Record<string, string>);
-    const queryString = filters ? `?${params}` : "";
-    return apiClient.get(`/coordinator/requests${queryString}`, {
-      headers: authSession.getAuthHeaders(),
-    });
-  },
+  // ────────────────────────────────────────────────────────
+  // CRUD
+  // ────────────────────────────────────────────────────────
 
-  /**
-   * Assign rescue team to request
-   * POST /coordinator/requests/{requestId}/assign
-   */
-  assignRescueTeam: async (
-    requestId: string,
-    teamId: string,
-  ): Promise<ApiResponse> => {
-    return apiClient.post(
-      `/coordinator/requests/${requestId}/assign`,
-      { teamId },
-      {
-        headers: authSession.getAuthHeaders(),
-      },
-    );
-  },
-
-  /**
-   * Get available rescue teams
-   * GET /coordinator/rescue-teams
-   */
-  getRescueTeams: async (): Promise<ApiResponse> => {
-    return apiClient.get("/coordinator/rescue-teams", {
-      headers: authSession.getAuthHeaders(),
-    });
-  },
-
-  /**
-   * Update request priority
-   * PUT /coordinator/requests/{requestId}/priority
-   */
-  updateRequestPriority: async (
-    requestId: string,
-    priority: PriorityLevel,
-  ): Promise<ApiResponse> => {
-    return apiClient.put(
-      `/coordinator/requests/${requestId}/priority`,
-      { priority },
-      {
-        headers: authSession.getAuthHeaders(),
-      },
-    );
-  },
-  /**
-   * Create mission (assign team to multiple requests)
-   * POST /missions
-   */
-  createMission: async (data: {
-    teamId: string;
-    requestIds: string[];
-    vehicleId?: string;
+  /** POST /missions — create mission (status = PLANNED) */
+  createMission: async (input: {
+    name: string;
+    type: string;
+    description?: string;
+    priority?: string;
   }): Promise<ApiResponse> => {
-    return apiClient.post("/missions", data, {
+    return apiClient.post("/missions", input, {
       headers: authSession.getAuthHeaders(),
     });
   },
 
-  /**
-   * Reassign mission
-   * PATCH /missions/{missionId}/reassign
-   */
-  reassignMission: async (
-    missionId: string,
-    teamId: string,
-  ): Promise<ApiResponse> => {
-    return apiClient.patch(
-      `/missions/${missionId}/reassign`,
-      { teamId },
-      {
-        headers: authSession.getAuthHeaders(),
-      },
-    );
-  },
-
-  /**
-   * Get mission positions
-   * GET /missions/{missionId}/positions
-   */
-  getMissionPositions: async (missionId: string): Promise<ApiResponse> => {
-    return apiClient.get(`/missions/${missionId}/positions`, {
-      headers: authSession.getAuthHeaders(),
-    });
-  },
-
-  /**
-   * Get all missions
-   * GET /missions
-   */
-  getAllMissions: async (params?: {
+  /** GET /missions — list with filters */
+  getMissions: async (params?: {
     status?: string;
+    type?: string;
+    code?: string;
     page?: number;
     limit?: number;
   }): Promise<ApiResponse> => {
@@ -140,10 +40,86 @@ export const missionApi = {
         }
       });
     }
-
     const query = queryParams.toString();
     const endpoint = query ? `/missions?${query}` : `/missions`;
+    return apiClient.get(endpoint, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
 
+  /** GET /missions/{id} — detail */
+  getMissionDetail: async (missionId: string): Promise<ApiResponse> => {
+    return apiClient.get(`/missions/${missionId}`, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /missions/{id} — update name/desc/priority */
+  updateMission: async (
+    missionId: string,
+    input: { name?: string; description?: string; priority?: string },
+  ): Promise<ApiResponse> => {
+    return apiClient.patch(`/missions/${missionId}`, input, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** DELETE /missions/{id} */
+  deleteMission: async (missionId: string): Promise<ApiResponse> => {
+    return apiClient.delete(`/missions/${missionId}`, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  // ────────────────────────────────────────────────────────
+  // ASSIGNMENT
+  // ────────────────────────────────────────────────────────
+
+  /** PATCH /missions/{id}/assign — assign team + request → creates Timeline */
+  assignTeam: async (
+    missionId: string,
+    input: { teamId: string; requestId: string; note?: string },
+  ): Promise<ApiResponse> => {
+    return apiClient.patch(`/missions/${missionId}/assign`, input, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  // ────────────────────────────────────────────────────────
+  // STATUS CONTROL
+  // ────────────────────────────────────────────────────────
+
+  /** PATCH /missions/{id}/pause — IN_PROGRESS → PAUSED */
+  pauseMission: async (missionId: string): Promise<ApiResponse> => {
+    return apiClient.patch(`/missions/${missionId}/pause`, undefined, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /missions/{id}/resume — PAUSED → IN_PROGRESS */
+  resumeMission: async (missionId: string): Promise<ApiResponse> => {
+    return apiClient.patch(`/missions/${missionId}/resume`, undefined, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /missions/{id}/abort — → ABORTED (auto-cancel active timelines) */
+  abortMission: async (missionId: string): Promise<ApiResponse> => {
+    return apiClient.patch(`/missions/${missionId}/abort`, undefined, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  // ────────────────────────────────────────────────────────
+  // TEAMS
+  // ────────────────────────────────────────────────────────
+
+  /** GET /teams — list available teams */
+  getTeams: async (params?: { status?: string }): Promise<ApiResponse> => {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.append("status", params.status);
+    const query = queryParams.toString();
+    const endpoint = query ? `/teams?${query}` : `/teams`;
     return apiClient.get(endpoint, {
       headers: authSession.getAuthHeaders(),
     });

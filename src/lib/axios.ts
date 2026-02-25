@@ -9,24 +9,31 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 /**
- * Token Manager - Lưu access token trong memory (không dùng localStorage)
- * Theo auth-flow.md: "Lưu accessToken vào memory/state"
+ * Token Manager - Lưu access token trong localStorage để persist qua page refresh
  */
-let accessToken: string | null = null;
+const TOKEN_STORAGE_KEY = "accessToken";
 
 export const tokenManager = {
-  getToken: () => accessToken,
+  getToken: (): string | null => {
+    if (typeof window !== "undefined")
+      return localStorage.getItem(TOKEN_STORAGE_KEY);
+    return null;
+  },
   setToken: (token: string | null) => {
-    accessToken = token;
+    if (typeof window !== "undefined") {
+      if (token) localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      else localStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
   },
   clearToken: () => {
-    accessToken = null;
+    if (typeof window !== "undefined")
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
   },
 };
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 60000, // 60s — Render.com free tier có thể mất ~30s để khởi động lại
   headers: {
     "Content-Type": "application/json",
   },
@@ -144,7 +151,11 @@ axiosInstance.interceptors.response.use(
           { withCredentials: true },
         );
 
-        const newToken = response.data.accessToken;
+        // Backend trả về wrapped: { success, data: { accessToken, user } }
+        const newToken = response.data?.data?.accessToken;
+        if (!newToken) {
+          throw new Error("No access token in refresh response");
+        }
         tokenManager.setToken(newToken);
 
         // Process queued requests

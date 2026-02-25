@@ -39,11 +39,17 @@ export class RequestRepositoryImpl implements IRequestRepository {
 
   async getRequestDetail(requestId: string): Promise<RescueRequest> {
     const response = await requestsApi.getRequestDetail(requestId);
-    return (response as any).data;
+    // Backend may return { data: Request } (wrapped) or Request directly (unwrapped)
+    const unwrapped = (response as any).data ?? response;
+    return unwrapped as RescueRequest;
   }
 
   async confirmRequest(requestId: string): Promise<void> {
     await requestsApi.confirmRequest(requestId);
+  }
+
+  async cancelRequest(requestId: string): Promise<void> {
+    await requestsApi.cancelRequest(requestId);
   }
 
   async getAllRequests(filters?: GetRequestsFilter): Promise<any> {

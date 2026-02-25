@@ -33,14 +33,15 @@ export interface RescueRequest {
 
 export interface CreateRescueRequestData {
   type?: string;
-  latitude: number;
-  longitude: number;
+  incidentType?: string;
+  latitude?: number;
+  longitude?: number;
   description: string;
   imageUrls?: string[];
   priority?: string;
   peopleCount?: number;
   requestSupply?: unknown[];
-  location?: string;
+  location?: string | { type?: string; coordinates: [number, number] };
   dangerType?: string;
   numberOfPeople?: number;
   urgencyLevel?: string;
@@ -83,14 +84,14 @@ export interface CoordinatorRequest {
   peopleCount?: number;
   priority: UrgencyLevel | "critical" | "high" | "normal";
   status:
-    | RequestStatus
-    | "Submitted"
-    | "Verified"
-    | "In Progress"
-    | "Completed"
-    | "Spam"
-    | "Rejected"
-    | "Cancelled";
+  | RequestStatus
+  | "Submitted"
+  | "Verified"
+  | "In Progress"
+  | "Completed"
+  | "Spam"
+  | "Rejected"
+  | "Cancelled";
   imageUrls?: string[];
   requestSupply?: Array<{
     supplyId: string;

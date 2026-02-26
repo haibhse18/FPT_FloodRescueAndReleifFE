@@ -3,6 +3,7 @@
 import { AuthGuard } from "@/shared/components/AuthGuard";
 import CoordinatorSidebar from "./components/CoordinatorSidebar";
 import { MobileBottomNav } from "@/shared/components/layout";
+import { Toaster } from "@/shared/ui/components";
 
 /**
  * Layout cho Coordinator routes
@@ -27,6 +28,7 @@ export default function CoordinatorLayout({
             }}
           ></div>
           {children}
+          <Toaster />
           <MobileBottomNav />
         </div>
       </div>

@@ -9,10 +9,21 @@ import {
   CreateRescueRequestData,
   EmergencyRequestData,
   GetRequestsFilter,
+  PaginatedRequests,
+  CoordinatorRequest,
+  VerifyRequestInput,
+  MarkDuplicateInput,
+  UpdateLocationInput,
+  UpdatePriorityInput,
+  CancelRequestInput,
+  CreateOnBehalfInput,
+  CitizenSearchResult,
 } from "../domain/request.entity";
 import { requestsApi } from "./requests.api";
 
 export class RequestRepositoryImpl implements IRequestRepository {
+  // ─── Citizen Operations ──────────────────────────────────
+
   async createRescueRequest(
     data: CreateRescueRequestData,
   ): Promise<RescueRequest> {
@@ -45,49 +56,110 @@ export class RequestRepositoryImpl implements IRequestRepository {
     return (response as any).data || [];
   }
 
-  async getRequestDetail(requestId: string): Promise<RescueRequest> {
+  async getRequestDetail(requestId: string): Promise<CoordinatorRequest> {
     const response = await requestsApi.getRequestDetail(requestId);
-    // Backend may return { data: Request } (wrapped) or Request directly (unwrapped)
     const unwrapped = (response as any).data ?? response;
-    return unwrapped as RescueRequest;
+    return unwrapped as CoordinatorRequest;
   }
 
   async confirmRequest(requestId: string): Promise<void> {
     await requestsApi.confirmRequest(requestId);
   }
 
-  async cancelRequest(requestId: string): Promise<void> {
-    await requestsApi.cancelRequest(requestId);
-  }
+  // ─── Coordinator Operations ──────────────────────────────
 
-  async getAllRequests(filters?: GetRequestsFilter): Promise<any> {
+  async getAllRequests(
+    filters?: GetRequestsFilter,
+  ): Promise<PaginatedRequests> {
     const response = await requestsApi.getAllRequests(filters);
-    return (response as any).data;
+    const result = response as any;
+
+    // If response already matches PaginatedRequests structure
+    if (
+      result &&
+      "total" in result &&
+      "totalPages" in result &&
+      !("meta" in result)
+    ) {
+      return result as PaginatedRequests;
+    }
+
+    return {
+      data: result.data ?? [],
+      total: result.meta?.total ?? 0,
+      page: result.meta?.page ?? 1,
+      limit: result.meta?.limit ?? 10,
+      totalPages: result.meta?.totalPages ?? 1,
+    };
   }
 
-  async updateRequestStatus(requestId: string, status: string): Promise<void> {
-    // Map legacy status calls to the correct swagger endpoints
-    if (status === "VERIFIED" || status === "Verified" || status === "approved") {
-      await requestsApi.verifyRequest(requestId, true);
-    } else if (status === "REJECTED" || status === "Rejected" || status === "rejected") {
-      await requestsApi.verifyRequest(requestId, false);
-    } else if (status === "CLOSED" || status === "Closed") {
-      await requestsApi.closeRequest(requestId);
-    } else if (status === "CANCELLED" || status === "Cancelled") {
-      await requestsApi.cancelRequest(requestId);
-    } else {
-      // Fallback: try verify with approved=true for any other forward transition
-      await requestsApi.verifyRequest(requestId, true);
-    }
+  async verifyRequest(
+    requestId: string,
+    input: VerifyRequestInput,
+  ): Promise<CoordinatorRequest> {
+    const response = await requestsApi.verifyRequest(requestId, input);
+    return ((response as any).data ?? response) as CoordinatorRequest;
+  }
+
+  async closeRequest(requestId: string): Promise<CoordinatorRequest> {
+    const response = await requestsApi.closeRequest(requestId);
+    return ((response as any).data ?? response) as CoordinatorRequest;
+  }
+
+  async markDuplicate(
+    requestId: string,
+    input: MarkDuplicateInput,
+  ): Promise<CoordinatorRequest> {
+    const response = await requestsApi.markDuplicate(requestId, input);
+    return ((response as any).data ?? response) as CoordinatorRequest;
+  }
+
+  async updateLocation(
+    requestId: string,
+    input: UpdateLocationInput,
+  ): Promise<CoordinatorRequest> {
+    const response = await requestsApi.updateLocation(requestId, input);
+    return ((response as any).data ?? response) as CoordinatorRequest;
   }
 
   async updateRequestPriority(
     requestId: string,
-    priority: string,
-  ): Promise<void> {
-    await requestsApi.updateRequestPriority(requestId, priority);
+    input: UpdatePriorityInput,
+  ): Promise<CoordinatorRequest> {
+    const response = await requestsApi.updateRequestPriority(
+      requestId,
+      input.priority,
+    );
+    return ((response as any).data ?? response) as CoordinatorRequest;
+  }
+
+  async cancelRequest(
+    requestId: string,
+    input?: CancelRequestInput,
+  ): Promise<CoordinatorRequest> {
+    const response = await requestsApi.cancelRequest(requestId, input);
+    return ((response as any).data ?? response) as CoordinatorRequest;
+  }
+
+  async createOnBehalf(
+    input: CreateOnBehalfInput,
+  ): Promise<CoordinatorRequest> {
+    const response = await requestsApi.createOnBehalf(input as any);
+    return ((response as any).data ?? response) as CoordinatorRequest;
+  }
+
+  async searchCitizens(query: string): Promise<CitizenSearchResult[]> {
+    const response = await requestsApi.searchCitizens(query);
+    return ((response as any).data ?? []) as CitizenSearchResult[];
+  }
+
+  // ─── Legacy (deprecated) ─────────────────────────────────
+
+  /** @deprecated Use verifyRequest instead */
+  async updateRequestStatus(requestId: string, status: string): Promise<void> {
+    await requestsApi.updateRequestStatus(requestId, status);
   }
 }
 
-// Singleton instance for easy access
+// Singleton instance
 export const requestRepository = new RequestRepositoryImpl();

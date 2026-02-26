@@ -1,11 +1,27 @@
 /**
  * Requests API - Infrastructure Layer
- * Handles citizen rescue request operations
+ * Handles citizen + coordinator request operations (Unified v2.2)
  */
 
 import { apiClient } from "@/services/apiClient";
 import { authSession } from "@/services/authSession";
 import type { ApiResponse } from "@/shared/types/api";
+
+// ─── Param Types ─────────────────────────────────────────
+
+export interface GetRequestsParams {
+  status?: string;
+  type?: string;
+  incidentType?: string;
+  priority?: string;
+  source?: string;
+  userName?: string;
+  createdBy?: string;
+  page?: number;
+  limit?: number;
+}
+
+// ─── Legacy DTOs (citizen pages) ─────────────────────────
 
 export interface CreateRescueRequestDTO {
   type: "Rescue" | "Relief";
@@ -29,20 +45,14 @@ export interface EmergencyRequestDTO {
   phone: string;
 }
 
-export interface GetRequestsParams {
-  status?: string;
-  type?: string;
-  incidentType?: string;
-  priority?: string;
-  page?: number;
-  limit?: number;
-}
+// ─── API Object ──────────────────────────────────────────
 
 export const requestsApi = {
-  /**
-   * Create a rescue request
-   * POST /requests
-   */
+  // ────────────────────────────────────────────────────────
+  // CITIZEN ENDPOINTS
+  // ────────────────────────────────────────────────────────
+
+  /** POST /requests */
   createRescueRequest: async (
     data: CreateRescueRequestDTO,
   ): Promise<ApiResponse> => {
@@ -51,10 +61,7 @@ export const requestsApi = {
     });
   },
 
-  /**
-   * Create emergency request (legacy)
-   * POST /citizen/emergency-request
-   */
+  /** POST /citizen/emergency-request */
   createEmergencyRequest: async (
     data: EmergencyRequestDTO,
   ): Promise<ApiResponse> => {
@@ -63,69 +70,44 @@ export const requestsApi = {
     });
   },
 
-  /**
-   * Get user's rescue requests
-   * GET /requests/my
-   */
+  /** GET /requests/my */
   getMyRequests: async (params?: GetRequestsParams): Promise<ApiResponse> => {
     const queryString =
       params ?
         "?" + new URLSearchParams(params as Record<string, string>).toString()
-        : "";
+      : "";
     return apiClient.get(`/requests/my${queryString}`, {
       headers: authSession.getAuthHeaders(),
     });
   },
 
-  /**
-   * Get request history
-   * GET /citizen/history
-   */
+  /** GET /citizen/history */
   getHistory: async (): Promise<ApiResponse> => {
     return apiClient.get("/citizen/history", {
       headers: authSession.getAuthHeaders(),
     });
   },
 
-  /**
-   * Get request detail by ID
-   * GET /requests/{id}
-   */
+  /** GET /requests/{id} */
   getRequestDetail: async (requestId: string): Promise<ApiResponse> => {
     return apiClient.get(`/requests/${requestId}`, {
       headers: authSession.getAuthHeaders(),
     });
   },
 
-  /**
-   * Citizen confirm safe / received
-   * PATCH /requests/{id}/confirm
-   */
+  /** PATCH /requests/{id}/confirm */
   confirmRequest: async (requestId: string): Promise<ApiResponse> => {
     return apiClient.patch(`/requests/${requestId}/confirm`, undefined, {
       headers: authSession.getAuthHeaders(),
     });
   },
 
-  /**
-   * Citizen cancel own request
-   * PATCH /requests/{requestId}/cancel
-   */
-  cancelRequest: async (requestId: string): Promise<ApiResponse> => {
-    return apiClient.patch(
-      `/requests/${requestId}/cancel`,
-      undefined,
-      { headers: authSession.getAuthHeaders() },
-    );
-  },
+  // ────────────────────────────────────────────────────────
+  // COORDINATOR ENDPOINTS
+  // ────────────────────────────────────────────────────────
 
-  /**
-   * Get all requests (Coordinator)
-   * GET /requests  (with filters)
-   */
-  getAllRequests: async (
-    params?: GetRequestsParams & { userName?: string; source?: string },
-  ): Promise<ApiResponse> => {
+  /** GET /requests — list all requests with filters */
+  getAllRequests: async (params?: GetRequestsParams): Promise<ApiResponse> => {
     const queryParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -136,16 +118,52 @@ export const requestsApi = {
     }
     const query = queryParams.toString();
     const endpoint = query ? `/requests?${query}` : `/requests`;
-
     return apiClient.get(endpoint, {
       headers: authSession.getAuthHeaders(),
     });
   },
 
-  /**
-   * Update request priority (Coordinator)
-   * PATCH /requests/{requestId}/priority
-   */
+  /** PATCH /requests/{id}/verify — verify or reject */
+  verifyRequest: async (
+    requestId: string,
+    input: { approved: boolean; priority?: string; reason?: string },
+  ): Promise<ApiResponse> => {
+    return apiClient.patch(`/requests/${requestId}/verify`, input, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /requests/{id}/close — close fulfilled request */
+  closeRequest: async (requestId: string): Promise<ApiResponse> => {
+    return apiClient.patch(`/requests/${requestId}/close`, undefined, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /requests/{id}/duplicate — mark as duplicate */
+  markDuplicate: async (
+    requestId: string,
+    input: { duplicatedOfRequestId: string },
+  ): Promise<ApiResponse> => {
+    return apiClient.patch(`/requests/${requestId}/duplicate`, input, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /requests/{id}/location — update location */
+  updateLocation: async (
+    requestId: string,
+    input: {
+      location: { type: string; coordinates: [number, number] };
+      isLocationVerified?: boolean;
+    },
+  ): Promise<ApiResponse> => {
+    return apiClient.patch(`/requests/${requestId}/location`, input, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /requests/{id}/priority — update priority */
   updateRequestPriority: async (
     requestId: string,
     priority: string,
@@ -157,31 +175,57 @@ export const requestsApi = {
     );
   },
 
-  /**
-   * Verify (approve/reject) a request (Coordinator)
-   * PATCH /requests/{id}/verify
-   */
-  verifyRequest: async (
+  /** PATCH /requests/{id}/cancel — coordinator cancel */
+  cancelRequest: async (
     requestId: string,
-    approved: boolean,
-    priority?: string,
-    notes?: string,
+    input?: { reason?: string },
   ): Promise<ApiResponse> => {
-    return apiClient.patch(
-      `/requests/${requestId}/verify`,
-      { approved, ...(priority ? { priority } : {}), ...(notes ? { notes } : {}) },
-      { headers: authSession.getAuthHeaders() },
+    return apiClient.patch(`/requests/${requestId}/cancel`, input ?? {}, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** POST /requests/on-behalf — create request on behalf of citizen */
+  createOnBehalf: async (input: {
+    citizenId?: string;
+    userName?: string;
+    phoneNumber?: string;
+    type: string;
+    incidentType?: string;
+    location: { type: string; coordinates: [number, number] };
+    description: string;
+    peopleCount?: number;
+    priority?: string;
+    requestSupplies?: { supplyId: string; requestedQty: number }[];
+    imageUrls?: string[];
+  }): Promise<ApiResponse> => {
+    return apiClient.post("/requests/on-behalf", input, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** GET /requests/search-citizens?q=... */
+  searchCitizens: async (q: string): Promise<ApiResponse> => {
+    return apiClient.get(
+      `/requests/search-citizens?q=${encodeURIComponent(q)}`,
+      {
+        headers: authSession.getAuthHeaders(),
+      },
     );
   },
 
-  /**
-   * Close a fulfilled request (Coordinator)
-   * PATCH /requests/{id}/close
-   */
-  closeRequest: async (requestId: string): Promise<ApiResponse> => {
+  // ────────────────────────────────────────────────────────
+  // LEGACY (deprecated — kept for backward compat)
+  // ────────────────────────────────────────────────────────
+
+  /** @deprecated Use verifyRequest instead */
+  updateRequestStatus: async (
+    requestId: string,
+    status: string,
+  ): Promise<ApiResponse> => {
     return apiClient.patch(
-      `/requests/${requestId}/close`,
-      undefined,
+      `/requests/${requestId}/status`,
+      { status },
       { headers: authSession.getAuthHeaders() },
     );
   },

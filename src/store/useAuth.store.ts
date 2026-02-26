@@ -177,14 +177,30 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   /**
    * Khởi tạo auth state khi app load
-   * Theo auth-flow.md: Khi reload, gọi /auth/refresh để lấy token mới
-   * (vì access token chỉ lưu trong memory, mất khi refresh page)
+   *
+   * Strategy:
+   * 1. Nếu có access token trong localStorage → gọi GET /auth/me (nhanh, token trong header)
+   * 2. Nếu /auth/me thất bại (token hết hạn) → thử POST /auth/refresh (cookie tự gửi)
+   * 3. Nếu cả 2 đều thất bại → clearAuth, user cần login lại
    */
   initAuth: async (): Promise<void> => {
     try {
       set({ loading: true });
 
-      // Thử refresh token từ cookie để lấy access token mới
+      const existingToken = tokenManager.getToken();
+
+      // Strategy 1: Nếu có token → thử /auth/me trước (nhanh nhất)
+      if (existingToken) {
+        try {
+          await get().getCurrentUser();
+          // Thành công → user đã authenticated
+          return;
+        } catch {
+          // Token hết hạn hoặc không hợp lệ → fallback xuống refresh
+        }
+      }
+
+      // Strategy 2: Thử refresh token từ cookie
       const success = await get().refreshToken();
 
       if (!success) {

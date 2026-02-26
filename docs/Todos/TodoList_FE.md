@@ -44,10 +44,10 @@
 - [x] Emergency Button
 - [x] Request List (Citizen) - `CitizenHistoryPage`
 - [x] Request Detail (Basic)
+- [x] **Coordinator Request List**: `CoordinatorRequestsPage` (Filter by status implemented)
 
 ### Not Implemented ❌
 
-- [ ] **Coordinator Request List**: Filter by status, priority, source.
 - [ ] **Request Verification UI**: Coordinator verify/reject request.
 - [ ] **Request Location Update**: Coordinator update location map.
 - [ ] **Duplicate Marking**: Coordinator mark request as duplicate.
@@ -60,7 +60,8 @@
 
 ### Implemented ✅
 
-- [x] Coordinator Requests View (Partially check `CoordinatorRequestsPage`)
+- [x] Coordinator Dashboard - `CoordinatorDashboardPage`
+- [x] Coordinator Mission List - `MissionListPage`
 - [x] Team Mission List - `TeamMissionsPage`
 
 ### Not Implemented ❌
@@ -80,19 +81,27 @@
 
 ---
 
-## 4. 👥 Team Management (Coordinator/Admin)
+## 4. 👥 Team Management (Coordinator vs Team Leader)
 
 ### Implemented ✅
 
-- [ ] (Check if `teams` module has generic CRUD)
+- [ ] Setup `teams` module / API services
 
 ### Not Implemented ❌
 
-- [ ] **Team List**: View all rescue teams and status (`AVAILABLE`/`BUSY`).
-- [ ] **Create Team Form**: Add new team.
-- [ ] **Team Detail**: View members.
-- [ ] **Manage Members**: Add/Remove members from team.
-- [ ] **Change Leader**: UI to assign new leader.
+#### 👨‍💼 Coordinator / Admin Role
+
+- [ ] **Global Team List**: View all rescue teams, filter by status (`AVAILABLE`/`BUSY`).
+- [ ] **Create Team**: Add new team.
+- [ ] **Global Team Detail**: View any team's members and current missions.
+- [ ] **Manage Any Members**: Add (`Citizen` -> `Rescue Team`)/Remove members from any team.
+- [ ] **Change Leader**: UI to assign new leader for any team.
+- [ ] **Delete/Edit Team**: Update team info or delete team.
+
+#### 👷‍♂️ Team Leader Role
+
+- [ ] **My Team Detail**: View own team's details & active missions.
+- [ ] **Manage Own Members**: Add/Remove members from their own team (Cannot remove self/leader).
 
 ---
 

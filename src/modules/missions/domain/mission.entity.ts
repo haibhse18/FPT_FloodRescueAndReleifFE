@@ -1,55 +1,87 @@
 /**
  * Mission Entity - Domain layer
- * Định nghĩa cấu trúc dữ liệu Mission, không phụ thuộc framework
+ * Định nghĩa cấu trúc dữ liệu Mission theo Unified v2.2
  */
 
-export type PriorityLevel = 'low' | 'medium' | 'high' | 'critical';
+// ─── Enums ───────────────────────────────────────────────
 
-export type MissionStatus = 
-    | 'pending' 
-    | 'assigned' 
-    | 'in_progress' 
-    | 'completed' 
-    | 'cancelled';
+export type MissionStatus =
+  | "PLANNED"
+  | "IN_PROGRESS"
+  | "PAUSED"
+  | "PARTIAL"
+  | "COMPLETED"
+  | "ABORTED";
+
+export type MissionType = "RESCUE" | "RELIEF";
+
+export type PriorityLevel = "Critical" | "High" | "Normal";
+
+// ─── Main Mission Entity ─────────────────────────────────
 
 export interface Mission {
-    id: string;
-    requestId: string;
-    teamId: string;
-    priority: PriorityLevel;
-    status: MissionStatus;
-    assignedAt: Date;
-    completedAt?: Date;
-    notes?: string;
+  _id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  status: MissionStatus;
+  priority: PriorityLevel;
+  type: MissionType;
+  coordinatorId: string;
+  createdAt: string;
+  updatedAt: string;
 }
+
+// ─── Paginated ───────────────────────────────────────────
+
+export interface PaginatedMissions {
+  data: Mission[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// ─── Filter ──────────────────────────────────────────────
+
+export interface GetMissionsFilter {
+  status?: MissionStatus;
+  type?: MissionType;
+  code?: string;
+  page?: number;
+  limit?: number;
+}
+
+// ─── Input DTOs ──────────────────────────────────────────
+
+export interface CreateMissionInput {
+  name: string;
+  type: MissionType;
+  description?: string;
+  priority?: PriorityLevel;
+}
+
+export interface UpdateMissionInput {
+  name?: string;
+  description?: string;
+  priority?: PriorityLevel;
+}
+
+export interface AssignTeamInput {
+  teamId: string;
+  requestId: string;
+  note?: string;
+}
+
+// ─── Rescue Team (for assign modal) ─────────────────────
 
 export interface RescueTeam {
-    id: string;
-    name: string;
-    status: 'available' | 'busy' | 'offline';
-    currentLocation?: {
-        latitude: number;
-        longitude: number;
-    };
-    memberCount: number;
-}
-
-export interface CoordinatorRequest {
-    id: string;
-    type: string;
-    location: string;
-    latitude: number;
-    longitude: number;
-    description: string;
-    urgencyLevel: string;
-    status: string;
-    assignedTeam?: RescueTeam;
-    createdAt: Date;
-}
-
-export interface GetAllRequestsFilter {
-    status?: string;
-    urgency?: string;
-    dateFrom?: string;
-    dateTo?: string;
+  _id: string;
+  name: string;
+  status: "AVAILABLE" | "BUSY" | string;
+  leaderId?: string;
+  members?: Array<{
+    _id: string;
+    displayName?: string;
+  }>;
 }

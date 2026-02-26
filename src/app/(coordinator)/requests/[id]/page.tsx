@@ -1,5 +1,7 @@
+"use client";
+
 import CoordinatorRequestDetailPage from "@/modules/requests/presentation/pages/CoordinatorRequestDetailPage";
 
-export default function Page({ params }: { params: { id: string } }) {
-  return <CoordinatorRequestDetailPage params={params} />;
+export default function Page() {
+  return <CoordinatorRequestDetailPage />;
 }

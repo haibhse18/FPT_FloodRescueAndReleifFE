@@ -1,32 +1,34 @@
 /**
  * Team Repository Interface - Domain layer
- * Định nghĩa contract cho team operations, không phụ thuộc implementation
+ * Định nghĩa contract cho team CRUD + member management
  */
 
-import { 
-    AssignedRequest, 
-    UpdateRequestStatusData,
-    LocationData 
-} from './team.entity';
+import type {
+  Team,
+  PaginatedTeams,
+  GetTeamsFilter,
+  CreateTeamInput,
+  UpdateTeamInput,
+  ChangeLeaderInput,
+  AddMemberInput,
+  TeamMember,
+} from "./team.entity";
 
 export interface ITeamRepository {
-    /**
-     * Lấy danh sách yêu cầu được phân công
-     */
-    getAssignedRequests(): Promise<AssignedRequest[]>;
+  // ── CRUD ────────────────────────────────────────────────
+  getTeams(filter?: GetTeamsFilter): Promise<PaginatedTeams>;
+  getTeamById(teamId: string): Promise<Team>;
+  createTeam(input: CreateTeamInput): Promise<Team>;
+  updateTeam(teamId: string, input: UpdateTeamInput): Promise<Team>;
+  deleteTeam(teamId: string): Promise<void>;
 
-    /**
-     * Cập nhật trạng thái yêu cầu
-     */
-    updateRequestStatus(requestId: string, data: UpdateRequestStatusData): Promise<void>;
+  // ── Leader ──────────────────────────────────────────────
+  changeLeader(teamId: string, input: ChangeLeaderInput): Promise<Team>;
 
-    /**
-     * Cập nhật vị trí đội
-     */
-    updateLocation(location: LocationData): Promise<void>;
+  // ── Members ─────────────────────────────────────────────
+  addMember(teamId: string, input: AddMemberInput): Promise<Team>;
+  removeMember(teamId: string, userId: string): Promise<Team>;
 
-    /**
-     * Báo cáo tiến độ nhiệm vụ
-     */
-    reportProgress(requestId: string, progress: string): Promise<void>;
+  // ── Available users ─────────────────────────────────────
+  getAvailableMembers(): Promise<TeamMember[]>;
 }

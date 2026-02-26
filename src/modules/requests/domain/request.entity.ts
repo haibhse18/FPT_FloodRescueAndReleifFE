@@ -1,9 +1,10 @@
 /**
  * Request Entity - Domain layer
- * Định nghĩa cấu trúc dữ liệu Request, không phụ thuộc framework
+ * Định nghĩa cấu trúc dữ liệu Request theo Unified v2.2
  */
 
-// Actual backend status enum (UPPERCASE) per swagger
+// ─── Enums ───────────────────────────────────────────────
+
 export type RequestStatus =
   | "SUBMITTED"
   | "VERIFIED"
@@ -14,48 +15,183 @@ export type RequestStatus =
   | "CLOSED"
   | "CANCELLED";
 
-// Actual backend priority enum (Title Case) per swagger
-export type UrgencyLevel = "Critical" | "High" | "Normal";
+export type PriorityLevel = "Critical" | "High" | "Normal";
 
-export type DangerType = "Flood" | "Trapped" | "Injured" | "Landslide" | "Other";
+export type RequestType = "Rescue" | "Relief";
 
-export interface RescueRequest {
-  _id?: string;
-  id?: string;
-  requestId?: string;
-  userId?: string;
+export type IncidentType =
+  | "Flood"
+  | "Trapped"
+  | "Injured"
+  | "Landslide"
+  | "Other";
+
+export type RequestSource = "CITIZEN" | "COORDINATOR";
+
+// ─── Legacy types (kept for backward compat) ────────────
+
+/** @deprecated Use PriorityLevel instead */
+export type UrgencyLevel = "low" | "medium" | "high" | "critical";
+
+/** @deprecated Use IncidentType instead */
+export type DangerType = "flood" | "trapped" | "injury" | "landslide" | "other";
+
+// ─── GeoPoint ────────────────────────────────────────────
+
+export interface GeoPoint {
+  type: "Point";
+  coordinates: [number, number]; // [lng, lat]
+}
+
+// ─── Media ───────────────────────────────────────────────
+
+export interface RequestMedia {
+  imageUrl: string;
+  description?: string;
+  uploadedAt?: string;
+}
+
+// ─── Supply Item ─────────────────────────────────────────
+
+export interface RequestSupplyItem {
+  supplyId: string;
+  requestedQty: number;
+  supplyName?: string;
+}
+
+// ─── Main Request Entity ─────────────────────────────────
+
+export interface CoordinatorRequest {
+  _id: string;
   userName?: string;
-  type: string;
-  incidentType?: string;
-  location: { type: "Point"; coordinates: [number, number] } | string;
+  userId?: string | null;
+  createdBy?: string;
+  source?: RequestSource;
+  phoneNumber?: string | null;
+  type: RequestType | string;
+  incidentType?: IncidentType | string;
+  location?: GeoPoint;
+  description: string;
+  peopleCount?: number;
+  priority: PriorityLevel | string;
+  status: RequestStatus | string;
+  requestSupplies?: RequestSupplyItem[];
+  media?: RequestMedia[];
+  imageUrls?: string[];
+  isDuplicated?: boolean;
+  duplicatedOfRequestId?: string | null;
+  isLocationVerified?: boolean;
+  createdAt: string | Date;
+  updatedAt?: string | Date;
+
+  // Legacy fields for backward compat
+  requestId?: string;
+  displayName?: string;
   latitude?: number;
   longitude?: number;
-  description: string;
-  imageUrls?: string[];
-  media?: Array<{ imageUrl: string; description?: string; uploadedAt?: string }>;
-  priority?: UrgencyLevel;
-  peopleCount?: number;
-  status: RequestStatus | string;
-  source?: "CITIZEN" | "COORDINATOR";
-  createdBy?: string;
+  address?: string;
   assignedTeamId?: string;
   assignedTeamName?: string;
   missionId?: string;
-  isDuplicated?: boolean;
+}
+
+// ─── Pagination ──────────────────────────────────────────
+
+export interface PaginatedRequests {
+  data: CoordinatorRequest[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// ─── Filter ──────────────────────────────────────────────
+
+export interface GetRequestsFilter {
+  status?: string;
+  type?: string;
+  incidentType?: string;
+  priority?: string;
+  source?: string;
+  userName?: string;
+  createdBy?: string;
+  page?: number;
+  limit?: number;
+}
+
+// ─── Input DTOs ──────────────────────────────────────────
+
+export interface VerifyRequestInput {
+  approved: boolean;
+  priority?: PriorityLevel;
+  reason?: string;
+}
+
+export interface MarkDuplicateInput {
+  duplicatedOfRequestId: string;
+}
+
+export interface UpdateLocationInput {
+  location: GeoPoint;
   isLocationVerified?: boolean;
-  requestSupplies?: Array<{ supplyId: string; requestedQty: number }>;
-  createdAt: string | Date;
-  updatedAt?: string | Date;
+}
+
+export interface UpdatePriorityInput {
+  priority: PriorityLevel;
+}
+
+export interface CancelRequestInput {
+  reason?: string;
+}
+
+export interface CreateOnBehalfInput {
+  citizenId?: string;
+  userName?: string;
+  phoneNumber?: string;
+  type: RequestType;
+  incidentType?: IncidentType;
+  location: GeoPoint;
+  description: string;
+  peopleCount?: number;
+  priority?: PriorityLevel;
+  requestSupplies?: RequestSupplyItem[];
+  imageUrls?: string[];
+}
+
+// ─── Legacy types (kept for existing citizen pages) ──────
+
+export interface RescueRequest {
+  id: string;
+  userId: string;
+  type: DangerType;
+  latitude: number;
+  longitude: number;
+  location: string;
+  description: string;
+  imageUrls: string[];
+  urgencyLevel: UrgencyLevel;
+  numberOfPeople: number;
+  status: string;
+  assignedTeamId?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface CreateRescueRequestData {
   type: "Rescue" | "Relief";
   incidentType?: "Flood" | "Trapped" | "Injured" | "Landslide" | "Other";
-  location: { type: "Point"; coordinates: [number, number] };
+  latitude?: number;
+  longitude?: number;
   description: string;
   imageUrls?: string[];
+  priority?: string;
   peopleCount?: number;
-  requestSupplies?: Array<{ supplyId: string; requestedQty: number }>;
+  requestSupplies?: Array<{ supplyId: string; requestedQty: number }>; // renamed from requestSupply for compatibility
+  location: { type: "Point"; coordinates: [number, number] }; // strict format
+  dangerType?: string;
+  numberOfPeople?: number;
+  urgencyLevel?: string;
+  // images?: string[]; is basically imageUrls
 }
 
 export interface EmergencyRequestData {
@@ -70,58 +206,12 @@ export interface EmergencyRequestData {
   phone: string;
 }
 
-export interface GetRequestsFilter {
-  status?: string;
-  type?: string;
-  incidentType?: string;
-  priority?: string;
-  page?: number;
-  limit?: number;
-  userName?: string;
-}
+// ─── Search Citizens ─────────────────────────────────────
 
-export interface CoordinatorRequest {
-  requestId?: string;
-  _id?: string;
-  id?: string;
-  userId?: string;
-  userName?: string;
-  displayName?: string;
-  source?: "CITIZEN" | "COORDINATOR";
-  type: string;
-  incidentType?: string;
-  location?: { type: "Point"; coordinates: [number, number] };
-  latitude?: number;
-  longitude?: number;
-  address?: string;
-  description: string;
-  peopleCount?: number;
-  priority?: "Critical" | "High" | "Normal";
-  status: RequestStatus | string;
-  imageUrls?: string[];
-  media?: Array<{ imageUrl: string; description?: string; uploadedAt?: string }>;
-  requestSupplies?: Array<{ supplyId: string; requestedQty: number }>;
-  isDuplicated?: boolean;
-  isLocationVerified?: boolean;
-  createdAt: string | Date;
-  updatedAt?: string | Date;
-  assignedTeamId?: string;
-  assignedTeamName?: string;
-  missionId?: string;
-}
-
-export interface PaginatedRequests {
-  data: CoordinatorRequest[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface PaginatedRescueRequests {
-  data: RescueRequest[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+export interface CitizenSearchResult {
+  _id: string;
+  userName: string;
+  displayName: string;
+  email: string;
+  phoneNumber: string;
 }

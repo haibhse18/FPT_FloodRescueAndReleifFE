@@ -1,23 +1,24 @@
 import { IRequestRepository } from "../domain/request.repository";
+import {
+  UpdatePriorityInput,
+  CoordinatorRequest,
+} from "../domain/request.entity";
 
 /**
  * Use Case: Update Request Priority
- * Coordinator set priority cho request (critical, high, normal)
+ * Coordinator set priority cho request (Critical, High, Normal)
  */
 export class UpdateRequestPriorityUseCase {
   constructor(private requestRepository: IRequestRepository) {}
 
-  async execute(requestId: string, priority: string): Promise<void> {
+  async execute(
+    requestId: string,
+    input: UpdatePriorityInput,
+  ): Promise<CoordinatorRequest> {
     if (!requestId) {
       throw new Error("Request ID is required");
     }
 
-    const validPriorities = ["critical", "high", "normal"];
-
-    if (!validPriorities.includes(priority)) {
-      throw new Error(`Invalid priority: ${priority}`);
-    }
-
-    await this.requestRepository.updateRequestPriority(requestId, priority);
+    return await this.requestRepository.updateRequestPriority(requestId, input);
   }
 }

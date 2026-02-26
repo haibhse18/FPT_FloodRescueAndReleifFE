@@ -1,25 +1,18 @@
+import { IMissionRepository } from "../domain/mission.repository";
+import { AssignTeamInput } from "../domain/mission.entity";
+import { Timeline } from "@/modules/timelines/domain/timeline.entity";
+
 /**
- * Assign Team Use Case - Application layer
- * Handle team assignment operations
+ * Use Case: Assign Team to Mission
+ * Creates a Timeline with status ASSIGNED
  */
-
-import { IMissionRepository } from '../domain/mission.repository';
-
 export class AssignTeamUseCase {
-    constructor(private readonly missionRepository: IMissionRepository) {}
+  constructor(private missionRepository: IMissionRepository) {}
 
-    /**
-     * Assign a rescue team to a request
-     */
-    async execute(requestId: string, teamId: string): Promise<void> {
-        if (!requestId) {
-            throw new Error('ID yêu cầu là bắt buộc');
-        }
-
-        if (!teamId) {
-            throw new Error('ID đội cứu hộ là bắt buộc');
-        }
-
-        await this.missionRepository.assignRescueTeam(requestId, teamId);
-    }
+  async execute(missionId: string, input: AssignTeamInput): Promise<Timeline> {
+    if (!missionId) throw new Error("Mission ID is required");
+    if (!input.teamId) throw new Error("Team ID is required");
+    if (!input.requestId) throw new Error("Request ID is required");
+    return await this.missionRepository.assignTeam(missionId, input);
+  }
 }

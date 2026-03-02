@@ -7,6 +7,9 @@ import { requestRepository } from "@/modules/requests/infrastructure/request.rep
 interface Request {
   id: string;
   type: string;
+  incidentType: string;
+  urgency: string;
+  peopleCount: number;
   status: string;
   originalStatus: string;
   location: string;
@@ -14,9 +17,6 @@ interface Request {
   completedAt?: string;
   statusText: string;
   statusColor: string;
-  priority: string;
-  peopleCount: number;
-  description?: string;
 }
 
 export default function CitizenHistoryPage() {
@@ -94,23 +94,18 @@ export default function CitizenHistoryPage() {
             req.type === "Rescue" || req.type === "rescue" ? "Cứu hộ"
               : req.type === "Relief" || req.type === "relief" ? "Cứu trợ"
                 : req.incidentType ? `${req.incidentType}` : "Yêu cầu",
+          incidentType: req.incidentType || req.type || "",
+          urgency: req.priority || req.urgencyLevel || "",
+          peopleCount: req.numberOfPeople || req.peopleCount || 1,
           status: st.filter,
           location:
-            typeof req.location === "string" ? req.location
-              : req.location?.coordinates
-                ? `${req.location.coordinates[1]?.toFixed(4)}, ${req.location.coordinates[0]?.toFixed(4)}`
-                : req.latitude != null && req.longitude != null
-                  ? `${Number(req.latitude).toFixed(4)}, ${Number(req.longitude).toFixed(4)}`
-                  : "Không xác định",
+            typeof req.location === "string" ? req.location : "",
           createdAt: new Date(req.createdAt).toLocaleString("vi-VN"),
           completedAt: req.completedAt
             ? new Date(req.completedAt).toLocaleString("vi-VN")
             : undefined,
           statusText: st.text,
           statusColor: st.color,
-          priority: req.priority?.toLowerCase() || req.urgencyLevel?.toLowerCase() || "medium",
-          peopleCount: req.peopleCount || req.numberOfPeople || 1,
-          description: req.description,
           originalStatus: req.status || "SUBMITTED",
         };
       });
@@ -262,188 +257,127 @@ export default function CitizenHistoryPage() {
                     )}
                   </div>
                   : requests.map((request) => (
-                    <div
+                    <Link
                       key={request.id}
-                      className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-5 hover:bg-white/10 hover:border-white/20 transition-all"
+                      href={`/history/${request.id}`}
+                      className="block bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 transition-all group"
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span className="font-mono text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded">
-                              #{(request.id?.length ?? 0) > 8 ? request.id.slice(-8).toUpperCase() : (request.id ?? "N/A")}
-                            </span>
-                            <span
-                              className={`px-3 py-1 rounded-lg text-xs font-bold border ${request.statusColor}`}
-                            >
-                              {request.statusText}
-                            </span>
-                            <span
-                              className={`px-2 py-1 rounded-lg text-xs font-bold ${request.priority === "critical" ?
-                                "bg-red-500/20 text-red-400 border border-red-500/30"
-                                : request.priority === "high" ?
-                                  "bg-orange-500/20 text-orange-400 border border-orange-500/30"
-                                  : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                                }`}
-                            >
-                              {request.priority === "critical" ?
-                                "🚨 KHẨN CẤP"
-                                : request.priority === "high" ?
-                                  "⚠️ CAO"
-                                  : "ℹ️ BÌNH THƯỜNG"}
-                            </span>
-                          </div>
-                          <h3 className="text-lg font-bold text-white mb-2">
-                            {request.type}
-                          </h3>
-                          <div className="space-y-1 text-sm text-gray-400">
-                            <p className="flex items-center gap-2">
-                              <span>📍</span>
-                              <span>{request.location}</span>
-                            </p>
-                            <p className="flex items-center gap-2">
-                              <span>👥</span>
-                              <span>{request.peopleCount} người</span>
-                            </p>
-                            <p className="flex items-center gap-2">
-                              <span>🕐</span>
-                              <span>Tạo lúc: {request.createdAt}</span>
-                            </p>
-                            {request.completedAt && (
-                              <p className="flex items-center gap-2 text-green-400">
-                                <span>✅</span>
-                                <span>Hoàn thành: {request.completedAt}</span>
-                              </p>
-                            )}
-                            {request.description && (
-                              <p className="flex items-start gap-2 mt-1">
-                                <span className="flex-shrink-0">📝</span>
-                                <span className="line-clamp-2 text-gray-400">
-                                  {request.description}
-                                </span>
-                              </p>
-                            )}
-                          </div>
-                        </div>
+                      {/* Top row: type + status badge */}
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <h3 className="text-base font-bold text-white truncate">
+                          {request.type}
+                        </h3>
+                        <span className={`flex-shrink-0 px-3 py-1 rounded-lg text-xs font-bold border ${request.statusColor}`}>
+                          {request.statusText}
+                        </span>
                       </div>
-                      <div className="flex gap-2 mt-4">
-                        {/* Mini 6-step status progress — matches swagger lifecycle */}
-                        <div className="flex-1">
-                          {(() => {
-                            const isCancelled =
-                              ["Rejected", "REJECTED", "Cancelled", "CANCELLED"].includes(
-                                request.originalStatus,
-                              );
-                            // 6 steps matching swagger: SUBMITTED→VERIFIED→IN_PROGRESS→PARTIALLY_FULFILLED→FULFILLED→CLOSED
-                            const steps = [
-                              { label: "Gửi" },         // 0
-                              { label: "Xác nhận" },    // 1
-                              { label: "Xử lý" },       // 2
-                              { label: "Cứu trợ" },     // 3
-                              { label: "Xong" },         // 4
-                              { label: "Đóng" },         // 5
-                            ];
-                            const stepIndex =
-                              ["CLOSED"].includes(request.originalStatus) ? 5
-                                : ["FULFILLED", "Fulfilled", "Completed"].includes(request.originalStatus) ? 4
-                                  : ["PARTIALLY_FULFILLED"].includes(request.originalStatus) ? 3
-                                    : ["IN_PROGRESS", "In Progress"].includes(request.originalStatus) ? 2
-                                      : ["VERIFIED", "Verified", "Accepted"].includes(request.originalStatus) ? 1
-                                        : 0; // SUBMITTED / Submitted / Pending / unknown
-                            return (
-                              <div className="space-y-1 mb-3">
-                                {/* Step nodes + connectors */}
-                                <div className="flex items-center">
-                                  {steps.map((step, i) => {
-                                    const done = !isCancelled && i < stepIndex;
-                                    const active = !isCancelled && i === stepIndex;
-                                    const cancelled = isCancelled;
-                                    return (
-                                      <div key={i} className="flex items-center flex-1">
-                                        <div
-                                          className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0 transition-all ${cancelled
-                                            ? "bg-red-500/20 text-red-400 border border-red-500/30"
-                                            : done
-                                              ? "bg-green-500 text-white"
-                                              : active
-                                                ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40"
-                                                : "bg-white/10 text-gray-600"
-                                            }`}
-                                        >
-                                          {cancelled ? "✕" : done ? "✓" : i + 1}
-                                        </div>
-                                        {i < steps.length - 1 && (
-                                          <div
-                                            className={`flex-1 h-0.5 mx-0.5 transition-all ${!cancelled && i < stepIndex
-                                              ? "bg-green-500"
-                                              : "bg-white/10"
-                                              }`}
-                                          />
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                                {/* Step labels */}
-                                <div className="flex">
-                                  {steps.map((step, i) => (
-                                    <div key={i} className="flex-1 text-center">
-                                      <span
-                                        className={`text-[9px] leading-tight ${isCancelled
-                                          ? "text-red-400"
-                                          : i === stepIndex
-                                            ? "text-[#FF7700] font-bold"
-                                            : i < stepIndex
-                                              ? "text-green-400"
-                                              : "text-gray-600"
-                                          }`}
-                                      >
-                                        {step.label}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                                {isCancelled && (
-                                  <p className="text-xs text-red-400 font-bold">
-                                    ✕{" "}
-                                    {request.originalStatus === "Rejected"
-                                      ? "Yêu cầu bị từ chối"
-                                      : "Yêu cầu đã hủy"}
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </div>
+
+                      {/* Info chips */}
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {request.incidentType && (
+                          <span className="text-xs bg-white/5 border border-white/10 text-gray-300 px-2.5 py-1 rounded-lg">
+                            🌊 {request.incidentType}
+                          </span>
+                        )}
+                        {request.urgency && (
+                          <span className={`text-xs px-2.5 py-1 rounded-lg border font-semibold ${["Critical", "critical"].includes(request.urgency)
+                              ? "bg-red-500/15 text-red-400 border-red-500/30"
+                              : ["High", "high"].includes(request.urgency)
+                                ? "bg-orange-500/15 text-orange-400 border-orange-500/30"
+                                : "bg-blue-500/15 text-blue-400 border-blue-500/30"
+                            }`}>
+                            {["Critical", "critical"].includes(request.urgency) ? "🚨 Khẩn cấp"
+                              : ["High", "high"].includes(request.urgency) ? "⚠️ Cao"
+                                : "ℹ️ Bình thường"}
+                          </span>
+                        )}
+                        <span className="text-xs bg-white/5 border border-white/10 text-gray-300 px-2.5 py-1 rounded-lg">
+                          👥 {request.peopleCount} người
+                        </span>
                       </div>
-                      <div className="flex gap-2">
+
+                      {/* Location */}
+                      {request.location && (
+                        <p className="text-sm text-gray-400 truncate mb-3">
+                          📍 {request.location}
+                        </p>
+                      )}
+
+                      {/* Time */}
+                      <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+                        <span>🕐 {request.createdAt}</span>
+                        {request.completedAt && (
+                          <span className="text-green-400">✅ {request.completedAt}</span>
+                        )}
+                      </div>
+
+                      {/* Mini progress bar */}
+                      {(() => {
+                        const isCancelled = ["REJECTED", "Rejected", "CANCELLED", "Cancelled"].includes(request.originalStatus);
+                        const steps = ["Gửi", "Xác nhận", "Xử lý", "Cứu trợ", "Xong", "Đóng"];
+                        const stepIndex =
+                          request.originalStatus === "CLOSED" ? 5
+                            : ["FULFILLED", "Fulfilled", "Completed"].includes(request.originalStatus) ? 4
+                              : request.originalStatus === "PARTIALLY_FULFILLED" ? 3
+                                : ["IN_PROGRESS", "In Progress"].includes(request.originalStatus) ? 2
+                                  : ["VERIFIED", "Verified", "Accepted"].includes(request.originalStatus) ? 1
+                                    : 0;
+                        return (
+                          <div className="mb-3 space-y-1">
+                            <div className="flex items-center">
+                              {steps.map((label, i) => (
+                                <div key={i} className="flex items-center flex-1">
+                                  <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black flex-shrink-0 ${isCancelled ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                                      : i < stepIndex ? "bg-green-500 text-white"
+                                        : i === stepIndex ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40"
+                                          : "bg-white/10 text-gray-600"
+                                    }`}>
+                                    {isCancelled ? "✕" : i < stepIndex ? "✓" : i + 1}
+                                  </div>
+                                  {i < steps.length - 1 && (
+                                    <div className={`flex-1 h-0.5 mx-0.5 ${!isCancelled && i < stepIndex ? "bg-green-500" : "bg-white/10"}`} />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex">
+                              {steps.map((label, i) => (
+                                <div key={i} className="flex-1 text-center">
+                                  <span className={`text-[8px] leading-tight ${isCancelled ? "text-red-400"
+                                      : i === stepIndex ? "text-[#FF7700] font-bold"
+                                        : i < stepIndex ? "text-green-400"
+                                          : "text-gray-600"
+                                    }`}>{label}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Action row */}
+                      <div className="flex gap-2" onClick={(e) => e.preventDefault()}>
                         <Link
                           href={`/history/${request.id}`}
-                          className="flex-1 px-4 py-2 bg-[#FF7700]/20 hover:bg-[#FF7700]/30 border border-[#FF7700]/30 rounded-xl text-[#FF7700] hover:text-[#FF8800] text-sm font-bold text-center transition-all"
+                          className="flex-1 px-3 py-2 bg-[#FF7700]/20 hover:bg-[#FF7700]/30 border border-[#FF7700]/30 rounded-xl text-[#FF7700] text-xs font-bold text-center transition-all"
                         >
-                          👁️ Xem chi tiết
+                          Xem chi tiết →
                         </Link>
-
-                        {/* Cancel button — hidden only when already terminal (cancelled/fulfilled/closed/rejected) */}
                         {!["CANCELLED", "Cancelled", "FULFILLED", "Fulfilled", "CLOSED", "Closed", "REJECTED", "Rejected", "Completed"].includes(
                           request.originalStatus,
                         ) && (
                             <button
                               onClick={() => handleCancelRequest(request.id)}
                               disabled={cancellingId === request.id}
-                              className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 rounded-xl text-red-400 hover:text-red-300 text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                              className="px-5 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-xl text-red-400 text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                             >
                               {cancellingId === request.id ? (
-                                <>
-                                  <span className="w-3.5 h-3.5 border-2 border-red-400 border-t-transparent rounded-full animate-spin inline-block" />
-                                  Hủy...
-                                </>
-                              ) : (
-                                "🚫 Hủy"
-                              )}
+                                <><span className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin inline-block" /> Hủy...</>
+                              ) : "🚫 Hủy"}
                             </button>
                           )}
                       </div>
-                    </div>
+                    </Link>
                   ))
             }
           </div>

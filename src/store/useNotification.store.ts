@@ -86,16 +86,34 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
 
     // ─── Notification event handler ─────────────────────
     const handleNewNotification = (data: Notification) => {
+      // Create a fallback date if needed
+      let dateObj = new Date();
+      if (data.createdAt) {
+        dateObj = new Date(data.createdAt);
+      } else if (data.timestamp) {
+        dateObj = new Date(data.timestamp);
+      }
+
+      // Ensure date is valid, else fallback to current time
+      if (isNaN(dateObj.getTime())) {
+        dateObj = new Date();
+      }
+
+      // Ensure that coming from socket, it is always marked as unread
+      const safeData = {
+        ...data,
+        isRead: false,
+        createdAt: dateObj.toISOString(),
+      };
+
       set((state) => ({
-        notifications: [data, ...state.notifications],
+        notifications: [safeData, ...state.notifications],
         unreadCount: state.unreadCount + 1,
       }));
 
       // Show toast
-      toast(data.message, {
-        description: new Date(data.createdAt || data.timestamp!).toLocaleString(
-          "vi-VN",
-        ),
+      toast(safeData.message || "Có thông báo mới", {
+        description: dateObj.toLocaleString("vi-VN"),
       });
     };
 

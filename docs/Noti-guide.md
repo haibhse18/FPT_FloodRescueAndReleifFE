@@ -183,7 +183,9 @@ interface NotificationContextValue {
   currentPage: number;
 }
 
-const NotificationContext = createContext<NotificationContextValue | null>(null);
+const NotificationContext = createContext<NotificationContextValue | null>(
+  null,
+);
 
 // ─── Provider ────────────────────────────────────────────────
 interface Props {
@@ -200,8 +202,10 @@ export function NotificationProvider({ children }: Props) {
 
   // Lấy token & user từ auth state của bạn
   // Thay bằng hook auth thực tế: useAuth(), useSession(), v.v.
-  const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-  const userId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+  const userId =
+    typeof window !== "undefined" ? localStorage.getItem("userId") : null;
 
   // ─── Fetch notifications qua REST API ───────────────────
   const fetchNotifications = useCallback(
@@ -212,12 +216,14 @@ export function NotificationProvider({ children }: Props) {
           `${process.env.NEXT_PUBLIC_API_URL}/api/notifications/${userId}?page=${page}&limit=${limit}`,
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
         const json = await res.json();
         if (json.success) {
           setNotifications(json.data);
-          setUnreadCount(json.data.filter((n: Notification) => !n.isRead).length);
+          setUnreadCount(
+            json.data.filter((n: Notification) => !n.isRead).length,
+          );
           setTotalPages(json.meta?.pages || 1);
           setCurrentPage(json.meta?.page || 1);
         }
@@ -225,7 +231,7 @@ export function NotificationProvider({ children }: Props) {
         console.error("Failed to fetch notifications:", error);
       }
     },
-    [userId, token]
+    [userId, token],
   );
 
   // ─── Mark as read ────────────────────────────────────────
@@ -238,17 +244,19 @@ export function NotificationProvider({ children }: Props) {
           {
             method: "PATCH",
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
         setNotifications((prev) =>
-          prev.map((n) => (n._id === notificationId ? { ...n, isRead: true } : n))
+          prev.map((n) =>
+            n._id === notificationId ? { ...n, isRead: true } : n,
+          ),
         );
         setUnreadCount((prev) => Math.max(0, prev - 1));
       } catch (error) {
         console.error("Failed to mark as read:", error);
       }
     },
-    [token]
+    [token],
   );
 
   // ─── Delete single notification ──────────────────────────
@@ -261,14 +269,16 @@ export function NotificationProvider({ children }: Props) {
           {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
-        setNotifications((prev) => prev.filter((n) => n._id !== notificationId));
+        setNotifications((prev) =>
+          prev.filter((n) => n._id !== notificationId),
+        );
       } catch (error) {
         console.error("Failed to delete notification:", error);
       }
     },
-    [token]
+    [token],
   );
 
   // ─── Delete all notifications ────────────────────────────
@@ -280,7 +290,7 @@ export function NotificationProvider({ children }: Props) {
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
       setNotifications([]);
       setUnreadCount(0);
@@ -326,7 +336,9 @@ export function NotificationProvider({ children }: Props) {
       setNotifications((prev) => [data, ...prev]);
       // Show toast
       toast(data.message, {
-        description: new Date(data.createdAt || data.timestamp!).toLocaleString("vi-VN"),
+        description: new Date(data.createdAt || data.timestamp!).toLocaleString(
+          "vi-VN",
+        ),
       });
     };
 
@@ -439,14 +451,16 @@ export default function SomeComponent() {
 // app/layout.tsx
 import { NotificationProvider } from "@/providers/NotificationProvider";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html>
       <body>
         {/* Đặt bên trong AuthProvider để có token */}
-        <NotificationProvider>
-          {children}
-        </NotificationProvider>
+        <NotificationProvider>{children}</NotificationProvider>
       </body>
     </html>
   );
@@ -461,14 +475,14 @@ Base URL: `{API_URL}/api/notifications`
 
 Tất cả endpoints yêu cầu header `Authorization: Bearer <JWT>`.
 
-| Method   | Endpoint                       | Mô tả                              | Params / Body                |
-| :------- | :----------------------------- | :---------------------------------- | :--------------------------- |
-| `POST`   | `/`                            | Tạo notification mới                | Body: `NotificationData`     |
-| `GET`    | `/:userId`                     | Lấy danh sách notification của user | Query: `?page=1&limit=10`   |
-| `GET`    | `/detail/:notificationId`      | Lấy chi tiết 1 notification         | —                            |
-| `PATCH`  | `/read/:notificationId`        | Đánh dấu đã đọc                    | —                            |
-| `DELETE` | `/:notificationId`             | Xoá 1 notification                  | —                            |
-| `DELETE` | `/user/:userId`                | Xoá tất cả notification của user    | —                            |
+| Method   | Endpoint                  | Mô tả                               | Params / Body             |
+| :------- | :------------------------ | :---------------------------------- | :------------------------ |
+| `POST`   | `/`                       | Tạo notification mới                | Body: `NotificationData`  |
+| `GET`    | `/:userId`                | Lấy danh sách notification của user | Query: `?page=1&limit=10` |
+| `GET`    | `/detail/:notificationId` | Lấy chi tiết 1 notification         | —                         |
+| `PATCH`  | `/read/:notificationId`   | Đánh dấu đã đọc                     | —                         |
+| `DELETE` | `/:notificationId`        | Xoá 1 notification                  | —                         |
+| `DELETE` | `/user/:userId`           | Xoá tất cả notification của user    | —                         |
 
 ### Response format
 
@@ -565,67 +579,145 @@ export type SocketEvent = (typeof SOCKET_EVENTS)[keyof typeof SOCKET_EVENTS];
 
 #### Citizen nhận các events:
 
-| Event                | Khi nào                            | Message mẫu                                      |
-| :------------------- | :--------------------------------- | :------------------------------------------------ |
-| `REQUEST_VERIFIED`   | Request được xác minh              | ✅ Yêu cầu cứu hộ của bạn đã được xác nhận hợp lệ |
-| `REQUEST_REJECTED`   | Request bị từ chối                 | ❌ Yêu cầu cứu hộ của bạn đã bị từ chối           |
-| `MISSION_ASSIGNED`   | Team được phân công                | ✅ Đội cứu hộ "Alpha" đã được phân công            |
-| `MISSION_APPROACHING`| Team đang trên đường               | 🚗 Đội cứu hộ "Alpha" đang trên đường đến         |
-| `MISSION_COMPLETED`  | Cứu hộ thành công                  | 🎉 Cứu hộ thành công!                             |
-| `MISSION_FAILED`     | Cứu hộ thất bại                   | ⚠️ Cứu hộ không thành công                        |
+| Event                 | Khi nào               | Message mẫu                                       |
+| :-------------------- | :-------------------- | :------------------------------------------------ |
+| `REQUEST_VERIFIED`    | Request được xác minh | ✅ Yêu cầu cứu hộ của bạn đã được xác nhận hợp lệ |
+| `REQUEST_REJECTED`    | Request bị từ chối    | ❌ Yêu cầu cứu hộ của bạn đã bị từ chối           |
+| `MISSION_ASSIGNED`    | Team được phân công   | ✅ Đội cứu hộ "Alpha" đã được phân công           |
+| `MISSION_APPROACHING` | Team đang trên đường  | 🚗 Đội cứu hộ "Alpha" đang trên đường đến         |
+| `MISSION_COMPLETED`   | Cứu hộ thành công     | 🎉 Cứu hộ thành công!                             |
+| `MISSION_FAILED`      | Cứu hộ thất bại       | ⚠️ Cứu hộ không thành công                        |
 
 #### Coordinator nhận các events:
 
-| Event                | Khi nào                            | Message mẫu                                      |
-| :------------------- | :--------------------------------- | :------------------------------------------------ |
-| `REQUEST_SUBMITTED`  | Citizen gửi request mới           | 🚨 Có yêu cầu cứu hộ mới cần xác minh            |
-| `MISSION_ACCEPTED`   | Team accept nhiệm vụ              | 👍 Đội "Alpha" đã nhận nhiệm vụ #123              |
-| `MISSION_COMPLETED`  | Mission hoàn thành                 | ✅ Nhiệm vụ #123 hoàn thành thành công             |
-| `MISSION_FAILED`     | Mission thất bại                   | ❌ Nhiệm vụ #123 thất bại - cần phân công lại     |
-| `MISSION_WITHDRAWN`  | Team từ chối nhiệm vụ             | ⚠️ Đội "Alpha" đã từ chối - cần phân công lại     |
+| Event               | Khi nào                 | Message mẫu                                   |
+| :------------------ | :---------------------- | :-------------------------------------------- |
+| `REQUEST_SUBMITTED` | Citizen gửi request mới | 🚨 Có yêu cầu cứu hộ mới cần xác minh         |
+| `MISSION_ACCEPTED`  | Team accept nhiệm vụ    | 👍 Đội "Alpha" đã nhận nhiệm vụ #123          |
+| `MISSION_COMPLETED` | Mission hoàn thành      | ✅ Nhiệm vụ #123 hoàn thành thành công        |
+| `MISSION_FAILED`    | Mission thất bại        | ❌ Nhiệm vụ #123 thất bại - cần phân công lại |
+| `MISSION_WITHDRAWN` | Team từ chối nhiệm vụ   | ⚠️ Đội "Alpha" đã từ chối - cần phân công lại |
 
 #### Team Leader nhận các events:
 
-| Event                | Khi nào                            | Message mẫu                                      |
-| :------------------- | :--------------------------------- | :------------------------------------------------ |
-| `MISSION_ASSIGNED`   | Được phân công nhiệm vụ mới       | 📋 Bạn có nhiệm vụ cứu hộ mới - Mission #123     |
-| `MISSION_REASSIGNED` | Nhiệm vụ được chuyển từ team khác | 🔄 Nhiệm vụ #123 đã được chuyển cho đội bạn       |
+| Event                | Khi nào                           | Message mẫu                                  |
+| :------------------- | :-------------------------------- | :------------------------------------------- |
+| `MISSION_ASSIGNED`   | Được phân công nhiệm vụ mới       | 📋 Bạn có nhiệm vụ cứu hộ mới - Mission #123 |
+| `MISSION_REASSIGNED` | Nhiệm vụ được chuyển từ team khác | 🔄 Nhiệm vụ #123 đã được chuyển cho đội bạn  |
 
 ---
 
 ## 8. Notification Data Schema
 
-Mỗi notification object nhận qua WebSocket hoặc REST API có cấu trúc:
+### 8.1. Notification object (REST API)
+
+Trả về từ `GET /api/notifications/me`, `GET /api/notifications/:userId`, `GET /api/notifications/detail/:notificationId`.
 
 ```typescript
 interface Notification {
-  _id: string;                    // MongoDB ObjectId
-  userId: string;                 // Người nhận (ObjectId ref → User)
-  type:                           // Loại notification
-    | "SUBMITTED"
-    | "ACCEPTED"
-    | "REJECTED"
-    | "IN_PROGRESS"
-    | "COMPLETED"
-    | "CANCELLED"
-    | "WITHDRAWN";
-  role:                           // Role của người nhận
-    | "CITIZEN"
-    | "COORDINATOR"
-    | "TEAM_LEADER"
-    | "ADMIN"
-    | "MANAGER";
-  message: string;                // Nội dung hiển thị
-  requestId: string;              // Request liên quan (ObjectId ref → Request)
-  missionId?: string;             // Mission liên quan (optional)
-  isRead: boolean;                // Trạng thái đã đọc
-  createdAt: string;              // ISO datetime
-  updatedAt: string;              // ISO datetime
-
-  // Chỉ có khi nhận qua WebSocket:
-  timestamp?: string;             // ISO datetime (injected by emitter)
+  _id: string; // MongoDB ObjectId string
+  userId: string; // ObjectId ref → User (người nhận)
+  type: // Loại sự kiện tạo ra notification
+    | "SUBMITTED" // Request vừa được gửi
+    | "ACCEPTED" // Request/Mission được chấp nhận / team được phân công
+    | "REJECTED" // Request bị từ chối
+    | "IN_PROGRESS" // (reserved, chưa dùng)
+    | "COMPLETED" // Mission hoàn thành
+    | "CANCELLED" // Mission thất bại / bị huỷ
+    | "WITHDRAWN"; // Team rút khỏi nhiệm vụ
+  role: // Role của người nhận notification
+    "CITIZEN" | "COORDINATOR" | "TEAM_LEADER" | "ADMIN" | "MANAGER";
+  message: string; // Nội dung hiển thị cho user (có emoji prefix)
+  requestId: string; // ObjectId ref → Request liên quan
+  missionId?: string; // ObjectId ref → Mission (chỉ có ở một số events — xem bảng 8.3)
+  isRead: boolean; // false = chưa đọc, true = đã đọc
+  createdAt: string; // ISO 8601 datetime
+  updatedAt: string; // ISO 8601 datetime
+  __v: number; // Mongoose version key (bỏ qua)
 }
 ```
+
+---
+
+### 8.2. Notification socket payload (WebSocket)
+
+Khi nhận qua socket, BE spread document DB rồi inject thêm `timestamp`:
+
+```typescript
+// notification.emitter.js:
+// io.to(`user:${userId}`).emit(event, { ...data, timestamp: new Date().toISOString() });
+
+interface SocketNotificationPayload extends Notification {
+  // isRead luôn là false (notification vừa được tạo)
+  isRead: false;
+
+  // timestamp: thời điểm server emit (có thể lệch vài ms so với createdAt)
+  timestamp: string; // ISO 8601 datetime — injected bởi emitter
+}
+```
+
+**Ví dụ thực tế** khi nhận event `MISSION_ASSIGNED` (Citizen):
+
+```json
+{
+  "_id": "65f1a2b3c4d5e6f7a8b9c0d1",
+  "userId": "65f1a2b3c4d5e6f7a8b9c0d2",
+  "type": "ACCEPTED",
+  "role": "CITIZEN",
+  "message": "✅ Đội cứu hộ \"Alpha\" đã được phân công đến hỗ trợ bạn",
+  "requestId": "65f1a2b3c4d5e6f7a8b9c0d3",
+  "missionId": null,
+  "isRead": false,
+  "createdAt": "2026-03-02T10:00:00.000Z",
+  "updatedAt": "2026-03-02T10:00:00.000Z",
+  "__v": 0,
+  "timestamp": "2026-03-02T10:00:00.123Z"
+}
+```
+
+---
+
+### 8.3. `missionId` có giá trị ở các events sau
+
+| Socket Event          | `missionId` |
+| :-------------------- | :---------- |
+| `MISSION_ASSIGNED`    | ✅ có       |
+| `MISSION_ACCEPTED`    | ✅ có       |
+| `MISSION_COMPLETED`   | ✅ có       |
+| `MISSION_FAILED`      | ✅ có       |
+| `MISSION_WITHDRAWN`   | ✅ có       |
+| `MISSION_REASSIGNED`  | ✅ có       |
+| `REQUEST_SUBMITTED`   | ❌ null     |
+| `REQUEST_VERIFIED`    | ❌ null     |
+| `REQUEST_REJECTED`    | ❌ null     |
+| `MISSION_APPROACHING` | ❌ null     |
+
+---
+
+### 8.4. Special events (không phải Notification object)
+
+**`CONNECTED`** — server gửi ngay sau khi xác thực socket thành công:
+
+```typescript
+interface ConnectedPayload {
+  message: string; // "WebSocket connection established"
+  userId: string; // ObjectId của user đang kết nối
+  userRole: string; // "Citizen" | "Rescue Coordinator" | "Rescue Team" | "Admin" | "Manager"
+}
+```
+
+**`UNREAD_COUNT_UPDATE`** — server gửi sau mỗi lần tạo notification mới:
+
+```typescript
+interface UnreadCountPayload {
+  unreadCount: number; // Số notification chưa đọc hiện tại của user
+  timestamp: string; // ISO 8601 datetime (injected bởi emitter)
+}
+```
+
+> **Tip:** Dùng `UNREAD_COUNT_UPDATE` để cập nhật badge số thay vì tự đếm local — số này được BE tính trực tiếp từ DB nên luôn chính xác kể cả khi user đang mở nhiều tabs.
+
+````
 
 ---
 
@@ -643,9 +735,10 @@ const CITIZEN_EVENTS = [
   "MISSION_COMPLETED",
   "MISSION_FAILED",
 ];
-```
+````
 
 **UX gợi ý:**
+
 - Hiển thị toast pop-up khi nhận notification mới.
 - Badge đỏ trên icon chuông với `unreadCount`.
 - Click vào notification → navigate đến request detail page.
@@ -663,6 +756,7 @@ const COORDINATOR_EVENTS = [
 ```
 
 **UX gợi ý:**
+
 - Sidebar notification panel (always visible).
 - Sound alert cho `REQUEST_SUBMITTED` (request mới cần xác minh).
 - Filter notifications by type.
@@ -670,13 +764,11 @@ const COORDINATOR_EVENTS = [
 ### 9.3. Team Leader App
 
 ```tsx
-const TEAM_LEADER_EVENTS = [
-  "MISSION_ASSIGNED",
-  "MISSION_REASSIGNED",
-];
+const TEAM_LEADER_EVENTS = ["MISSION_ASSIGNED", "MISSION_REASSIGNED"];
 ```
 
 **UX gợi ý:**
+
 - Full-screen alert khi có nhiệm vụ mới.
 - Action buttons (Accept / Reject) ngay trên notification.
 
@@ -716,12 +808,11 @@ export function NotificationBell() {
             Thông báo ({unreadCount} chưa đọc)
           </div>
 
-          {notifications.length === 0 ? (
+          {notifications.length === 0 ?
             <div className="p-4 text-center text-gray-500">
               Không có thông báo
             </div>
-          ) : (
-            notifications.map((noti) => (
+          : notifications.map((noti) => (
               <div
                 key={noti._id}
                 onClick={() => markAsRead(noti._id)}
@@ -735,7 +826,7 @@ export function NotificationBell() {
                 </p>
               </div>
             ))
-          )}
+          }
         </div>
       )}
     </div>

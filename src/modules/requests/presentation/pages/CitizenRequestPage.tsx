@@ -261,18 +261,6 @@ export default function CitizenRequestPage() {
       return;
     }
 
-    // Bỏ qua validate ảnh (ảnh bây giờ là tuỳ chọn)
-    /*
-    if (uploadedImages.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Thiếu ảnh minh chứng",
-        description: "Vui lòng tải lên ít nhất 1 ảnh để gửi yêu cầu.",
-      });
-      return;
-    }
-    */
-
     setIsSubmitting(true);
     try {
       // Backend enum: Flood | Trapped | Injured | Landslide | Other

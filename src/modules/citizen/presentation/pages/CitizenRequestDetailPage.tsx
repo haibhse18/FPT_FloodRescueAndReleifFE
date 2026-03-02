@@ -524,8 +524,8 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                     </div>
                 ) : (
                     <div className="flex flex-col gap-3">
-                        {/* Cancel: SUBMITTED status — citizen can cancel via PATCH /requests/{id}/cancel */}
-                        {["SUBMITTED", "Submitted", "Pending", "PENDING"].includes(request.status) && (
+                        {/* Cancel: hidden only when already terminal — backend validates if allowed */}
+                        {!["CANCELLED", "Cancelled", "FULFILLED", "Fulfilled", "CLOSED", "Closed", "REJECTED", "Rejected", "Completed"].includes(request.status) && (
                             <button
                                 onClick={handleCancel}
                                 disabled={actionLoading !== null}

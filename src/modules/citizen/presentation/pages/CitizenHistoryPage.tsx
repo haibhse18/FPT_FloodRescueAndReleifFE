@@ -199,8 +199,8 @@ export default function CitizenHistoryPage() {
                   key={chip.value}
                   onClick={() => handleFilterChange(chip.value)}
                   className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${statusFilter === chip.value
-                      ? "bg-[#FF7700] text-white shadow-lg shadow-[#FF7700]/20 scale-105"
-                      : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                    ? "bg-[#FF7700] text-white shadow-lg shadow-[#FF7700]/20 scale-105"
+                    : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
                     }`}
                 >
                   <span>{chip.icon}</span>
@@ -423,8 +423,8 @@ export default function CitizenHistoryPage() {
                           👁️ Xem chi tiết
                         </Link>
 
-                        {/* Cancel button — only for SUBMITTED requests */}
-                        {["SUBMITTED", "Submitted", "Pending", "pending"].includes(
+                        {/* Cancel button — hidden only when already terminal (cancelled/fulfilled/closed/rejected) */}
+                        {!["CANCELLED", "Cancelled", "FULFILLED", "Fulfilled", "CLOSED", "Closed", "REJECTED", "Rejected", "Completed"].includes(
                           request.originalStatus,
                         ) && (
                             <button
@@ -466,8 +466,8 @@ export default function CitizenHistoryPage() {
                     key={p}
                     onClick={() => setPage(p as number)}
                     className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${page === p
-                        ? "bg-[#FF7700] text-white shadow-lg shadow-[#FF7700]/20"
-                        : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                      ? "bg-[#FF7700] text-white shadow-lg shadow-[#FF7700]/20"
+                      : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
                       }`}
                   >
                     {p}

@@ -131,9 +131,28 @@ export default function TeamDetailPage({
       toast.success("Đã xoá đội thành công!");
       router.push("/team-control");
     } catch (err: any) {
-      toast.error(err.message || "Lỗi khi xoá đội");
+      // Detect active-timeline / active-mission errors from BE (400)
+      const raw: string = (
+        err?.response?.data?.message ||
+        err?.message ||
+        ""
+      ).toLowerCase();
+      const isActiveTimeline =
+        raw.includes("timeline") ||
+        raw.includes("active") ||
+        raw.includes("mission") ||
+        raw.includes("assigned") ||
+        raw.includes("en_route") ||
+        raw.includes("on_site");
+
+      toast.error(
+        isActiveTimeline ?
+          "Không thể xóa do Team đang thực hiện nhiệm vụ"
+        : err?.response?.data?.message || err.message || "Lỗi khi xoá đội",
+      );
     } finally {
       setActionLoading(null);
+      setShowDeleteConfirm(false);
     }
   };
 

@@ -3,29 +3,51 @@
  * Định nghĩa cấu trúc dữ liệu Supply, không phụ thuộc framework
  */
 
-export type SupplyCategory = 'food' | 'water' | 'medicine' | 'shelter' | 'clothing' | 'hygiene' | 'other';
+// categories should match backend enum values (uppercase)
+export type SupplyCategory =
+  | 'FOOD'
+  | 'WATER'
+  | 'MEDICAL'
+  | 'CLOTHING'
+  | 'EQUIPMENT'
+  | 'OTHER';
 
-export type SupplyStatus = 'pending' | 'approved' | 'dispatched' | 'delivered';
+// statuses mirror backend SUPPLY_STATUS
+export type SupplyStatus =
+  | 'SUBMITTED'
+  | 'CLOSED'
+  | 'CANCELLED';
+export type REQUEST_STATUS = 
+  |'SUBMITTED'
+  |  'REJECTED'
+  | 'IN_PROGRESS'
+  | 'PARTIALLY_FULFILLED'
+  |'FULFILLED'
+  | 'CLOSED'
+  |  'CANCELLED';
 
+  export type REQUEST_TYPE = "Rescue" | "Relief";
 export interface Supply {
     id: string;
     name: string;
     category: SupplyCategory;
-    quantity: number;
     unit: string;
-    requestId?: string;
+    unitWeight: number;
+    description: string;
+    isActive: boolean;
+    createdBy: string; // user id
     status: SupplyStatus;
     source?: string;
-    destination?: string;
-    estimatedDelivery?: Date;
     createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface SupplyRequest {
     id: string;
     requestId: string;
+    type: REQUEST_TYPE;
     items: SupplyItem[];
-    status: SupplyStatus;
+    status: REQUEST_STATUS;
     priority: 'low' | 'medium' | 'high' | 'critical';
     createdAt: Date;
 }

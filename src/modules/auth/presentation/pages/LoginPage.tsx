@@ -49,7 +49,7 @@ export default function LoginPage() {
         Citizen: "/home",
         "Rescue Team": "/missions",
         "Rescue Coordinator": "/dashboard",
-        Manager: "/manager",
+        "Manager": "/manager-dashboard",
         Admin: "/admin/users",
       };
 

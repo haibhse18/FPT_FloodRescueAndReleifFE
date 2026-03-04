@@ -7,10 +7,10 @@ import { authRepository } from "@/modules/auth/infrastructure/auth.repository.im
 
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 
-export default function CoordinatorSidebar() {
+export default function ManagerSidebar() {
   const [user, setUser] = useState<{ name: string; role: string }>({
-    name: "Coordinator",
-    role: "Rescue Coordinator",
+    name: "Manager",
+    role: "Manager",
   });
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function CoordinatorSidebar() {
         if (currentUser) {
           setUser({
             name: currentUser.displayName || currentUser.email,
-            role: "Rescue Coordinator",
+            role: "Manager",
           });
         }
       } catch (error) {
@@ -32,19 +32,19 @@ export default function CoordinatorSidebar() {
   }, []);
 
   const navItems: NavItem[] = [
-    { icon: "🏠", label: "Dashboard", href: "/coordinator-dashboard" },
-    { icon: "🆘", label: "Yêu cầu", href: "/coordinator-requests" },
-    { icon: "⚔️", label: "Nhiệm vụ", href: "/coordinator-mission-control" },
-    { icon: "👥", label: "Quản lí team", href: "/coordinator-team-control" },
-    { icon: "👤", label: "Cá nhân", href: "/profile" },
+    { icon: "🏠", label: "Dashboard", href: "/manager-dashboard" },
+    { icon: "📦", label: "Vật tư", href: "/manager-investory-control/equipments" },
+    { icon: "🚛", label: "Phương tiện", href: "/manager-investory-control/vehicles" },
+    { icon: "📊", label: "Tồn kho", href: "/manager-investory-control/stock" },
+    { icon: "👤", label: "Cá nhân", href: "/manager-profile" },
   ];
 
   return (
     <Sidebar
       navItems={navItems}
       user={user}
-      title="Điều phối viên"
-      subtitle="FPT Flood Rescue"
+      title="Quản lý" 
+      subtitle="Flood Rescue"
     />
   );
 }

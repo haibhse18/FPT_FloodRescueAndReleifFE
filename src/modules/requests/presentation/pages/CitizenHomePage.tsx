@@ -326,9 +326,9 @@ export default function CitizenHomePage() {
             {coordinates && (
               <div className="mt-4 h-64 rounded-lg overflow-hidden border-2 border-slate-300 shadow-inner">
                 <OpenMap
-                  latitude={coordinates.lat}
-                  longitude={coordinates.lon}
-                  address={currentLocation}
+                  citizenLatitude={coordinates.lat}
+                  citizenLongitude={coordinates.lon}
+                  citizenAddress={currentLocation}
                 />
               </div>
             )}

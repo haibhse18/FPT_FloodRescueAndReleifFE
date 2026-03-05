@@ -178,20 +178,20 @@ export interface RescueRequest {
 }
 
 export interface CreateRescueRequestData {
-  type?: string;
-  incidentType?: string;
+  type: "Rescue" | "Relief";
+  incidentType?: "Flood" | "Trapped" | "Injured" | "Landslide" | "Other";
   latitude?: number;
   longitude?: number;
   description: string;
   imageUrls?: string[];
   priority?: string;
   peopleCount?: number;
-  requestSupply?: unknown[];
-  location?: string | { type?: string; coordinates: [number, number] };
+  requestSupplies?: Array<{ supplyId: string; requestedQty: number }>; // renamed from requestSupply for compatibility
+  location: { type: "Point"; coordinates: [number, number] }; // strict format
   dangerType?: string;
   numberOfPeople?: number;
   urgencyLevel?: string;
-  images?: string[];
+  // images?: string[]; is basically imageUrls
 }
 
 export interface EmergencyRequestData {

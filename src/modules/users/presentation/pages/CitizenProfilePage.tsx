@@ -75,14 +75,18 @@ export default function CitizenProfilePage() {
       }
 
       if (requests.status === "fulfilled") {
-        const list = requests.value as any[];
+        const result = requests.value as any;
+        const list: any[] = Array.isArray(result) ? result : (result?.data ?? []);
+        const totalCount = Array.isArray(result)
+          ? list.length
+          : (result?.total ?? result?.meta?.total ?? list.length);
         setStats({
-          total: list.length,
+          total: totalCount,
           completed: list.filter((r) =>
-            ["Completed", "COMPLETED"].includes(r.status),
+            ["FULFILLED", "CLOSED", "Fulfilled", "Closed", "Completed"].includes(r.status),
           ).length,
           inProgress: list.filter((r) =>
-            ["In Progress", "IN_PROGRESS", "Accepted", "ACCEPTED"].includes(
+            ["VERIFIED", "IN_PROGRESS", "PARTIALLY_FULFILLED", "Verified", "In Progress"].includes(
               r.status,
             ),
           ).length,

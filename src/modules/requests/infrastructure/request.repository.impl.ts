@@ -38,9 +38,17 @@ export class RequestRepositoryImpl implements IRequestRepository {
     return (response as any).data;
   }
 
-  async getMyRequests(filters?: GetRequestsFilter): Promise<RescueRequest[]> {
+  async getMyRequests(filters?: GetRequestsFilter): Promise<any> {
     const response = await requestsApi.getMyRequests(filters);
-    return (response as any).data || [];
+    const res = response as any;
+    // API trả về { success, data: [], meta: { page, limit, total, totalPages } }
+    return {
+      data: res.data || [],
+      total: res.meta?.total ?? 0,
+      page: res.meta?.page ?? 1,
+      limit: res.meta?.limit ?? 10,
+      totalPages: res.meta?.totalPages ?? 1,
+    };
   }
 
   async getHistory(): Promise<RescueRequest[]> {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import type { AxiosError } from "axios";
 import { GetNotificationsUseCase } from "@/modules/notifications/application/getNotifications.usecase";
 import { MarkNotificationReadUseCase } from "@/modules/notifications/application/markNotificationRead.usecase";
 import { notificationRepository } from "@/modules/notifications/infrastructure/notification.repository.impl";
@@ -42,8 +43,10 @@ function toRelativeTime(isoString: string): string {
   }
 }
 
-// Maps API status type → { uiType, title, actionLabel, actionLink }
-// API type enum: SUBMITTED, ACCEPTED, REJECTED, IN_PROGRESS, COMPLETED, CANCELLED
+// Maps API notification type → { uiType, title, actionLabel, actionLink }
+// Swagger Notification.type enum (uppercased): INFO | WARNING | SUCCESS | ERROR
+// Swagger request status enum: SUBMITTED | VERIFIED | REJECTED | IN_PROGRESS
+//                              | PARTIALLY_FULFILLED | FULFILLED | CLOSED | CANCELLED
 const STATUS_META: Record<
   string,
   {
@@ -53,28 +56,22 @@ const STATUS_META: Record<
     actionLink?: string;
   }
 > = {
+  // ── Swagger Notification.type values (uppercased in mapApiToNotification) ──
+  INFO: { uiType: "info", title: "Thông báo" },
+  WARNING: { uiType: "warning", title: "Cảnh báo" },
+  SUCCESS: { uiType: "success", title: "Thành công" },
+  ERROR: { uiType: "emergency", title: "Lỗi" },
+  // ── Canonical UPPERCASE swagger statuses ──
   SUBMITTED: {
     uiType: "info",
     title: "Yêu cầu đã được gửi",
     actionLabel: "Xem lịch sử",
     actionLink: "/history",
   },
-  ACCEPTED: {
+  VERIFIED: {
     uiType: "success",
-    title: "Yêu cầu được tiếp nhận",
+    title: "Yêu cầu được xác nhận",
     actionLabel: "Theo dõi",
-    actionLink: "/history",
-  },
-  IN_PROGRESS: {
-    uiType: "warning",
-    title: "Đội cứu hộ đang xử lý",
-    actionLabel: "Theo dõi",
-    actionLink: "/history",
-  },
-  COMPLETED: {
-    uiType: "success",
-    title: "Yêu cầu đã hoàn thành",
-    actionLabel: "Xem chi tiết",
     actionLink: "/history",
   },
   REJECTED: {
@@ -83,12 +80,43 @@ const STATUS_META: Record<
     actionLabel: "Gửi lại",
     actionLink: "/request",
   },
+  IN_PROGRESS: {
+    uiType: "warning",
+    title: "Đội cứu hộ đang xử lý",
+    actionLabel: "Theo dõi",
+    actionLink: "/history",
+  },
+  PARTIALLY_FULFILLED: {
+    uiType: "warning",
+    title: "Đang tiến hành cứu trợ",
+    actionLabel: "Theo dõi",
+    actionLink: "/history",
+  },
+  FULFILLED: {
+    uiType: "success",
+    title: "Yêu cầu đã hoàn thành",
+    actionLabel: "Xem chi tiết",
+    actionLink: "/history",
+  },
+  CLOSED: {
+    uiType: "success",
+    title: "Yêu cầu đã đóng",
+    actionLabel: "Xem lịch sử",
+    actionLink: "/history",
+  },
   CANCELLED: {
     uiType: "warning",
     title: "Yêu cầu đã được hủy",
     actionLabel: "Xem lịch sử",
     actionLink: "/history",
   },
+  // ── Legacy / mixed-case fallbacks ──
+  ACCEPTED: { uiType: "success", title: "Yêu cầu được tiếp nhận", actionLabel: "Theo dõi", actionLink: "/history" },
+  COMPLETED: { uiType: "success", title: "Yêu cầu đã hoàn thành", actionLabel: "Xem chi tiết", actionLink: "/history" },
+  REQUEST: { uiType: "info", title: "Yêu cầu mới", actionLabel: "Xem lịch sử", actionLink: "/history" },
+  MISSION: { uiType: "info", title: "Cập nhật nhiệm vụ", actionLabel: "Xem lịch sử", actionLink: "/history" },
+  SYSTEM: { uiType: "info", title: "Thông báo hệ thống" },
+  ALERT: { uiType: "emergency", title: "Cảnh báo khẩn cấp" },
 };
 
 // Helper: map raw API data → Notification UI model
@@ -146,12 +174,33 @@ export default function CitizenNotificationsPage() {
     else setIsRefreshing(true);
     setError(null);
     try {
-      const data = await getNotificationsUseCase.execute();
-      const rawList = Array.isArray(data) ? data : (data as any)?.data ?? [];
+      // execute() always returns Notification[] (repository handles unwrapping)
+      const rawList = await getNotificationsUseCase.execute();
       setNotifications(rawList.map(mapApiToNotification));
-    } catch (err) {
-      console.error("Lỗi khi tải thông báo:", err);
-      setError("Không thể tải thông báo. Vui lòng thử lại.");
+    } catch (err: unknown) {
+      const axiosErr = err as AxiosError;
+      const status = axiosErr?.response?.status;
+      // Log full error for debugging
+      console.error("Lỗi khi tải thông báo:", {
+        status,
+        message: axiosErr?.message,
+        data: axiosErr?.response?.data,
+      });
+      // 401/403 → axios interceptor handles redirect to login; no UI error needed
+      if (status === 401 || status === 403) {
+        setError(null);
+        setNotifications([]);
+      } else if (status === 404) {
+        // Endpoint not yet implemented — show empty state, not error
+        setError(null);
+        setNotifications([]);
+      } else {
+        setError(
+          status
+            ? `Không thể tải thông báo (lỗi ${status}). Vui lòng thử lại.`
+            : "Không thể tải thông báo. Kiểm tra kết nối mạng và thử lại."
+        );
+      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -162,11 +211,16 @@ export default function CitizenNotificationsPage() {
     fetchNotifications();
   }, [fetchNotifications]);
 
+  // Dispatch custom event so CitizenLayout refreshes badge count immediately
+  const notifyLayoutRefresh = () =>
+    window.dispatchEvent(new CustomEvent("notifications:updated"));
+
   const markAsRead = async (id: string) => {
     // Optimistic update first
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
     );
+    notifyLayoutRefresh();
     try {
       await markNotificationReadUseCase.execute(id);
     } catch {
@@ -174,16 +228,19 @@ export default function CitizenNotificationsPage() {
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, isRead: false } : n)),
       );
+      notifyLayoutRefresh();
     }
   };
 
   const markAllAsRead = async () => {
     const prev = notifications;
     setNotifications((n) => n.map((item) => ({ ...item, isRead: true })));
+    notifyLayoutRefresh();
     try {
       await markNotificationReadUseCase.executeAll();
     } catch {
       setNotifications(prev);
+      notifyLayoutRefresh();
     }
   };
 

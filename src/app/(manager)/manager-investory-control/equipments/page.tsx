@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Button, Table } from "@/shared/ui/components";
-import { Input } from "@/shared/ui/components/Input";
 
 import { supplyApi } from "@/modules/supplies/infrastructure/supply.api";
 import type { Supply } from "@/modules/supplies/domain/supply.entity";

@@ -90,8 +90,9 @@ export default function SupplyStockPage() {
         .map((wh) => ({
           id: wh._id!,
           name: wh.name,
-          lat: wh.location.coordinates[1], // latitude
           lon: wh.location.coordinates[0], // longitude
+          lat: wh.location.coordinates[1], // latitude
+          
         }));
 
       if (!locations.length) {
@@ -223,11 +224,7 @@ export default function SupplyStockPage() {
       {/* MAP SECTION */}
       <div className="bg-slate-200 rounded-xl p-5 shadow-lg border-l-4 border-[#FF7700]">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-slate-800 font-bold">
-            Vị trí các nhà kho
-          </h2>
-
-          <Button
+         <Button
             onClick={fetchAllWarehouseLocations}
             disabled={isLoadingLocation}
             className="text-[#FF3535] text-sm font-bold uppercase"
@@ -250,25 +247,18 @@ export default function SupplyStockPage() {
                 </span>
                 : `Tìm thấy ${warehouseLocations.length} nhà kho`}
             </p>
-            {warehouseLocations && (
-              <div className="text-xs text-slate-500 font-mono mb-3">
-                Lat: {warehouseLocations[0]?.lat.toFixed(4)} • Long:{" "}
-                {warehouseLocations[0]?.lon.toFixed(4)}
-              </div>
-            )}
-             {warehouseLocations && (
-              <div className="mt-4 h-64 rounded-lg overflow-hidden border-2 border-slate-300 shadow-inner">
-                <OpenMap
-                  warehouses={warehouseLocations.map((wh) => ({
-                    id: wh.id,
-                    name: wh.name,
-                    longitude: wh.lon,
-                    latitude: wh.lat,
-                  }))}
-
-                />
-              </div>
-            )}
+       {warehouseLocations.length > 0 && (
+  <div className="mt-4 h-64 rounded-lg overflow-hidden border-2 border-slate-300 shadow-inner">
+    <OpenMap
+      warehouses={warehouseLocations.map((wh) => ({
+        id: wh.id,
+        name: wh.name,
+        longitude: wh.lon,
+        latitude: wh.lat,
+      }))}
+    />
+  </div>
+)}
       </div>
     </div>
   );

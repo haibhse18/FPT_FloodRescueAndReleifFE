@@ -321,14 +321,14 @@ export default function CitizenHomePage() {
                 {coordinates.lon.toFixed(4)}
               </div>
             )}
-
+   
             {/* Mini Map */}
             {coordinates && (
               <div className="mt-4 h-64 rounded-lg overflow-hidden border-2 border-slate-300 shadow-inner">
                 <OpenMap
-                  citizenLatitude={coordinates.lat}
-                  citizenLongitude={coordinates.lon}
-                  citizenAddress={currentLocation}
+                  latitude={coordinates.lat}
+                  longitude={coordinates.lon}
+                  address={currentLocation}
                 />
               </div>
             )}

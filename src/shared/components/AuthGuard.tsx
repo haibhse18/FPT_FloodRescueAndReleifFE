@@ -71,7 +71,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
           Citizen: "/home",
           "Rescue Team": "/missions",
           "Rescue Coordinator": "/dashboard",
-          Manager: "/manager",
+          Manager: "/manager-profile",
           Admin: "/admin/users",
         };
         router.replace(roleRedirects[role] || "/");

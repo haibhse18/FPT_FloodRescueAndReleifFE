@@ -43,7 +43,7 @@ export default function LocationMap({ latitude, longitude, address }: LocationMa
         el.style.boxShadow = '0 0 10px rgba(0,0,0,0.3)';
         el.style.cursor = 'pointer';
 
-        marker.current = new maplibregl.Marker({ element: el })
+        marker.current = new maplibregl.Marker({ element: el, anchor: 'bottom' })
             .setLngLat([longitude, latitude])
             .addTo(map.current);
 
@@ -76,11 +76,33 @@ export default function LocationMap({ latitude, longitude, address }: LocationMa
     // Cập nhật vị trí khi latitude/longitude thay đổi
     useEffect(() => {
         if (map.current && marker.current) {
+            const currentCenter = map.current.getCenter();
+            const sameLng = Math.abs(currentCenter.lng - longitude) < 1e-6;
+            const sameLat = Math.abs(currentCenter.lat - latitude) < 1e-6;
+
+            // nếu tọa độ chưa thay đổi, chỉ cập nhật popup mà thôi
+            if (sameLng && sameLat) {
+                if (address) {
+                    const popup = new maplibregl.Popup({ offset: 25 })
+                        .setHTML(`
+                            <div style="padding: 8px;">
+                                <p style="font-weight: bold; margin-bottom: 4px;">Vị trí của bạn</p>
+                                <p style="color: #666; font-size: 12px;">${address}</p>
+                                <p style="color: #999; font-size: 10px; margin-top: 4px;">
+                                    GPS: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}
+                                </p>
+                            </div>
+                        `);
+                    marker.current.setPopup(popup);
+                }
+                return;
+            }
+
             const newCenter: [number, number] = [longitude, latitude];
             map.current.flyTo({
                 center: newCenter,
                 zoom: 15,
-                duration: 1000
+                duration: 1000,
             });
             marker.current.setLngLat(newCenter);
 

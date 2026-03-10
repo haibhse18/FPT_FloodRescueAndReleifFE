@@ -7,20 +7,25 @@ import { authRepository } from "@/modules/auth/infrastructure/auth.repository.im
 
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 
-export default function CoordinatorSidebar() {
-  const [user, setUser] = useState<{ name: string; role: string }>({
-    name: "Coordinator",
-    role: "Rescue Coordinator",
+export default function ManagerSidebar() {
+    const [user, setUser] = useState<{
+    name: string;
+    role: string;
+    avatar?: string;
+  }>({
+    name: "Quản lý",
+    role: "Manager",
+    avatar: undefined,
   });
-
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const currentUser = await getCurrentUserUseCase.execute();
         if (currentUser) {
           setUser({
-            name: currentUser.displayName || currentUser.email,
-            role: "Rescue Coordinator",
+            name: currentUser.displayName || currentUser.userName || "Quản lý",
+            role: "Manager",
+            avatar: currentUser.avatar || undefined,
           });
         }
       } catch (error) {
@@ -32,19 +37,16 @@ export default function CoordinatorSidebar() {
   }, []);
 
   const navItems: NavItem[] = [
-    { icon: "🏠", label: "Dashboard", href: "/coordinator-dashboard" },
-    { icon: "🆘", label: "Yêu cầu", href: "/coordinator-requests" },
-    { icon: "⚔️", label: "Nhiệm vụ", href: "/coordinator-mission-control" },
-    { icon: "👥", label: "Quản lí team", href: "/coordinator-team-control" },
-    { icon: "👤", label: "Cá nhân", href: "/profile" },
+    { icon: "🏠", label: "Dashboard", href: "/manager-dashboard" },
+    { icon: "📦", label: "Vật tư", href: "/manager-investory-control/equipments" },
+    { icon: "🚛", label: "Phương tiện", href: "/manager-investory-control/vehicles" },
+    { icon: "📊", label: "Tồn kho", href: "/manager-investory-control/stock" },
   ];
 
   return (
     <Sidebar
       navItems={navItems}
       user={user}
-      title="Điều phối viên"
-      subtitle="FPT Flood Rescue"
     />
   );
 }

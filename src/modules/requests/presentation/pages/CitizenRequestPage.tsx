@@ -640,7 +640,7 @@ export default function CitizenRequestPage() {
                   <div className="grid grid-cols-3 gap-2">
                     {uploadedImages.map((url, i) => (
                       <div
-                        key={i}
+                        key={url}
                         className="relative aspect-square rounded-lg overflow-hidden group border border-white/10"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -649,6 +649,7 @@ export default function CitizenRequestPage() {
                           alt={`Ảnh hiện trường ${i + 1}`}
                           className="w-full h-full object-cover"
                         />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity" />
                         <button
                           type="button"
                           onClick={() =>
@@ -660,7 +661,7 @@ export default function CitizenRequestPage() {
                         >
                           ✕
                         </button>
-                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        
                       </div>
                     ))}
                   </div>

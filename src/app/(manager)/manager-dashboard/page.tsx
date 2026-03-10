@@ -9,7 +9,6 @@ import { supplyRepository } from "@/modules/supplies/infrastructure/supply.repos
 import { GetSuppliesUseCase } from "@/modules/supplies/application/getSupplies.usecase";
 import { GetSupplyRequestsUseCase } from "@/modules/supplies/application/getSupplyRequests.usecase";
 
-import { Vehicle } from "@/modules/vehicles/domain/vehicles.enity";
 import { vehicleRepository } from "@/modules/vehicles/infrastructure/vehicles.repository.impl";
 import { GetVehiclesUseCase } from "@/modules/vehicles/application/getVehicles.usecase";
 
@@ -23,13 +22,14 @@ const getVehiclesUseCase = new GetVehiclesUseCase(vehicleRepository);
 
 export default function ManagerDashboardPage() {
 
-  const [supplies, setSupplies] = useState<Supply[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [requests, setRequests] = useState<SupplyRequest[]>([]);
+  const [suppliesTotal, setSuppliesTotal] = useState(0);
+  const [vehiclesTotal, setVehiclesTotal] = useState(0);
+  const [requestsProcessing, setRequestsProcessing] = useState(0);
+
   const [loading, setLoading] = useState(true);
 
-
   const fetchData = async () => {
+
     setLoading(true);
 
     try {
@@ -41,14 +41,20 @@ export default function ManagerDashboardPage() {
           getVehiclesUseCase.execute(),
         ]);
 
-      setSupplies(suppliesRes);
-      setRequests(requestsRes);
-      setVehicles(vehiclesRes);
+      setSuppliesTotal(suppliesRes.length ?? 0);
+
+      setRequestsProcessing(requestsRes.length ?? 0);
+
+      setVehiclesTotal(vehiclesRes?.total ?? 0);
 
     } catch (err) {
-      console.error("Dashboard fetch error:", err);
+
+      console.error("Dashboard error:", err);
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
@@ -57,11 +63,11 @@ export default function ManagerDashboardPage() {
   }, []);
 
   const chartData = {
-    labels: ["Vật tư", "Phương tiện", "Yêu cầu"],
+    labels: ["Vật tư", "Phương tiện", "Yêu cầu đang xử lý"],
     datasets: [
       {
-        label: "Số lượng",
-        data: [supplies.length, vehicles.length, requests.length],
+        label: "Thống kê hệ thống",
+        data: [suppliesTotal, vehiclesTotal, requestsProcessing],
         backgroundColor: [
           "rgba(59,130,246,0.8)",
           "rgba(251,146,60,0.9)",
@@ -77,9 +83,7 @@ export default function ManagerDashboardPage() {
     responsive: true,
     plugins: {
       legend: {
-        labels: {
-          color: "#e5e7eb",
-        },
+        labels: { color: "#e5e7eb" },
       },
     },
     scales: {
@@ -99,40 +103,42 @@ export default function ManagerDashboardPage() {
     <div className="p-4 lg:p-6">
 
       {/* Quick stats */}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
 
         <div className="bg-white/5 rounded-lg p-6 border border-gray-700">
           <p className="text-gray-400 text-sm mb-2">📦 Tổng vật tư</p>
           <p className="text-4xl font-bold text-white">
-            {loading ? "-" : supplies.length}
+            {loading ? "-" : suppliesTotal}
           </p>
         </div>
 
         <div className="bg-white/5 rounded-lg p-6 border border-gray-700">
           <p className="text-gray-400 text-sm mb-2">🚑 Tổng phương tiện</p>
           <p className="text-4xl font-bold text-white">
-            {loading ? "-" : vehicles.length}
+            {loading ? "-" : vehiclesTotal}
           </p>
         </div>
 
         <div className="bg-white/5 rounded-lg p-6 border border-gray-700">
           <p className="text-gray-400 text-sm mb-2">📋 Yêu cầu đang xử lý</p>
           <p className="text-4xl font-bold text-white">
-            {loading
-              ? "-"
-              : requests.filter((r) => r.status === "IN_PROGRESS").length}
+            {loading ? "-" : requestsProcessing}
           </p>
         </div>
 
       </div>
 
       {/* Chart */}
+
       <div className="bg-white/5 rounded-lg p-6 border border-gray-700">
+
         <h1 className="text-2xl font-bold text-white mb-6">
           📊 Thống kê hệ thống
         </h1>
 
         <Bar data={chartData} options={chartOptions} />
+
       </div>
 
     </div>

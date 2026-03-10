@@ -10,16 +10,31 @@ import {
 } from '../domain/supply.entity';
 import { ApiResponse } from '@/types';
 import axiosInstance from '@/lib/axios';
+import { uploadFile } from '../../../services/uploadFile';
 
 /**
  * Supply API methods
  */
 export const supplyApi = {
+
+   /**
+   * POST /api/supply/import
+   * Import supplies from Excel
+   */
+   importExcel: async (file: File) => {
+    const response = await uploadFile<ApiResponse<{message:string,total:number}>>(
+      "/supply/import",
+      file
+    );
+
+    return response.data;
+  },
+
     /**
      * GET /api/supply  (backend mounts supply routes at /api/supply)
      * Fetches all supplies from backend
      */
-    getSupplies: async (query?: string): Promise<Supply[]> => {
+    getSupplies: async (query?: string): Promise<{ data: Supply[], meta: { page: number, totalPages: number } }> => {
     try {
         const response = await axiosInstance.get<ApiResponse<Supply[]>>(
             '/supply/list' + (query || '')
@@ -27,32 +42,37 @@ export const supplyApi = {
         const data = response.data?.data;
         if (!Array.isArray(data)) {
             console.warn('[SupplyAPI] Data is not array. Full response:', response.data);
-            return [];
+            return { data: [], meta: { page: 1, totalPages: 1 } };
         }
-        return data;
+        return { data, meta: response.data?.meta || { page: 1, totalPages: 1 } };
     } catch (error) {
         console.error('[SupplyAPI] Error fetching supplies:', error);
-        return []; // 👈 không throw nữa
+        return { data: [], meta: { page: 1, totalPages: 1 } };
     }
     },
 
     /**
      * GET /api/supply/requests  (example; adjust if backend path differs)
      */
-   getSupplyRequests: async (type?: string): Promise<SupplyRequest[]> => {
-    try {
-        const response = await axiosInstance.get<ApiResponse<SupplyRequest[]>>(
-            '/supply/type/' + (type || '')
-        );
+   getSupplyRequests: async (status?: string): Promise<SupplyRequest[]> => {
+  try {
+    const response = await axiosInstance.get<ApiResponse<SupplyRequest[]>>(
+      "/supply/status/" + (status || "IN_PROGRESS")
+    );
 
-        const data = response.data?.data;
+    const data = response.data?.data;
 
-        return Array.isArray(data) ? data : [];
-    } catch (error) {
-        console.error('[SupplyAPI] Error fetching requests:', error);
-        return [];
+    if (!Array.isArray(data)) {
+      console.warn("[SupplyAPI] Data is not array. Full response:", response.data);
+      return [];
     }
-    },
+
+    return data;
+  } catch (error) {
+    console.error("[SupplyAPI] Error fetching supplies:", error);
+    return [];
+  }
+},
 
     /**
      * POST /api/supply/requests

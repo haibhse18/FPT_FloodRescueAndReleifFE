@@ -13,9 +13,9 @@ import { supplyApi } from './supply.api';
 
 export class SupplyRepositoryImpl implements ISupplyRepository {
     async getSupplies(): Promise<Supply[]> {
-        const supplies = await supplyApi.getSupplies();
-        return supplies;
-    }
+    const result = await supplyApi.getSupplies();
+    return result?.data ?? [];
+}
 
     async getSupplyRequests(): Promise<SupplyRequest[]> {
         const requests = await supplyApi.getSupplyRequests();
@@ -29,6 +29,10 @@ export class SupplyRepositoryImpl implements ISupplyRepository {
 
     async updateSupplyStatus(id: string, status: string): Promise<void> {
         await supplyApi.updateSupplyStatus(id, status);
+    }
+
+    async importExcel(file: File): Promise<void> {
+        await supplyApi.importExcel(file);
     }
 }
 

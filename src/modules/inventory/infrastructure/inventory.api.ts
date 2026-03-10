@@ -12,22 +12,29 @@ export const inventoryApi = {
      * GET /api/inventory
      * optional querystring (keyword, page, limit)
      */
-    getItems: async (query?: string): Promise<InventoryItem[]> => {
+    getItems: async (query?: string): Promise<{ data: InventoryItem[], meta: { page: number, totalPages: number } }> => {
+        try {
         const response = await axiosInstance.get<ApiResponse<InventoryItem[]>>(
-            `/inventory/list` + (query || '')
+            `/inventory/list` + (query || '') 
         );
-        if (!response.data.data) {
-            throw new Error('Không nhận được dữ liệu tồn kho');
+         const data = response.data?.data;  
+        if (!Array.isArray(data)) {
+            console.warn('[InventoryAPI] Data is not array. Full response:', response.data);
+            return { data: [], meta: { page: 1, totalPages: 1 } };
         }
-        return response.data.data;
+        return { data, meta: response.data?.meta || { page: 1, totalPages: 1 } };
+        } catch (error) {
+        console.error('[InventoryAPI] Error fetching inventory items:', error);
+        return { data: [], meta: { page: 1, totalPages: 1 } }; 
+    }
     },
 
     /**
      * GET /api/inventory/:id
      */
-    getItemById: async (id: string): Promise<InventoryItem> => {
+    getItemByName: async (name: string): Promise<InventoryItem> => {
         const response = await axiosInstance.get<ApiResponse<InventoryItem>>(
-            `/inventory/${id}`
+            `/inventory${name}`
         );
         if (!response.data.data) {
             throw new Error('Không nhận được thông tin item');

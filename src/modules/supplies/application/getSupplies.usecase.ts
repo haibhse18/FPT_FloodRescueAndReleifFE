@@ -14,18 +14,19 @@ export class GetSuppliesUseCase {
      * @returns Supply[] - Danh sách vật tư
      */
     async execute(): Promise<Supply[]> {
-        try {
-            const supplies = await this.supplyRepository.getSupplies();
-            
-            if (!supplies || !Array.isArray(supplies)) {
-                throw new Error('Dữ liệu vật tư không hợp lệ');
-            }
-            return supplies;
-        } catch (error) {
-            if (error instanceof Error) {
-                throw new Error(`Không thể lấy danh sách vật tư: ${error.message}`);
-            }
-            throw error;
+    try {
+        const result = await this.supplyRepository.getSupplies();
+
+        if (!result || !Array.isArray(result)) {
+            throw new Error('Dữ liệu vật tư không hợp lệ');
         }
+
+        return result;
+    } catch (error) {
+        if (error instanceof Error) {
+            throw new Error(`Không thể lấy danh sách vật tư: ${error.message}`);
+        }
+        throw error;
     }
+}
 }

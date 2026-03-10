@@ -17,7 +17,7 @@ export class GetSupplyRequestsUseCase {
         try {
             const requests = await this.supplyRepository.getSupplyRequests();
             
-            if (!requests || !Array.isArray(requests)) {
+            if (!requests || !Array.isArray(requests)) { 
                 throw new Error('Dữ liệu yêu cầu không hợp lệ');
             }
 

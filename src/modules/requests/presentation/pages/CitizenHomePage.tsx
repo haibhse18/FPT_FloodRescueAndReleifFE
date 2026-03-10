@@ -6,7 +6,6 @@ import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
-import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 
 // Dynamic import cho OpenMap để tránh SSR issues
 const OpenMap = dynamic(
@@ -22,8 +21,6 @@ const OpenMap = dynamic(
 );
 
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
-
-const NON_TERMINAL_STATUSES = ["SUBMITTED", "VERIFIED", "IN_PROGRESS", "PARTIALLY_FULFILLED"];
 
 // Emergency contacts configuration
 const EMERGENCY_CONTACTS = [
@@ -53,7 +50,6 @@ export default function CitizenHomePage() {
   } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [activeRequest, setActiveRequest] = useState<{ id: string; status: string } | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -66,28 +62,8 @@ export default function CitizenHomePage() {
         setIsLoading(false);
       }
     };
-
-    const checkActiveRequest = async () => {
-      try {
-        const result = await requestRepository.getMyRequests({ page: 1, limit: 10 });
-        const requests: any[] = result?.data ?? [];
-        const active = requests.find((r: any) =>
-          NON_TERMINAL_STATUSES.includes(r.status)
-        );
-        if (active) {
-          const id: string = active.requestId || active._id || active.id || "";
-          if (id) {
-            setActiveRequest({ id, status: active.status });
-          }
-        }
-      } catch {
-        // silently ignore — non-critical
-      }
-    };
-
     fetchUser();
     fetchLocation();
-    checkActiveRequest();
   }, []);
 
   const fetchLocation = async () => {
@@ -221,12 +197,10 @@ export default function CitizenHomePage() {
                 </span>
               </p>
               <p className="text-[#FF7700] font-bold text-2xl lg:text-3xl mb-2">
-                {activeRequest ? "YÊU CẦU ĐANG ĐƯỢC XỬ LÝ" : "CẦN HỖ TRỢ NGAY?"}
+                CẦN HỖ TRỢ NGAY?
               </p>
               <p className="text-slate-300 text-base lg:text-lg">
-                {activeRequest
-                  ? "Nhấn vào để theo dõi trạng thái yêu cầu cứu hộ của bạn"
-                  : "Bấm nút bên dưới để gửi tín hiệu cấp cứu và vị trí của bạn"}
+                Bấm nút bên dưới để gửi tín hiệu cấp cứu và vị trí của bạn
               </p>
             </div>
 
@@ -236,67 +210,30 @@ export default function CitizenHomePage() {
               role="group"
               aria-label="Nút cứu hộ khẩn cấp"
             >
-              {activeRequest ? (
-                /* ── Has active request: amber pulsing, links to detail ── */
-                <>
-                  <div
-                    className="absolute w-64 h-64 lg:w-80 lg:h-80 rounded-full border border-orange-400/30 animate-ping-slow"
-                    aria-hidden="true"
-                  ></div>
-                  <div
-                    className="absolute w-52 h-52 lg:w-64 lg:h-64 rounded-full border border-orange-400/50 animate-ping"
-                    style={{ animationDuration: "3s", animationDelay: "1s" }}
-                    aria-hidden="true"
-                  ></div>
-                  <Link
-                    href={`/history/${activeRequest.id}`}
-                    className="relative w-48 h-48 lg:w-56 lg:h-56 rounded-full bg-[#FF7700] border-4 border-white/80 shadow-[0_0_40px_rgba(255,119,0,0.6)] flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform z-20 hover:bg-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-400/50"
-                    aria-label="Xem chi tiết yêu cầu cứu hộ đang xử lý"
-                  >
-                    <span className="text-3xl lg:text-4xl" aria-hidden="true">⏳</span>
-                    <span className="text-sm lg:text-base font-black tracking-wide text-white text-center leading-tight px-3">
-                      YÊU CẦU<br />ĐANG XỬ LÝ
-                    </span>
-                    <span className="text-[11px] font-bold text-white/75 tracking-wider">
-                      Xem chi tiết →
-                    </span>
-                  </Link>
-                </>
-              ) : (
-                /* ── No active request: original red SOS button ── */
-                <>
-                  <div
-                    className="absolute w-64 h-64 lg:w-80 lg:h-80 rounded-full border border-red-500/30 animate-ping-slow"
-                    aria-hidden="true"
-                  ></div>
-                  <div
-                    className="absolute w-52 h-52 lg:w-64 lg:h-64 rounded-full border border-red-500/50 animate-ping"
-                    style={{ animationDuration: "3s", animationDelay: "1s" }}
-                    aria-hidden="true"
-                  ></div>
-                  <Link
-                    href="/request"
-                    className="sos-pulse relative w-48 h-48 lg:w-56 lg:h-56 rounded-full bg-[#FF3535] border-4 border-white shadow-[0_0_40px_rgba(255,53,53,0.7)] flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform z-20 group cursor-pointer hover:bg-red-600 focus:outline-none focus:ring-4 focus:ring-red-500/50"
-                    aria-label="Gửi yêu cầu cứu hộ khẩn cấp"
-                  >
-                    <span className="text-2xl lg:text-3xl font-black tracking-wider text-white">
-                      CỨU HỘ
-                    </span>
-                    <span className="text-base lg:text-lg font-bold tracking-widest text-white">
-                      KHẨN CẤP
-                    </span>
-                  </Link>
-                </>
-              )}
-            </div>
+              {/* Ripple layers */}
+              <div
+                className="absolute w-64 h-64 lg:w-80 lg:h-80 rounded-full border border-red-500/30 animate-ping-slow"
+                aria-hidden="true"
+              ></div>
+              <div
+                className="absolute w-52 h-52 lg:w-64 lg:h-64 rounded-full border border-red-500/50 animate-ping"
+                style={{ animationDuration: "3s", animationDelay: "1s" }}
+                aria-hidden="true"
+              ></div>
 
-            {/* Status hint below button */}
-            {activeRequest && (
-              <div className="mt-6 flex flex-col items-center gap-1 text-center">
-                <p className="text-orange-300 text-sm font-bold">Bạn đang có yêu cầu đang chờ xử lý</p>
-                <p className="text-slate-400 text-xs">Chỉ được gửi 1 yêu cầu tại một thời điểm</p>
-              </div>
-            )}
+              <Link
+                href="/request"
+                className="sos-pulse relative w-48 h-48 lg:w-56 lg:h-56 rounded-full bg-[#FF3535] border-4 border-white shadow-[0_0_40px_rgba(255,53,53,0.7)] flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform z-20 group cursor-pointer hover:bg-red-600 focus:outline-none focus:ring-4 focus:ring-red-500/50"
+                aria-label="Gửi yêu cầu cứu hộ khẩn cấp"
+              >
+                <span className="text-2xl lg:text-3xl font-black tracking-wider text-white">
+                  CỨU HỘ
+                </span>
+                <span className="text-base lg:text-lg font-bold tracking-widest text-white">
+                  KHẨN CẤP
+                </span>
+              </Link>
+            </div>
           </div>
 
           {/* Quick Options Section */}

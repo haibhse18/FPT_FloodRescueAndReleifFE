@@ -1,12 +1,10 @@
 /**
  * Notifications API - Infrastructure Layer
  * Handles user notifications
- *
- * Auth is injected automatically by the axios request interceptor (Bearer token).
- * No need to pass headers manually.
  */
 
 import { apiClient } from '@/services/apiClient';
+import { authSession } from '@/services/authSession';
 import type { ApiResponse } from '@/shared/types/api';
 
 export const notificationsApi = {
@@ -15,7 +13,9 @@ export const notificationsApi = {
      * GET /notifications
      */
     getNotifications: async (): Promise<ApiResponse> => {
-        return apiClient.get('/notifications');
+        return apiClient.get('/notifications', {
+            headers: authSession.getAuthHeaders() as Record<string, string>,
+        });
     },
 
     /**
@@ -23,10 +23,28 @@ export const notificationsApi = {
      * PATCH /notifications/{id}/read
      */
     markNotificationAsRead: async (notificationId: string): Promise<ApiResponse> => {
-        return apiClient.patch(`/notifications/${notificationId}/read`, undefined);
+        return apiClient.patch(`/notifications/${notificationId}/read`, undefined, {
+            headers: authSession.getAuthHeaders() as Record<string, string>,
+        });
     },
 
-    // NOTE: No bulk mark-all-read endpoint in swagger.
-    // No unread-count endpoint in swagger.
-    // Both are derived client-side from the getNotifications list.
+    /**
+     * Mark all notifications as read
+     * PATCH /notifications/mark-all-read
+     */
+    markAllNotificationsAsRead: async (): Promise<ApiResponse> => {
+        return apiClient.patch('/notifications/mark-all-read', undefined, {
+            headers: authSession.getAuthHeaders() as Record<string, string>,
+        });
+    },
+
+    /**
+     * Get unread notifications count
+     * GET /notifications/unread-count
+     */
+    getUnreadCount: async (): Promise<ApiResponse> => {
+        return apiClient.get('/notifications/unread-count', {
+            headers: authSession.getAuthHeaders() as Record<string, string>,
+        });
+    },
 };

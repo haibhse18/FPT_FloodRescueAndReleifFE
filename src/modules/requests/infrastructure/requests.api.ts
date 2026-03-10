@@ -24,13 +24,20 @@ export interface GetRequestsParams {
 // ─── Legacy DTOs (citizen pages) ─────────────────────────
 
 export interface CreateRescueRequestDTO {
-  type: "Rescue" | "Relief";
-  incidentType?: "Flood" | "Trapped" | "Injured" | "Landslide" | "Other";
-  location: { type: "Point"; coordinates: [number, number] };
+  type?: string;
+  incidentType?: string;
+  latitude?: number;
+  longitude?: number;
   description: string;
   imageUrls?: string[];
+  priority?: string;
   peopleCount?: number;
-  requestSupplies?: Array<{ supplyId: string; requestedQty: number }>;
+  requestSupply?: unknown[];
+  location?: string | { type?: string; coordinates: [number, number] };
+  dangerType?: string;
+  numberOfPeople?: number;
+  urgencyLevel?: string;
+  images?: string[];
 }
 
 export interface EmergencyRequestDTO {

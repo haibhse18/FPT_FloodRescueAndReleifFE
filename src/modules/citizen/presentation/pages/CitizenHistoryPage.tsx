@@ -1,15 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 
 interface Request {
   id: string;
   type: string;
-  incidentType: string;
-  urgency: string;
-  peopleCount: number;
   status: string;
   originalStatus: string;
   location: string;
@@ -17,130 +14,147 @@ interface Request {
   completedAt?: string;
   statusText: string;
   statusColor: string;
+  priority: string;
+  peopleCount: number;
+  description?: string;
 }
 
 export default function CitizenHistoryPage() {
-  const [statusFilter, setStatusFilter] = useState("");
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [filter, setFilter] = useState<
+    "all" | "pending" | "in_progress" | "completed"
+  >("all");
   const [requests, setRequests] = useState<Request[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  const handleCancelRequest = async (requestId: string) => {
-    if (!window.confirm("Bạn có chắc muốn hủy yêu cầu này không?")) return;
-    setCancellingId(requestId);
-    try {
-      await requestRepository.cancelRequest(requestId);
-      // Optimistically update local state so UI refreshes instantly
-      setRequests((prev) =>
-        prev.map((r) =>
-          r.id === requestId
-            ? {
-              ...r,
-              originalStatus: "CANCELLED",
-              status: "completed",
-              statusText: "Đã hủy",
-              statusColor: "bg-gray-500/20 text-gray-400 border-gray-500/30",
-            }
-            : r,
-        ),
-      );
-    } catch (err: any) {
-      alert(
-        `❌ ${err?.response?.data?.message || err.message || "Không thể hủy yêu cầu. Vui lòng thử lại."}`,
-      );
-    } finally {
-      setCancellingId(null);
-    }
-  };
+  useEffect(() => {
+    fetchRequests();
+  }, []);
 
-  const fetchRequests = useCallback(async (targetPage: number, status: string) => {
+  const fetchRequests = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await requestRepository.getMyRequests({
-        page: targetPage,
-        limit: 10,
-        ...(status ? { status } : {}),
-      });
+      const data = await requestRepository.getMyRequests();
 
-      const statusMap: Record<string, { text: string; color: string; filter: string }> = {
-        SUBMITTED: { text: "Chờ xử lý", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "pending" },
-        VERIFIED: { text: "Đã xác nhận", color: "bg-blue-500/20 text-blue-400 border-blue-500/30", filter: "in_progress" },
-        REJECTED: { text: "Bị từ chối", color: "bg-red-500/20 text-red-400 border-red-500/30", filter: "completed" },
-        IN_PROGRESS: { text: "Đang xử lý", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", filter: "in_progress" },
-        PARTIALLY_FULFILLED: { text: "Chưa hoàn tất", color: "bg-orange-500/20 text-orange-400 border-orange-500/30", filter: "in_progress" },
-        FULFILLED: { text: "Hoàn thành", color: "bg-green-500/20 text-green-400 border-green-500/30", filter: "completed" },
-        CLOSED: { text: "Đã đóng", color: "bg-green-700/20 text-green-500 border-green-700/30", filter: "completed" },
-        CANCELLED: { text: "Đã hủy", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "completed" },
-        Submitted: { text: "Chờ xử lý", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "pending" },
-        Accepted: { text: "Đã chấp nhận", color: "bg-blue-500/20 text-blue-400 border-blue-500/30", filter: "in_progress" },
-        Verified: { text: "Đã xác nhận", color: "bg-blue-500/20 text-blue-400 border-blue-500/30", filter: "in_progress" },
-        Rejected: { text: "Bị từ chối", color: "bg-red-500/20 text-red-400 border-red-500/30", filter: "completed" },
-        "In Progress": { text: "Đang xử lý", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", filter: "in_progress" },
-        Fulfilled: { text: "Hoàn thành", color: "bg-green-500/20 text-green-400 border-green-500/30", filter: "completed" },
-        Completed: { text: "Hoàn thành", color: "bg-green-500/20 text-green-400 border-green-500/30", filter: "completed" },
-        Cancelled: { text: "Đã hủy", color: "bg-gray-500/20 text-gray-400 border-gray-500/30", filter: "completed" },
-      };
+      // Map API response to UI format
+      const mappedRequests: Request[] = data.map((req: any) => {
+        const statusMap: Record<
+          string,
+          { text: string; color: string; filter: string }
+        > = {
+          Submitted: {
+            text: "Chờ xử lý",
+            color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+            filter: "pending",
+          },
+          Accepted: {
+            text: "Đã chấp nhận",
+            color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+            filter: "in_progress",
+          },
+          Rejected: {
+            text: "Bị từ chối",
+            color: "bg-red-500/20 text-red-400 border-red-500/30",
+            filter: "completed",
+          },
+          "In Progress": {
+            text: "Đang xử lý",
+            color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+            filter: "in_progress",
+          },
+          Completed: {
+            text: "Hoàn thành",
+            color: "bg-green-500/20 text-green-400 border-green-500/30",
+            filter: "completed",
+          },
+          Cancelled: {
+            text: "Đã hủy",
+            color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+            filter: "completed",
+          },
+        };
 
-      const mappedRequests: Request[] = result.data.map((req: any) => {
-        const st = statusMap[req.status] || statusMap["Submitted"];
+        const status = statusMap[req.status] || statusMap["Submitted"];
+
         return {
           id: req.requestId || req._id || req.id || "unknown",
           type:
             req.type === "Rescue" || req.type === "rescue" ? "Cứu hộ"
-              : req.type === "Relief" || req.type === "relief" ? "Cứu trợ"
-                : req.incidentType ? `${req.incidentType}` : "Yêu cầu",
-          incidentType: req.incidentType || req.type || "",
-          urgency: req.priority || req.urgencyLevel || "",
-          peopleCount: req.numberOfPeople || req.peopleCount || 1,
-          status: st.filter,
+              : req.type === "Relief" || req.type === "supply" ? "Cứu trợ"
+                : req.incidentType
+                  ? `${req.incidentType}`
+                  : "Yêu cầu",
+          status: status.filter,
           location:
-            typeof req.location === "string" ? req.location : "",
+            typeof req.location === "string" ? req.location
+              : req.location?.coordinates ?
+                `${req.location.coordinates[1]?.toFixed(4)}, ${req.location.coordinates[0]?.toFixed(4)}`
+                : req.latitude != null && req.longitude != null ?
+                  `${Number(req.latitude).toFixed(4)}, ${Number(req.longitude).toFixed(4)}`
+                  : "Không xác định",
           createdAt: new Date(req.createdAt).toLocaleString("vi-VN"),
-          completedAt: req.completedAt
-            ? new Date(req.completedAt).toLocaleString("vi-VN")
-            : undefined,
-          statusText: st.text,
-          statusColor: st.color,
-          originalStatus: req.status || "SUBMITTED",
+          completedAt:
+            req.completedAt ?
+              new Date(req.completedAt).toLocaleString("vi-VN")
+              : undefined,
+          statusText: status.text,
+          statusColor: status.color,
+          priority:
+            req.priority?.toLowerCase() ||
+            req.urgencyLevel?.toLowerCase() ||
+            "medium",
+          peopleCount: req.peopleCount || req.numberOfPeople || 1,
+          description: req.description,
+          originalStatus: req.status || "Submitted",
         };
       });
 
       setRequests(mappedRequests);
-      setTotal(result.total);
-      setTotalPages(result.totalPages || 1);
     } catch (err) {
       console.error("Error fetching requests:", err);
       setError("Không thể tải lịch sử yêu cầu. Vui lòng thử lại sau.");
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchRequests(page, statusFilter);
-  }, [fetchRequests, page, statusFilter]);
-
-  const handleFilterChange = (value: string) => {
-    setStatusFilter(value);
-    setPage(1);
   };
 
-  // Tính số trang để hiển thị (dạng: 1 … 4 5 6 … 10)
-  const pageNumbers: (number | "…")[] = [];
-  for (let i = 1; i <= totalPages; i++) {
-    if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
-      pageNumbers.push(i);
-    } else if (pageNumbers[pageNumbers.length - 1] !== "…") {
-      pageNumbers.push("…");
-    }
-  }
-  const from = total === 0 ? 0 : (page - 1) * 10 + 1;
-  const to = Math.min(page * 10, total);
+  const filteredRequests = requests.filter(
+    (req) => filter === "all" || req.status === filter,
+  );
+
+  const stats = [
+    {
+      label: "Tổng cộng",
+      value: requests.length.toString(),
+      icon: "📊",
+      color: "from-blue-500/20 to-cyan-500/10 border-blue-500/30",
+      filterKey: "all" as const,
+    },
+    {
+      label: "Hoàn thành",
+      value: requests.filter((r) => r.status === "completed").length.toString(),
+      icon: "✅",
+      color: "from-green-500/20 to-emerald-500/10 border-green-500/30",
+      filterKey: "completed" as const,
+    },
+    {
+      label: "Đang xử lý",
+      value: requests
+        .filter((r) => r.status === "in_progress")
+        .length.toString(),
+      icon: "⏳",
+      color: "from-yellow-500/20 to-orange-500/10 border-yellow-500/30",
+      filterKey: "in_progress" as const,
+    },
+    {
+      label: "Chờ xử lý",
+      value: requests.filter((r) => r.status === "pending").length.toString(),
+      icon: "⏱️",
+      color: "from-gray-500/20 to-slate-500/10 border-gray-500/30",
+      filterKey: "pending" as const,
+    },
+  ];
 
   return (
     <div className="flex flex-col h-full">
@@ -153,11 +167,11 @@ export default function CitizenHistoryPage() {
                 Lịch sử yêu cầu
               </h1>
               <p className="text-white/90 text-xs lg:text-sm">
-                {total > 0 ? `Hiển thị ${from}\u2013${to} trong ${total} yêu cầu` : "Theo dõi trạng thái các yêu cầu của bạn"}
+                Theo dõi trạng thái các yêu cầu của bạn
               </p>
             </div>
             <button
-              onClick={() => fetchRequests(page, statusFilter)}
+              onClick={fetchRequests}
               disabled={isLoading}
               className="p-2 lg:p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Làm mới"
@@ -176,35 +190,140 @@ export default function CitizenHistoryPage() {
         {/* Background Pattern - Removed as it is now in layout */}
 
         <div className="relative p-4 lg:p-8 space-y-6 max-w-7xl mx-auto">
-          {/* Lọc theo trạng thái */}
-          <div className="overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0">
-            <div className="flex gap-2 w-max lg:w-auto lg:flex-wrap">
+          {/* Stats Grid — clickable to filter */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+            {stats.map((stat, index) => (
+              <button
+                key={index}
+                onClick={() => setFilter(stat.filterKey)}
+                className={`bg-gradient-to-br ${stat.color} border rounded-2xl p-4 lg:p-5 text-center hover:scale-105 transition-transform cursor-pointer ${filter === stat.filterKey
+                  ? "ring-2 ring-[#FF7700] ring-offset-2 ring-offset-[#133249]"
+                  : ""
+                  }`}
+              >
+                <div className="text-3xl lg:text-4xl mb-2">{stat.icon}</div>
+                <div className="text-2xl lg:text-3xl font-bold text-white mb-1">
+                  {stat.value}
+                </div>
+                <div className="text-xs lg:text-sm text-gray-400">
+                  {stat.label}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Overall Completion Progress Bar */}
+          {!isLoading && !error && requests.length > 0 && (
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-white font-bold text-sm">
+                    Tỉ lệ hoàn thành
+                  </p>
+                  <p className="text-gray-400 text-xs mt-0.5">
+                    {requests.filter((r) => r.status === "completed").length}/
+                    {requests.length} yêu cầu đã xử lý xong
+                  </p>
+                </div>
+                <span className="text-2xl font-black text-white">
+                  {requests.length > 0
+                    ? Math.round(
+                      (requests.filter((r) => r.status === "completed")
+                        .length /
+                        requests.length) *
+                      100,
+                    )
+                    : 0}
+                  %
+                </span>
+              </div>
+              {/* Segmented progress bar */}
+              <div className="relative h-3 rounded-full bg-white/10 overflow-hidden">
+                {/* Completed */}
+                <div
+                  className="absolute left-0 top-0 h-full bg-green-500 transition-all duration-700 ease-out rounded-full"
+                  style={{
+                    width: `${requests.length > 0
+                      ? (requests.filter((r) => r.status === "completed")
+                        .length /
+                        requests.length) *
+                      100
+                      : 0
+                      }%`,
+                  }}
+                />
+                {/* In progress (overlaid on top of completed) */}
+                <div
+                  className="absolute top-0 h-full bg-yellow-400 transition-all duration-700 ease-out"
+                  style={{
+                    left: `${requests.length > 0
+                      ? (requests.filter((r) => r.status === "completed")
+                        .length /
+                        requests.length) *
+                      100
+                      : 0
+                      }%`,
+                    width: `${requests.length > 0
+                      ? (requests.filter((r) => r.status === "in_progress")
+                        .length /
+                        requests.length) *
+                      100
+                      : 0
+                      }%`,
+                  }}
+                />
+              </div>
+              {/* Legend */}
+              <div className="flex items-center gap-4 mt-2.5 flex-wrap">
+                <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
+                  Hoàn thành (
+                  {requests.filter((r) => r.status === "completed").length})
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block" />
+                  Đang xử lý (
+                  {requests.filter((r) => r.status === "in_progress").length})
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-white/20 inline-block" />
+                  Chờ xử lý (
+                  {requests.filter((r) => r.status === "pending").length})
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Filters */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-gray-400 text-sm font-bold mr-2">
+                🔍 Lọc:
+              </span>
               {[
-                { label: "Tất cả", icon: "📋", value: "" },
-                { label: "Chờ duyệt", icon: "⏱️", value: "SUBMITTED" },
-                { label: "Đã xác nhận", icon: "✅", value: "VERIFIED" },
-                { label: "Đang xử lý", icon: "⏳", value: "IN_PROGRESS" },
-                { label: "Chưa hoàn tất", icon: "🔶", value: "PARTIALLY_FULFILLED" },
-                { label: "Hoàn thành", icon: "🎉", value: "FULFILLED" },
-                { label: "Đã đóng", icon: "🔒", value: "CLOSED" },
-                { label: "Từ chối", icon: "❌", value: "REJECTED" },
-                { label: "Đã hủy", icon: "🚫", value: "CANCELLED" },
-              ].map((chip) => (
+                { value: "all", label: "Tất cả", icon: "📋", count: requests.length },
+                { value: "pending", label: "Chờ xử lý", icon: "⏱️", count: requests.filter((r) => r.status === "pending").length },
+                { value: "in_progress", label: "Đang xử lý", icon: "⏳", count: requests.filter((r) => r.status === "in_progress").length },
+                { value: "completed", label: "Hoàn thành", icon: "✅", count: requests.filter((r) => r.status === "completed").length },
+              ].map((btn) => (
                 <button
-                  key={chip.value}
-                  onClick={() => handleFilterChange(chip.value)}
-                  className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${statusFilter === chip.value
-                    ? "bg-[#FF7700] text-white shadow-lg shadow-[#FF7700]/20 scale-105"
+                  key={btn.value}
+                  onClick={() => setFilter(btn.value as typeof filter)}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === btn.value ?
+                    "bg-[#FF7700] text-white shadow-lg shadow-[#FF7700]/20"
                     : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
                     }`}
                 >
-                  <span>{chip.icon}</span>
-                  <span>{chip.label}</span>
+                  <span>{btn.icon}</span>
+                  <span>{btn.label}</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${filter === btn.value ? "bg-white/20" : "bg-white/10"
+                    }`}>
+                    {btn.count}
+                  </span>
                 </button>
               ))}
             </div>
           </div>
-
 
           {/* Requests List */}
           <div className="space-y-3">
@@ -224,14 +343,14 @@ export default function CitizenHistoryPage() {
                   </h3>
                   <p className="text-gray-400 mb-4">{error}</p>
                   <button
-                    onClick={() => fetchRequests(page, statusFilter)}
+                    onClick={fetchRequests}
                     className="inline-flex items-center gap-2 px-6 py-3 bg-[#FF7700] hover:bg-[#FF8800] rounded-xl text-white font-bold transition-all"
                   >
                     <span>🔄</span>
                     <span>Thử lại</span>
                   </button>
                 </div>
-                : requests.length === 0 ?
+                : filteredRequests.length === 0 ?
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center">
                     <div className="text-6xl mb-4">
                       {requests.length === 0 ? "📭" : "🔭"}
@@ -256,172 +375,166 @@ export default function CitizenHistoryPage() {
                       </Link>
                     )}
                   </div>
-                  : requests.map((request) => (
-                    <Link
+                  : filteredRequests.map((request) => (
+                    <div
                       key={request.id}
-                      href={`/history/${request.id}`}
-                      className="block bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 transition-all group"
+                      className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-5 hover:bg-white/10 hover:border-white/20 transition-all"
                     >
-                      {/* Top row: type + status badge */}
-                      <div className="flex items-center justify-between gap-3 mb-3">
-                        <h3 className="text-base font-bold text-white truncate">
-                          {request.type}
-                        </h3>
-                        <span className={`flex-shrink-0 px-3 py-1 rounded-lg text-xs font-bold border ${request.statusColor}`}>
-                          {request.statusText}
-                        </span>
-                      </div>
-
-                      {/* Info chips */}
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {request.incidentType && (
-                          <span className="text-xs bg-white/5 border border-white/10 text-gray-300 px-2.5 py-1 rounded-lg">
-                            🌊 {request.incidentType}
-                          </span>
-                        )}
-                        {request.urgency && (
-                          <span className={`text-xs px-2.5 py-1 rounded-lg border font-semibold ${["Critical", "critical"].includes(request.urgency)
-                              ? "bg-red-500/15 text-red-400 border-red-500/30"
-                              : ["High", "high"].includes(request.urgency)
-                                ? "bg-orange-500/15 text-orange-400 border-orange-500/30"
-                                : "bg-blue-500/15 text-blue-400 border-blue-500/30"
-                            }`}>
-                            {["Critical", "critical"].includes(request.urgency) ? "🚨 Khẩn cấp"
-                              : ["High", "high"].includes(request.urgency) ? "⚠️ Cao"
-                                : "ℹ️ Bình thường"}
-                          </span>
-                        )}
-                        <span className="text-xs bg-white/5 border border-white/10 text-gray-300 px-2.5 py-1 rounded-lg">
-                          👥 {request.peopleCount} người
-                        </span>
-                      </div>
-
-                      {/* Location */}
-                      {request.location && (
-                        <p className="text-sm text-gray-400 truncate mb-3">
-                          📍 {request.location}
-                        </p>
-                      )}
-
-                      {/* Time */}
-                      <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
-                        <span>🕐 {request.createdAt}</span>
-                        {request.completedAt && (
-                          <span className="text-green-400">✅ {request.completedAt}</span>
-                        )}
-                      </div>
-
-                      {/* Mini progress bar */}
-                      {(() => {
-                        const isCancelled = ["REJECTED", "Rejected", "CANCELLED", "Cancelled"].includes(request.originalStatus);
-                        const steps = ["Gửi", "Xác nhận", "Xử lý", "Cứu trợ", "Xong", "Đóng"];
-                        const stepIndex =
-                          request.originalStatus === "CLOSED" ? 5
-                            : ["FULFILLED", "Fulfilled", "Completed"].includes(request.originalStatus) ? 4
-                              : request.originalStatus === "PARTIALLY_FULFILLED" ? 3
-                                : ["IN_PROGRESS", "In Progress"].includes(request.originalStatus) ? 2
-                                  : ["VERIFIED", "Verified", "Accepted"].includes(request.originalStatus) ? 1
-                                    : 0;
-                        return (
-                          <div className="mb-3 space-y-1">
-                            <div className="flex items-center">
-                              {steps.map((label, i) => (
-                                <div key={i} className="flex items-center flex-1">
-                                  <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black flex-shrink-0 ${isCancelled ? "bg-red-500/20 text-red-400 border border-red-500/30"
-                                      : i < stepIndex ? "bg-green-500 text-white"
-                                        : i === stepIndex ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40"
-                                          : "bg-white/10 text-gray-600"
-                                    }`}>
-                                    {isCancelled ? "✕" : i < stepIndex ? "✓" : i + 1}
-                                  </div>
-                                  {i < steps.length - 1 && (
-                                    <div className={`flex-1 h-0.5 mx-0.5 ${!isCancelled && i < stepIndex ? "bg-green-500" : "bg-white/10"}`} />
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                            <div className="flex">
-                              {steps.map((label, i) => (
-                                <div key={i} className="flex-1 text-center">
-                                  <span className={`text-[8px] leading-tight ${isCancelled ? "text-red-400"
-                                      : i === stepIndex ? "text-[#FF7700] font-bold"
-                                        : i < stepIndex ? "text-green-400"
-                                          : "text-gray-600"
-                                    }`}>{label}</span>
-                                </div>
-                              ))}
-                            </div>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <span className="font-mono text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded">
+                              #{(request.id?.length ?? 0) > 8 ? request.id.slice(-8).toUpperCase() : (request.id ?? "N/A")}
+                            </span>
+                            <span
+                              className={`px-3 py-1 rounded-lg text-xs font-bold border ${request.statusColor}`}
+                            >
+                              {request.statusText}
+                            </span>
+                            <span
+                              className={`px-2 py-1 rounded-lg text-xs font-bold ${request.priority === "critical" ?
+                                "bg-red-500/20 text-red-400 border border-red-500/30"
+                                : request.priority === "high" ?
+                                  "bg-orange-500/20 text-orange-400 border border-orange-500/30"
+                                  : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                }`}
+                            >
+                              {request.priority === "critical" ?
+                                "🚨 KHẨN CẤP"
+                                : request.priority === "high" ?
+                                  "⚠️ CAO"
+                                  : "ℹ️ BÌNH THƯỜNG"}
+                            </span>
                           </div>
-                        );
-                      })()}
-
-                      {/* Action row */}
-                      <div className="flex gap-2" onClick={(e) => e.preventDefault()}>
+                          <h3 className="text-lg font-bold text-white mb-2">
+                            {request.type}
+                          </h3>
+                          <div className="space-y-1 text-sm text-gray-400">
+                            <p className="flex items-center gap-2">
+                              <span>📍</span>
+                              <span>{request.location}</span>
+                            </p>
+                            <p className="flex items-center gap-2">
+                              <span>👥</span>
+                              <span>{request.peopleCount} người</span>
+                            </p>
+                            <p className="flex items-center gap-2">
+                              <span>🕐</span>
+                              <span>Tạo lúc: {request.createdAt}</span>
+                            </p>
+                            {request.completedAt && (
+                              <p className="flex items-center gap-2 text-green-400">
+                                <span>✅</span>
+                                <span>Hoàn thành: {request.completedAt}</span>
+                              </p>
+                            )}
+                            {request.description && (
+                              <p className="flex items-start gap-2 mt-1">
+                                <span className="flex-shrink-0">📝</span>
+                                <span className="line-clamp-2 text-gray-400">
+                                  {request.description}
+                                </span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-4">
+                        {/* Mini 4-step status progress */}
+                        <div className="flex-1">
+                          {(() => {
+                            const isCancelled =
+                              request.originalStatus === "Rejected" ||
+                              request.originalStatus === "Cancelled";
+                            const steps = [
+                              { label: "Gửi" },
+                              { label: "Tiếp nhận" },
+                              { label: "Xử lý" },
+                              { label: "Xong" },
+                            ];
+                            const stepIndex =
+                              request.originalStatus === "Completed" ? 3
+                                : request.originalStatus === "In Progress" ? 2
+                                  : request.originalStatus === "Accepted" ? 1
+                                    : 0;
+                            return (
+                              <div className="space-y-1 mb-3">
+                                {/* Step nodes + connectors */}
+                                <div className="flex items-center">
+                                  {steps.map((step, i) => {
+                                    const done = !isCancelled && i < stepIndex;
+                                    const active = !isCancelled && i === stepIndex;
+                                    const cancelled = isCancelled;
+                                    return (
+                                      <div key={i} className="flex items-center flex-1">
+                                        <div
+                                          className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0 transition-all ${cancelled
+                                            ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                                            : done
+                                              ? "bg-green-500 text-white"
+                                              : active
+                                                ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40"
+                                                : "bg-white/10 text-gray-600"
+                                            }`}
+                                        >
+                                          {cancelled ? "✕" : done ? "✓" : i + 1}
+                                        </div>
+                                        {i < steps.length - 1 && (
+                                          <div
+                                            className={`flex-1 h-0.5 mx-0.5 transition-all ${!cancelled && i < stepIndex
+                                              ? "bg-green-500"
+                                              : "bg-white/10"
+                                              }`}
+                                          />
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                {/* Step labels */}
+                                <div className="flex">
+                                  {steps.map((step, i) => (
+                                    <div key={i} className="flex-1 text-center">
+                                      <span
+                                        className={`text-[9px] leading-tight ${isCancelled
+                                          ? "text-red-400"
+                                          : i === stepIndex
+                                            ? "text-[#FF7700] font-bold"
+                                            : i < stepIndex
+                                              ? "text-green-400"
+                                              : "text-gray-600"
+                                          }`}
+                                      >
+                                        {step.label}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                                {isCancelled && (
+                                  <p className="text-xs text-red-400 font-bold">
+                                    ✕{" "}
+                                    {request.originalStatus === "Rejected"
+                                      ? "Yêu cầu bị từ chối"
+                                      : "Yêu cầu đã hủy"}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
                         <Link
                           href={`/history/${request.id}`}
-                          className="flex-1 px-3 py-2 bg-[#FF7700]/20 hover:bg-[#FF7700]/30 border border-[#FF7700]/30 rounded-xl text-[#FF7700] text-xs font-bold text-center transition-all"
+                          className="flex-1 px-4 py-2 bg-[#FF7700]/20 hover:bg-[#FF7700]/30 border border-[#FF7700]/30 rounded-xl text-[#FF7700] hover:text-[#FF8800] text-sm font-bold text-center transition-all"
                         >
-                          Xem chi tiết →
+                          👁️ Xem chi tiết
                         </Link>
-                        {!["CANCELLED", "Cancelled", "FULFILLED", "Fulfilled", "CLOSED", "Closed", "REJECTED", "Rejected", "Completed"].includes(
-                          request.originalStatus,
-                        ) && (
-                            <button
-                              onClick={() => handleCancelRequest(request.id)}
-                              disabled={cancellingId === request.id}
-                              className="px-5 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-xl text-red-400 text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                            >
-                              {cancellingId === request.id ? (
-                                <><span className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin inline-block" /> Hủy...</>
-                              ) : "🚫 Hủy"}
-                            </button>
-                          )}
                       </div>
-                    </Link>
+                    </div>
                   ))
             }
           </div>
-
-          {/* Phân trang */}
-          {!isLoading && !error && totalPages > 1 && (
-            <div className="flex items-center justify-center gap-1 pt-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                ← Trước
-              </button>
-              {pageNumbers.map((p, i) =>
-                p === "…" ? (
-                  <span key={`e${i}`} className="px-2 text-gray-600">…</span>
-                ) : (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p as number)}
-                    className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${page === p
-                      ? "bg-[#FF7700] text-white shadow-lg shadow-[#FF7700]/20"
-                      : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
-                      }`}
-                  >
-                    {p}
-                  </button>
-                )
-              )}
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                Tiếp →
-              </button>
-            </div>
-          )}
-          {!isLoading && !error && total > 0 && (
-            <p className="text-center text-xs text-gray-500">
-              {from}–{to} / {total} yêu cầu
-            </p>
-          )}
         </div>
       </main>
     </div>

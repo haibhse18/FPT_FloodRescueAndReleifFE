@@ -29,10 +29,9 @@ export class NotificationRepositoryImpl implements INotificationRepository {
                 : (response as any).data || [];
             const unread = list.filter((n: any) => !(n.isRead ?? n.is_read));
             await Promise.allSettled(
-                unread
-                    .map((n: any) => n._id || n.id || n.notificationId)
-                    .filter(Boolean) // skip entries with no valid id to avoid /notifications/undefined/read
-                    .map((id: string) => notificationsApi.markNotificationAsRead(id)),
+                unread.map((n: any) =>
+                    notificationsApi.markNotificationAsRead(n._id || n.id || n.notificationId),
+                ),
             );
         } catch {
             // silently fail — UI has already done optimistic update

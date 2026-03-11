@@ -48,4 +48,48 @@ export const timelineApi = {
       headers: authSession.getAuthHeaders(),
     });
   },
+
+  /** PATCH /timelines/{id}/accept — Rescue Team accept → EN_ROUTE */
+  acceptTimeline: async (timelineId: string): Promise<ApiResponse> => {
+    return apiClient.patch(`/timelines/${timelineId}/accept`, {}, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /timelines/{id}/arrive — Rescue Team arrive → ON_SITE */
+  arriveTimeline: async (timelineId: string): Promise<ApiResponse> => {
+    return apiClient.patch(`/timelines/${timelineId}/arrive`, {}, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /timelines/{id}/complete — Rescue Team complete (outcome COMPLETED | PARTIAL) */
+  completeTimeline: async (
+    timelineId: string,
+    input: { outcome: "COMPLETED" | "PARTIAL"; note?: string; rescuedCount?: number },
+  ): Promise<ApiResponse> => {
+    return apiClient.patch(`/timelines/${timelineId}/complete`, input, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /timelines/{id}/fail — Rescue Team mark failed */
+  failTimeline: async (
+    timelineId: string,
+    input: { failureReason: string; note?: string },
+  ): Promise<ApiResponse> => {
+    return apiClient.patch(`/timelines/${timelineId}/fail`, input, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /timelines/{id}/withdraw — Rescue Team withdraw */
+  withdrawTimeline: async (
+    timelineId: string,
+    input: { withdrawalReason: string; note?: string },
+  ): Promise<ApiResponse> => {
+    return apiClient.patch(`/timelines/${timelineId}/withdraw`, input, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
 };

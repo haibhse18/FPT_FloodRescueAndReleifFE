@@ -9,8 +9,16 @@ import {
   PaginatedTimelines,
   GetTimelinesFilter,
   TimelineCancelInput,
+  TimelineCompleteInput,
+  TimelineFailInput,
+  TimelineWithdrawInput,
 } from "../domain/timeline.entity";
 import { timelineApi } from "./timeline.api";
+
+function toTimeline(response: unknown): Timeline {
+  const data = (response as any)?.data ?? response;
+  return data as Timeline;
+}
 
 export class TimelineRepositoryImpl implements ITimelineRepository {
   async getTimelines(
@@ -29,7 +37,7 @@ export class TimelineRepositoryImpl implements ITimelineRepository {
 
   async getTimelineDetail(timelineId: string): Promise<Timeline> {
     const response = await timelineApi.getTimelineDetail(timelineId);
-    return ((response as any).data ?? response) as Timeline;
+    return toTimeline(response);
   }
 
   async cancelTimeline(
@@ -37,6 +45,40 @@ export class TimelineRepositoryImpl implements ITimelineRepository {
     input?: TimelineCancelInput,
   ): Promise<void> {
     await timelineApi.cancelTimeline(timelineId, input);
+  }
+
+  async acceptTimeline(timelineId: string): Promise<Timeline> {
+    const response = await timelineApi.acceptTimeline(timelineId);
+    return toTimeline(response);
+  }
+
+  async arriveTimeline(timelineId: string): Promise<Timeline> {
+    const response = await timelineApi.arriveTimeline(timelineId);
+    return toTimeline(response);
+  }
+
+  async completeTimeline(
+    timelineId: string,
+    input: TimelineCompleteInput,
+  ): Promise<Timeline> {
+    const response = await timelineApi.completeTimeline(timelineId, input);
+    return toTimeline(response);
+  }
+
+  async failTimeline(
+    timelineId: string,
+    input: TimelineFailInput,
+  ): Promise<Timeline> {
+    const response = await timelineApi.failTimeline(timelineId, input);
+    return toTimeline(response);
+  }
+
+  async withdrawTimeline(
+    timelineId: string,
+    input: TimelineWithdrawInput,
+  ): Promise<Timeline> {
+    const response = await timelineApi.withdrawTimeline(timelineId, input);
+    return toTimeline(response);
   }
 }
 

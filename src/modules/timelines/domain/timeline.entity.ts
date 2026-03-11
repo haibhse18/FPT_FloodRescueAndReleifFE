@@ -61,3 +61,28 @@ export interface GetTimelinesFilter {
 export interface TimelineCancelInput {
   note?: string;
 }
+
+/** Team accepts → EN_ROUTE (Swagger: PATCH /timelines/{id}/accept, no body) */
+export type TimelineAcceptInput = void;
+
+/** Team arrives → ON_SITE (Swagger: PATCH /timelines/{id}/arrive, no body) */
+export type TimelineArriveInput = void;
+
+/** Team completes with outcome (Swagger: TimelineCompleteInput) */
+export interface TimelineCompleteInput {
+  outcome: "COMPLETED" | "PARTIAL";
+  note?: string | null;
+  rescuedCount?: number;
+}
+
+/** Team marks failed (Swagger: TimelineFailInput) */
+export interface TimelineFailInput {
+  failureReason: string;
+  note?: string | null;
+}
+
+/** Team withdraws (Swagger: TimelineWithdrawInput) */
+export interface TimelineWithdrawInput {
+  withdrawalReason: string;
+  note?: string | null;
+}

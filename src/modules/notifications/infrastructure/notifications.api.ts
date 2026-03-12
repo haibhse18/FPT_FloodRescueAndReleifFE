@@ -1,50 +1,78 @@
 /**
  * Notifications API - Infrastructure Layer
- * Handles user notifications
+ *
+ * Endpoints theo Noti-guide.md:
+ *   GET    /notifications/:userId?page=&limit=
+ *   PATCH  /notifications/read/:notificationId
+ *   DELETE /notifications/:notificationId
+ *   DELETE /notifications/user/:userId
+ *
+ * Không cần manual auth headers — axios interceptor tự thêm Authorization.
  */
 
-import { apiClient } from '@/services/apiClient';
-import { authSession } from '@/services/authSession';
-import type { ApiResponse } from '@/shared/types/api';
+import { apiClient } from "@/services/apiClient";
+import type {
+  Notification,
+  NotificationListResponse,
+} from "../domain/notification.entity";
+
+interface ApiSuccessResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  meta?: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
 
 export const notificationsApi = {
-    /**
-     * Get user notifications
-     * GET /notifications
-     */
-    getNotifications: async (): Promise<ApiResponse> => {
-        return apiClient.get('/notifications', {
-            headers: authSession.getAuthHeaders() as Record<string, string>,
-        });
-    },
+  /**
+   * Lấy danh sách notification của user hiện tại
+   * GET /notifications/me?page=&limit=
+   */
+  getNotifications: async (
+    page = 1,
+    limit = 10,
+  ): Promise<ApiSuccessResponse<Notification[]>> => {
+    return apiClient.get<ApiSuccessResponse<Notification[]>>(
+      `/notifications/me?page=${page}&limit=${limit}`,
+    );
+  },
 
-    /**
-     * Mark notification as read
-     * PATCH /notifications/{id}/read
-     */
-    markNotificationAsRead: async (notificationId: string): Promise<ApiResponse> => {
-        return apiClient.patch(`/notifications/${notificationId}/read`, undefined, {
-            headers: authSession.getAuthHeaders() as Record<string, string>,
-        });
-    },
+  /**
+   * Đánh dấu đã đọc
+   * PATCH /notifications/read/:notificationId
+   */
+  markAsRead: async (
+    notificationId: string,
+  ): Promise<ApiSuccessResponse<Notification>> => {
+    return apiClient.patch<ApiSuccessResponse<Notification>>(
+      `/notifications/read/${notificationId}`,
+    );
+  },
 
-    /**
-     * Mark all notifications as read
-     * PATCH /notifications/mark-all-read
-     */
-    markAllNotificationsAsRead: async (): Promise<ApiResponse> => {
-        return apiClient.patch('/notifications/mark-all-read', undefined, {
-            headers: authSession.getAuthHeaders() as Record<string, string>,
-        });
-    },
+  /**
+   * Xoá 1 notification
+   * DELETE /notifications/:notificationId
+   */
+  deleteNotification: async (
+    notificationId: string,
+  ): Promise<ApiSuccessResponse<null>> => {
+    return apiClient.delete<ApiSuccessResponse<null>>(
+      `/notifications/${notificationId}`,
+    );
+  },
 
-    /**
-     * Get unread notifications count
-     * GET /notifications/unread-count
-     */
-    getUnreadCount: async (): Promise<ApiResponse> => {
-        return apiClient.get('/notifications/unread-count', {
-            headers: authSession.getAuthHeaders() as Record<string, string>,
-        });
-    },
+  /**
+   * Xoá tất cả notification của user
+   * DELETE /notifications/user/:userId
+   */
+  deleteAll: async (userId: string): Promise<ApiSuccessResponse<null>> => {
+    return apiClient.delete<ApiSuccessResponse<null>>(
+      `/notifications/user/${userId}`,
+    );
+  },
 };

@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
+import NotificationBell from "@/modules/notifications/presentation/components/NotificationBell";
 
 // Dynamic import cho OpenMap để tránh SSR issues
 const OpenMap = dynamic(
@@ -162,20 +163,21 @@ export default function CitizenHomePage() {
                 </span>
               </div>
             </div>
-            {/* User Greeting */}
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <p className="text-xs text-white/60">Xin chào,</p>
-                <p className="text-sm font-bold text-white truncate max-w-[140px]">
-                  {isLoading ? (
-                    <span className="inline-block w-24 h-4 bg-white/20 rounded animate-pulse" />
-                  ) : (
-                    userName
-                  )}
-                </p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-[#FF7700]/30 border-2 border-[#FF7700]/50 flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
-                {isLoading ? "?" : userName.charAt(0).toUpperCase()}
+            {/* User Greeting and Bell */}
+            <div className="flex items-center gap-2 sm:gap-4">
+              <NotificationBell />
+              <div className="flex items-center gap-3">
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs text-white/60">Xin chào,</p>
+                  <p className="text-sm font-bold text-white truncate max-w-[140px]">
+                    {isLoading ?
+                      <span className="inline-block w-24 h-4 bg-white/20 rounded animate-pulse" />
+                    : userName}
+                  </p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-[#FF7700]/30 border-2 border-[#FF7700]/50 flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
+                  {isLoading ? "?" : userName.charAt(0).toUpperCase()}
+                </div>
               </div>
             </div>
           </div>
@@ -313,7 +315,7 @@ export default function CitizenHomePage() {
                   <span className="w-4 h-4 border-2 border-slate-800 border-t-transparent rounded-full animate-spin"></span>
                   Đang tải...
                 </span>
-                : currentLocation}
+              : currentLocation}
             </p>
             {coordinates && (
               <div className="text-xs text-slate-500 font-mono mb-3">

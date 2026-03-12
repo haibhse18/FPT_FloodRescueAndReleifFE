@@ -1,0 +1,188 @@
+"use client";
+
+/**
+ * NotificationBell — Bell icon với badge + dropdown danh sách thông báo.
+ *
+ * Sử dụng useNotificationStore (Zustand) để lấy data & actions.
+ */
+
+import { useState, useRef, useEffect } from "react";
+import { Bell, Trash2, CheckCheck, X } from "lucide-react";
+import { useNotificationStore } from "@/store/useNotification.store";
+import { useAuthStore } from "@/store/useAuth.store";
+
+function toRelativeTime(isoString: string): string {
+  try {
+    const diff = Date.now() - new Date(isoString).getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return "Vừa xong";
+    if (minutes < 60) return `${minutes} phút trước`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} giờ trước`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} ngày trước`;
+    return new Date(isoString).toLocaleDateString("vi-VN");
+  } catch {
+    return isoString;
+  }
+}
+
+const TYPE_ICON: Record<string, string> = {
+  SUBMITTED: "📩",
+  ACCEPTED: "✅",
+  REJECTED: "❌",
+  IN_PROGRESS: "⚙️",
+  COMPLETED: "🎉",
+  CANCELLED: "🚫",
+  WITHDRAWN: "↩️",
+};
+
+export default function NotificationBell() {
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    deleteNotification,
+    deleteAll,
+  } = useNotificationStore();
+  const user = useAuthStore((s) => s.user);
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Click outside to close
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      {/* Bell Icon */}
+      <button
+        onClick={() => setOpen(!open)}
+        className="relative p-2 rounded-xl hover:bg-white/10 transition-colors"
+        aria-label="Thông báo"
+      >
+        <Bell className="h-5 w-5 text-white/80" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center ring-2 ring-[#133249]">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-[#1a3a52] rounded-xl shadow-2xl border border-white/10 max-h-[28rem] overflow-hidden z-50 flex flex-col">
+          {/* Header */}
+          <div className="p-3 border-b border-white/10 flex items-center justify-between shrink-0">
+            <h3 className="text-white font-bold text-sm">
+              Thông báo{" "}
+              {unreadCount > 0 && (
+                <span className="text-xs text-red-400 ml-1">
+                  ({unreadCount} chưa đọc)
+                </span>
+              )}
+            </h3>
+            <div className="flex items-center gap-1">
+              {notifications.length > 0 && (
+                <button
+                  onClick={() => {
+                    const userId = user?._id || user?.id;
+                    if (userId) deleteAll(userId);
+                  }}
+                  className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                  title="Xoá tất cả"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-white/50" />
+                </button>
+              )}
+              <button
+                onClick={() => setOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <X className="h-3.5 w-3.5 text-white/50" />
+              </button>
+            </div>
+          </div>
+
+          {/* List */}
+          <div className="overflow-y-auto flex-1">
+            {notifications.length === 0 ?
+              <div className="p-8 text-center">
+                <div className="text-4xl mb-2">📭</div>
+                <p className="text-white/50 text-sm">Không có thông báo</p>
+              </div>
+            : notifications.map((noti) => (
+                <div
+                  key={noti._id}
+                  className={`group p-3 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors flex gap-3 ${
+                    !noti.isRead ? "bg-blue-500/10" : ""
+                  }`}
+                  onClick={() => {
+                    if (!noti.isRead) markAsRead(noti._id);
+                  }}
+                >
+                  {/* Icon */}
+                  <span className="text-lg shrink-0 mt-0.5">
+                    {TYPE_ICON[noti.type] || "🔔"}
+                  </span>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={`text-sm leading-snug ${
+                        !noti.isRead ?
+                          "text-white font-medium"
+                        : "text-white/70"
+                      }`}
+                    >
+                      {noti.message}
+                    </p>
+                    <p className="text-[11px] text-white/40 mt-1">
+                      {toRelativeTime(noti.createdAt)}
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-start gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    {!noti.isRead && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAsRead(noti._id);
+                        }}
+                        className="p-1 rounded hover:bg-white/10"
+                        title="Đánh dấu đã đọc"
+                      >
+                        <CheckCheck className="h-3.5 w-3.5 text-blue-400" />
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteNotification(noti._id);
+                      }}
+                      className="p-1 rounded hover:bg-white/10"
+                      title="Xoá"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-red-400/60" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

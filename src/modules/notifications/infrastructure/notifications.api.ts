@@ -8,25 +8,33 @@
 
 import { apiClient } from '@/services/apiClient';
 import type { ApiResponse } from '@/shared/types/api';
+import type { NotificationQueryParams } from '../domain/notification.entity';
 
 export const notificationsApi = {
     /**
-     * Get user notifications
-     * GET /notifications
+     * Get current user's notifications
+     * GET /notifications/me
      */
-    getNotifications: async (): Promise<ApiResponse> => {
-        return apiClient.get('/notifications');
+    getNotifications: async (params?: NotificationQueryParams): Promise<ApiResponse> => {
+        return apiClient.get('/notifications/me', { params });
     },
 
     /**
      * Mark notification as read
-     * PATCH /notifications/{id}/read
+     * PATCH /notifications/read/{notificationId}
      */
     markNotificationAsRead: async (notificationId: string): Promise<ApiResponse> => {
-        return apiClient.patch(`/notifications/${notificationId}/read`, undefined);
+        return apiClient.patch(`/notifications/read/${notificationId}`);
+    },
+
+    /**
+     * Delete a notification
+     * DELETE /notifications/{notificationId}
+     */
+    deleteNotification: async (notificationId: string): Promise<ApiResponse> => {
+        return apiClient.delete(`/notifications/${notificationId}`);
     },
 
     // NOTE: No bulk mark-all-read endpoint in swagger.
-    // No unread-count endpoint in swagger.
-    // Both are derived client-side from the getNotifications list.
+    // Derived client-side: fetch list then mark each unread one individually.
 };

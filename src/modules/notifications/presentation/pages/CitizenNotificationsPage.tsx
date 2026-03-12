@@ -47,6 +47,7 @@ function toRelativeTime(isoString: string): string {
 // Swagger Notification.type enum (uppercased): INFO | WARNING | SUCCESS | ERROR
 // Swagger request status enum: SUBMITTED | VERIFIED | REJECTED | IN_PROGRESS
 //                              | PARTIALLY_FULFILLED | FULFILLED | CLOSED | CANCELLED
+// Swagger Notification.type enum: SUBMITTED | ACCEPTED | REJECTED | IN_PROGRESS | COMPLETED | CANCELLED | WITHDRAWN
 const STATUS_META: Record<
   string,
   {
@@ -56,21 +57,15 @@ const STATUS_META: Record<
     actionLink?: string;
   }
 > = {
-  // ── Swagger Notification.type values (uppercased in mapApiToNotification) ──
-  INFO: { uiType: "info", title: "Thông báo" },
-  WARNING: { uiType: "warning", title: "Cảnh báo" },
-  SUCCESS: { uiType: "success", title: "Thành công" },
-  ERROR: { uiType: "emergency", title: "Lỗi" },
-  // ── Canonical UPPERCASE swagger statuses ──
   SUBMITTED: {
     uiType: "info",
     title: "Yêu cầu đã được gửi",
     actionLabel: "Xem lịch sử",
     actionLink: "/history",
   },
-  VERIFIED: {
+  ACCEPTED: {
     uiType: "success",
-    title: "Yêu cầu được xác nhận",
+    title: "Yêu cầu được tiếp nhận",
     actionLabel: "Theo dõi",
     actionLink: "/history",
   },
@@ -86,22 +81,10 @@ const STATUS_META: Record<
     actionLabel: "Theo dõi",
     actionLink: "/history",
   },
-  PARTIALLY_FULFILLED: {
-    uiType: "warning",
-    title: "Đang tiến hành cứu trợ",
-    actionLabel: "Theo dõi",
-    actionLink: "/history",
-  },
-  FULFILLED: {
+  COMPLETED: {
     uiType: "success",
     title: "Yêu cầu đã hoàn thành",
     actionLabel: "Xem chi tiết",
-    actionLink: "/history",
-  },
-  CLOSED: {
-    uiType: "success",
-    title: "Yêu cầu đã đóng",
-    actionLabel: "Xem lịch sử",
     actionLink: "/history",
   },
   CANCELLED: {
@@ -110,13 +93,12 @@ const STATUS_META: Record<
     actionLabel: "Xem lịch sử",
     actionLink: "/history",
   },
-  // ── Legacy / mixed-case fallbacks ──
-  ACCEPTED: { uiType: "success", title: "Yêu cầu được tiếp nhận", actionLabel: "Theo dõi", actionLink: "/history" },
-  COMPLETED: { uiType: "success", title: "Yêu cầu đã hoàn thành", actionLabel: "Xem chi tiết", actionLink: "/history" },
-  REQUEST: { uiType: "info", title: "Yêu cầu mới", actionLabel: "Xem lịch sử", actionLink: "/history" },
-  MISSION: { uiType: "info", title: "Cập nhật nhiệm vụ", actionLabel: "Xem lịch sử", actionLink: "/history" },
-  SYSTEM: { uiType: "info", title: "Thông báo hệ thống" },
-  ALERT: { uiType: "emergency", title: "Cảnh báo khẩn cấp" },
+  WITHDRAWN: {
+    uiType: "warning",
+    title: "Yêu cầu đã bị rút lại",
+    actionLabel: "Xem lịch sử",
+    actionLink: "/history",
+  },
 };
 
 // Helper: map raw API data → Notification UI model

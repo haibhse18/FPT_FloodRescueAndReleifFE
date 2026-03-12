@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 
 interface Request {
@@ -20,6 +21,7 @@ interface Request {
 }
 
 export default function CitizenHistoryPage() {
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -257,10 +259,10 @@ export default function CitizenHistoryPage() {
                     )}
                   </div>
                   : requests.map((request) => (
-                    <Link
+                    <div
                       key={request.id}
-                      href={`/history/${request.id}`}
-                      className="block bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 transition-all group"
+                      onClick={() => router.push(`/history/${request.id}`)}
+                      className="block bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 transition-all group cursor-pointer"
                     >
                       {/* Top row: type + status badge */}
                       <div className="flex items-center justify-between gap-3 mb-3">
@@ -281,10 +283,10 @@ export default function CitizenHistoryPage() {
                         )}
                         {request.urgency && (
                           <span className={`text-xs px-2.5 py-1 rounded-lg border font-semibold ${["Critical", "critical"].includes(request.urgency)
-                              ? "bg-red-500/15 text-red-400 border-red-500/30"
-                              : ["High", "high"].includes(request.urgency)
-                                ? "bg-orange-500/15 text-orange-400 border-orange-500/30"
-                                : "bg-blue-500/15 text-blue-400 border-blue-500/30"
+                            ? "bg-red-500/15 text-red-400 border-red-500/30"
+                            : ["High", "high"].includes(request.urgency)
+                              ? "bg-orange-500/15 text-orange-400 border-orange-500/30"
+                              : "bg-blue-500/15 text-blue-400 border-blue-500/30"
                             }`}>
                             {["Critical", "critical"].includes(request.urgency) ? "🚨 Khẩn cấp"
                               : ["High", "high"].includes(request.urgency) ? "⚠️ Cao"
@@ -328,9 +330,9 @@ export default function CitizenHistoryPage() {
                               {steps.map((label, i) => (
                                 <div key={i} className="flex items-center flex-1">
                                   <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black flex-shrink-0 ${isCancelled ? "bg-red-500/20 text-red-400 border border-red-500/30"
-                                      : i < stepIndex ? "bg-green-500 text-white"
-                                        : i === stepIndex ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40"
-                                          : "bg-white/10 text-gray-600"
+                                    : i < stepIndex ? "bg-green-500 text-white"
+                                      : i === stepIndex ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40"
+                                        : "bg-white/10 text-gray-600"
                                     }`}>
                                     {isCancelled ? "✕" : i < stepIndex ? "✓" : i + 1}
                                   </div>
@@ -344,9 +346,9 @@ export default function CitizenHistoryPage() {
                               {steps.map((label, i) => (
                                 <div key={i} className="flex-1 text-center">
                                   <span className={`text-[8px] leading-tight ${isCancelled ? "text-red-400"
-                                      : i === stepIndex ? "text-[#FF7700] font-bold"
-                                        : i < stepIndex ? "text-green-400"
-                                          : "text-gray-600"
+                                    : i === stepIndex ? "text-[#FF7700] font-bold"
+                                      : i < stepIndex ? "text-green-400"
+                                        : "text-gray-600"
                                     }`}>{label}</span>
                                 </div>
                               ))}
@@ -357,12 +359,11 @@ export default function CitizenHistoryPage() {
 
                       {/* Action row */}
                       <div className="flex gap-2" onClick={(e) => e.preventDefault()}>
-                        <Link
-                          href={`/history/${request.id}`}
-                          className="flex-1 px-3 py-2 bg-[#FF7700]/20 hover:bg-[#FF7700]/30 border border-[#FF7700]/30 rounded-xl text-[#FF7700] text-xs font-bold text-center transition-all"
+                        <span
+                          className="flex-1 px-3 py-2 bg-[#FF7700]/20 hover:bg-[#FF7700]/30 border border-[#FF7700]/30 rounded-xl text-[#FF7700] text-xs font-bold text-center transition-all cursor-pointer"
                         >
                           Xem chi tiết →
-                        </Link>
+                        </span>
                         {!["CANCELLED", "Cancelled", "FULFILLED", "Fulfilled", "CLOSED", "Closed", "REJECTED", "Rejected", "Completed"].includes(
                           request.originalStatus,
                         ) && (
@@ -377,7 +378,7 @@ export default function CitizenHistoryPage() {
                             </button>
                           )}
                       </div>
-                    </Link>
+                    </div>
                   ))
             }
           </div>

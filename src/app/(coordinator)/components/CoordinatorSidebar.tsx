@@ -32,10 +32,10 @@ export default function CoordinatorSidebar() {
   }, []);
 
   const navItems: NavItem[] = [
-    { icon: "🏠", label: "Dashboard", href: "/coordinator-dashboard" },
-    { icon: "🆘", label: "Yêu cầu", href: "/coordinator-requests" },
-    { icon: "⚔️", label: "Nhiệm vụ", href: "/coordinator-mission-control" },
-    { icon: "👥", label: "Quản lí team", href: "/coordinator-team-control" },
+    { icon: "🏠", label: "Dashboard", href: "/dashboard" },
+    { icon: "🆘", label: "Yêu cầu", href: "/requests" },
+    { icon: "⚔️", label: "Nhiệm vụ", href: "/mission-control" },
+    { icon: "👥", label: "Quản lí team", href: "/team-control" },
     { icon: "👤", label: "Cá nhân", href: "/profile" },
   ];
 

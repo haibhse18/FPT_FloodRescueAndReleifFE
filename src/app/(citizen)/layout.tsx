@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { AuthGuard } from "@/shared/components/AuthGuard";
 import CitizenSidebar from "./components/CitizenSidebar";
 import MobileBottomNav from "@/shared/components/layout/MobileBottomNav";
-import { notificationsApi } from "@/modules/notifications/infrastructure/notifications.api";
 import { Toaster } from "@/shared/ui/components/toaster";
+import { useSocketInit } from "@/hooks/useSocketInit";
+import { useNotificationStore } from "@/store/useNotification.store";
 
 /**
  * Layout cho Citizen routes
@@ -17,20 +17,10 @@ export default function CitizenLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [unreadCount, setUnreadCount] = useState(0);
+  // Khởi tạo Socket.IO khi authenticated
+  useSocketInit();
 
-  useEffect(() => {
-    notificationsApi
-      .getUnreadCount()
-      .then((res: any) => {
-        const count =
-          res?.data?.count ?? res?.data?.unreadCount ?? res?.count ?? 0;
-        setUnreadCount(Number(count) || 0);
-      })
-      .catch(() => {
-        // silently ignore — badge is non-critical
-      });
-  }, []);
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
 
   return (
     <AuthGuard allowedRoles={["Citizen"]}>

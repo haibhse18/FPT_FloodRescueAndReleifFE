@@ -49,8 +49,8 @@ export default function LoginPage() {
         Citizen: "/home",
         "Rescue Team": "/missions",
         "Rescue Coordinator": "/dashboard",
-        Manager: "/manager",
-        Admin: "/admin/users",
+        "Manager": "/manager-dashboard",
+        "Admin": "/admin-dashboard",
       };
 
       const redirectPath =

@@ -42,5 +42,5 @@ export default function CitizenSidebar() {
     { icon: "👤", label: "Cá nhân", href: "/profile" },
   ];
 
-  return <Sidebar navItems={navItems} user={user} />;
+  return <Sidebar navItems={navItems} user={user} />; 
 }

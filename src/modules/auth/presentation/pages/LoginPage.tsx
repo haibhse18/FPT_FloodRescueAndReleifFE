@@ -50,7 +50,7 @@ export default function LoginPage() {
         "Rescue Team": "/missions",
         "Rescue Coordinator": "/dashboard",
         "Manager": "/manager-dashboard",
-        Admin: "/admin/users",
+        "Admin": "/admin-dashboard",
       };
 
       const redirectPath =

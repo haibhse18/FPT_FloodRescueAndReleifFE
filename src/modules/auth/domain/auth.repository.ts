@@ -3,9 +3,9 @@
  * Định nghĩa contract cho auth operations, không phụ thuộc implementation
  */
 
-import { 
-    User, 
-    LoginCredentials, 
+import {
+    User,
+    LoginCredentials,
     RegisterData,
     LoginResponse,
     RegisterResponse,
@@ -43,4 +43,6 @@ export interface IAuthRepository {
      * POST /api/auth/refresh
      */
     refreshToken(): Promise<RefreshResponse>;
+
+
 }

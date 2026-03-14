@@ -5,18 +5,15 @@
 
 import {
     User,
+    UserRole
 
 } from '@/modules/auth/domain/user.entity';
 
 export interface IAdminRepository {
 
+    getListUsers(): Promise<{ users: User[], total: number }>;
 
-    /**
-     * Lấy danh sách user
-     * GET /users/
-     */
-    getListUser(): Promise<User[]>;
+    updateUserRole(userId: string, role: UserRole[]): Promise<void>;
 
-
-
+    deleteUser(userId: string): Promise<void>;
 }

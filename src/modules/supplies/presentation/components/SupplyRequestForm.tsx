@@ -20,7 +20,7 @@ export function SupplyRequestForm({
         items: [
             {
                 name: "",
-                category: "other",
+                category: "OTHER",
                 quantity: 0,
                 unit: "",
             },
@@ -37,7 +37,7 @@ export function SupplyRequestForm({
                 ...prev.items,
                 {
                     name: "",
-                    category: "other",
+                    category: "OTHER",
                     quantity: 0,
                     unit: "",
                 },
@@ -78,7 +78,7 @@ export function SupplyRequestForm({
                     items: [
                         {
                             name: "",
-                            category: "other",
+                            category: "OTHER",
                             quantity: 0,
                             unit: "",
                         },
@@ -187,13 +187,12 @@ export function SupplyRequestForm({
                                         disabled={isDisabled}
                                         className="w-full px-3 py-2 bg-white/10 border border-gray-600 rounded-lg text-white text-sm"
                                     >
-                                        <option value="food">Thực phẩm</option>
-                                        <option value="water">Nước</option>
-                                        <option value="medicine">Thuốc</option>
-                                        <option value="shelter">Nơi trú ẩn</option>
-                                        <option value="clothing">Quần áo</option>
-                                        <option value="hygiene">Vệ sinh</option>
-                                        <option value="other">Khác</option>
+                                        <option value="FOOD">Thực phẩm</option>
+                                        <option value="WATER">Nước</option>
+                                        <option value="MEDICAL">Y tế</option>
+                                        <option value="CLOTHING">Quần áo</option>
+                                        <option value="EQUIPMENT">Thiết bị</option>
+                                        <option value="OTHER">Khác</option>
                                     </select>
                                 </div>
                             </div>

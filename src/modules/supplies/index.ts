@@ -23,4 +23,3 @@ export { SupplyRequestForm } from './presentation/components/SupplyRequestForm';
 
 // Presentation - Pages
 export { default as SupplyManagement } from './presentation/pages/SupplyManagement';
-export { default as ManagerDashboard } from './presentation/pages/ManagerDashboard';

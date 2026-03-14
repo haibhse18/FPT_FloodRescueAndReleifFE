@@ -10,7 +10,7 @@ export interface WarehouseLocation {
 }
 
 export interface Warehouse {
-  _id?: string;
+  _id: string;
   name: string;
   location: WarehouseLocation;
   status: WAREHOUSE_STATUS;

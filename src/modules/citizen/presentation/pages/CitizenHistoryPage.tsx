@@ -290,46 +290,6 @@ export default function CitizenHistoryPage() {
             </div>
           </div>
 
-          {/* Pagination Info & Controls */}
-          {requests.length > 0 && (
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-4 bg-white/5 border border-white/10 rounded-2xl p-4">
-              <div className="text-sm text-gray-400">
-                Hiển thị <span className="font-bold text-white">{(currentPage - 1) * pageSize + 1}</span> đến <span className="font-bold text-white">{Math.min(currentPage * pageSize, totalRequests)}</span> của <span className="font-bold text-white">{totalRequests}</span> yêu cầu
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ← Trước
-                </button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`w-10 h-10 rounded-lg font-bold transition-all ${
-                        currentPage === page
-                          ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40"
-                          : "bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Sau →
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Requests List */}
           <div className="space-y-3">
             {isLoading ?
@@ -550,6 +510,43 @@ export default function CitizenHistoryPage() {
                   ))
             }
           </div>
+
+          {/* Pagination Controls */}
+          {requests.length > 0 && (
+            <div className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-2xl p-4">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ← Trước
+                </button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`w-10 h-10 rounded-lg font-bold transition-all ${
+                        currentPage === page
+                          ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40"
+                          : "bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Sau →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Cancel Confirmation Modal */}

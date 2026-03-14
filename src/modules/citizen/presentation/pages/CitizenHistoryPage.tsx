@@ -262,6 +262,15 @@ export default function CitizenHistoryPage() {
                     <div
                       key={request.id}
                       onClick={() => router.push(`/history/${request.id}`)}
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) return;
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          router.push(`/history/${request.id}`);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
                       className="block bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 hover:border-white/20 transition-all group cursor-pointer"
                     >
                       {/* Top row: type + status badge */}
@@ -358,17 +367,22 @@ export default function CitizenHistoryPage() {
                       })()}
 
                       {/* Action row */}
-                      <div className="flex gap-2" onClick={(e) => e.preventDefault()}>
-                        <span
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/history/${request.id}`)}
                           className="flex-1 px-3 py-2 bg-[#FF7700]/20 hover:bg-[#FF7700]/30 border border-[#FF7700]/30 rounded-xl text-[#FF7700] text-xs font-bold text-center transition-all cursor-pointer"
                         >
                           Xem chi tiết →
-                        </span>
+                        </button>
                         {!["CANCELLED", "Cancelled", "FULFILLED", "Fulfilled", "CLOSED", "Closed", "REJECTED", "Rejected", "Completed"].includes(
                           request.originalStatus,
                         ) && (
                             <button
-                              onClick={() => handleCancelRequest(request.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancelRequest(request.id);
+                              }}
                               disabled={cancellingId === request.id}
                               className="px-5 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-xl text-red-400 text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                             >

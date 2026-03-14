@@ -284,7 +284,6 @@ export default function CitizenHomePage() {
                     className="relative w-48 h-48 lg:w-56 lg:h-56 rounded-full bg-[#FF7700] border-4 border-white/80 shadow-[0_0_40px_rgba(255,119,0,0.6)] flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform z-20 hover:bg-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-400/50"
                     aria-label="Theo dõi yêu cầu cứu hộ đang xử lý"
                   >
-                    <span className="text-3xl lg:text-4xl" aria-hidden="true">⟳</span>
                     <span className="text-sm lg:text-base font-black tracking-wide text-white text-center leading-tight px-3">
                       YÊU CẦU
                       <br />

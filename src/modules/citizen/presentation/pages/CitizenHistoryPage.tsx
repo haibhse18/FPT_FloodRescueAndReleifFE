@@ -26,6 +26,8 @@ export default function CitizenHistoryPage() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRequests();
@@ -116,6 +118,27 @@ export default function CitizenHistoryPage() {
       setError("Không thể tải lịch sử yêu cầu. Vui lòng thử lại sau.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCancelRequest = async (requestId: string) => {
+    setCancelingId(requestId);
+    try {
+      await requestRepository.cancelRequest(requestId, {
+        reason: "Hủy bởi người dùng",
+      });
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === requestId
+            ? { ...r, originalStatus: "Cancelled", statusText: "Đã hủy" }
+            : r,
+        ),
+      );
+      setCancelConfirmId(null);
+    } catch (err: any) {
+      alert(`❌ ${err?.response?.data?.message || err.message || "Không thể hủy yêu cầu"}`);
+    } finally {
+      setCancelingId(null);
     }
   };
 
@@ -376,57 +399,57 @@ export default function CitizenHistoryPage() {
                                   : request.originalStatus === "Accepted" ? 1
                                     : 0;
                             return (
-                              <div className="space-y-1 mb-3">
-                                {/* Step nodes + connectors */}
-                                <div className="flex items-center">
+                              <div className="mb-3">
+                                {/* Progress bar with steps and labels */}
+                                <div className="flex items-start gap-1">
                                   {steps.map((step, i) => {
                                     const done = !isCancelled && i < stepIndex;
                                     const active = !isCancelled && i === stepIndex;
                                     const cancelled = isCancelled;
                                     return (
-                                      <div key={i} className="flex items-center flex-1">
+                                      <div key={i} className="flex flex-col items-center flex-1">
+                                        {/* Circle step */}
                                         <div
-                                          className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0 transition-all ${cancelled
-                                            ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                                          className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 transition-all ${cancelled
+                                            ? "bg-red-500/30 text-red-300 border border-red-500/50"
                                             : done
-                                              ? "bg-green-500 text-white"
+                                              ? "bg-green-500 text-white border border-green-400"
                                               : active
-                                                ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40"
-                                                : "bg-white/10 text-gray-600"
+                                                ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40 border border-[#FF7700]"
+                                                : "bg-white/10 text-gray-300 border border-white/20"
                                             }`}
                                         >
                                           {cancelled ? "✕" : done ? "✓" : i + 1}
                                         </div>
+                                        {/* Connector line */}
                                         {i < steps.length - 1 && (
                                           <div
-                                            className={`flex-1 h-0.5 mx-0.5 transition-all ${!cancelled && i < stepIndex
-                                              ? "bg-green-500"
-                                              : "bg-white/10"
+                                            className={`w-full h-0.5 mt-1 transition-all ${cancelled
+                                              ? "bg-red-500/30"
+                                              : i < stepIndex
+                                                ? "bg-green-500"
+                                                : i === stepIndex
+                                                  ? "bg-[#FF7700]"
+                                                  : "bg-white/10"
                                               }`}
                                           />
                                         )}
+                                        {/* Step label */}
+                                        <span
+                                          className={`text-xs font-semibold mt-2 text-center leading-tight ${isCancelled
+                                            ? "text-red-400"
+                                            : i === stepIndex
+                                              ? "text-[#FF7700] font-bold"
+                                              : i < stepIndex
+                                                ? "text-green-400"
+                                                : "text-gray-500"
+                                            }`}
+                                        >
+                                          {step.label}
+                                        </span>
                                       </div>
                                     );
                                   })}
-                                </div>
-                                {/* Step labels */}
-                                <div className="flex">
-                                  {steps.map((step, i) => (
-                                    <div key={i} className="flex-1 text-center">
-                                      <span
-                                        className={`text-[9px] leading-tight ${isCancelled
-                                          ? "text-red-400"
-                                          : i === stepIndex
-                                            ? "text-[#FF7700] font-bold"
-                                            : i < stepIndex
-                                              ? "text-green-400"
-                                              : "text-gray-600"
-                                          }`}
-                                      >
-                                        {step.label}
-                                      </span>
-                                    </div>
-                                  ))}
                                 </div>
                                 {isCancelled && (
                                   <p className="text-xs text-red-400 font-bold">
@@ -448,12 +471,52 @@ export default function CitizenHistoryPage() {
                         >
                           👁️ Xem chi tiết
                         </Link>
+                        {request.originalStatus !== "Completed" &&
+                          request.originalStatus !== "Cancelled" &&
+                          request.originalStatus !== "Rejected" && (
+                            <button
+                              onClick={() => setCancelConfirmId(request.id)}
+                              className="flex-1 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-xl text-red-400 hover:text-red-300 text-sm font-bold transition-all"
+                            >
+                              🚫 Hủy
+                            </button>
+                          )}
                       </div>
                     </div>
                   ))
             }
           </div>
         </div>
+
+        {/* Cancel Confirmation Modal */}
+        {cancelConfirmId && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] p-4">
+            <div className="bg-[#1a3a52] rounded-xl p-6 max-w-sm w-full border border-white/20">
+              <h3 className="text-white font-bold text-lg mb-3">
+                Xác nhận hủy yêu cầu
+              </h3>
+              <p className="text-gray-300 mb-6 text-sm">
+                Bạn có chắc muốn hủy yêu cầu này? Hành động này không thể hoàn tác.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleCancelRequest(cancelConfirmId)}
+                  disabled={cancelingId === cancelConfirmId}
+                  className="flex-1 px-4 py-3 rounded-lg font-bold bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50"
+                >
+                  {cancelingId === cancelConfirmId ? "Đang xử lý..." : "Hủy yêu cầu"}
+                </button>
+                <button
+                  onClick={() => setCancelConfirmId(null)}
+                  disabled={cancelingId === cancelConfirmId}
+                  className="flex-1 px-4 py-3 rounded-lg font-bold bg-gray-600 hover:bg-gray-700 text-white transition-colors disabled:opacity-50"
+                >
+                  Quay lại
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

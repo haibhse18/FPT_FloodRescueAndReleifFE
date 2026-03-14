@@ -343,13 +343,24 @@ export default function MissionDetailPage() {
                       <div>
                         <span className="text-gray-500 text-xs">Team</span>
                         <p className="text-gray-300 font-mono text-xs">
-                          {tl.teamId}
+                          {typeof tl.teamId === "string" ?
+                            tl.teamId
+                          : (
+                              tl.teamId as unknown as {
+                                name?: string;
+                                _id: string;
+                              }
+                            )?.name ||
+                            (tl.teamId as unknown as { _id: string })?._id
+                          }
                         </p>
                       </div>
                       <div>
                         <span className="text-gray-500 text-xs">Request</span>
                         <p className="text-gray-300 font-mono text-xs">
-                          {tl.requestId}
+                          {typeof tl.requestId === "string" ?
+                            tl.requestId
+                          : (tl.requestId as unknown as { _id: string })?._id}
                         </p>
                       </div>
                       <div>

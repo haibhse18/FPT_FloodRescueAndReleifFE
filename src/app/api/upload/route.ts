@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
         const apiKey =
             process.env.CLOUDINARY_API_KEY ||
             process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY || '';
-        const apiSecret = process.env.CLOUDINARY_API_SECRET || '';
+        const apiSecret = process.env.CLOUDINARY_API_SECRET || ''; 
 
         if (!cloudName || !apiKey || !apiSecret) {
             console.error('Missing Cloudinary env vars:', {

@@ -11,7 +11,12 @@ export default function MyTeamPage() {
 
   useEffect(() => {
     if (user?.teamId) {
-      setTeamId(user.teamId);
+      // BE có thể populate teamId thành full Team object thay vì string
+      const id =
+        typeof user.teamId === "string" ?
+          user.teamId
+        : (user.teamId as unknown as { _id: string })?._id;
+      if (id) setTeamId(id);
     }
     setLoading(false);
   }, [user]);

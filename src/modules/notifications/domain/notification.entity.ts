@@ -1,37 +1,47 @@
 /**
  * Notification Entity - Domain layer
- * Định nghĩa cấu trúc dữ liệu Notification, không phụ thuộc framework
+ *
+ * Schema theo Noti-guide.md + ERD.
+ * Bao gồm WITHDRAWN type và requestId/missionId fields.
  */
 
-/** UI display type — mapped from BackendNotificationType */
-export type NotificationType = 'success' | 'warning' | 'info' | 'emergency';
+export type NotificationType =
+  | "SUBMITTED"
+  | "ACCEPTED"
+  | "REJECTED"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "WITHDRAWN";
 
-/** Backend API notification type enum (Swagger: Notification.type) */
-export type BackendNotificationType =
-    | 'SUBMITTED'
-    | 'ACCEPTED'
-    | 'REJECTED'
-    | 'IN_PROGRESS'
-    | 'COMPLETED'
-    | 'CANCELLED'
-    | 'WITHDRAWN';
-
-/** Query params for GET /notifications/me */
-export interface NotificationQueryParams {
-    page?: number;
-    limit?: number;
-    isRead?: boolean;
-    type?: BackendNotificationType;
-    sortOrder?: 'asc' | 'desc';
-}
+export type NotificationRole =
+  | "CITIZEN"
+  | "COORDINATOR"
+  | "TEAM_LEADER"
+  | "ADMIN"
+  | "MANAGER";
 
 export interface Notification {
-    id: string;
-    type: NotificationType;
-    title: string;
-    message: string;
-    timestamp: string;
-    isRead: boolean;
-    actionLabel?: string;
-    actionLink?: string;
+  _id: string;
+  userId: string;
+  type: NotificationType;
+  role: NotificationRole;
+  message: string;
+  requestId: string;
+  missionId?: string;
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+  /** Chỉ có khi nhận qua WebSocket */
+  timestamp?: string;
+}
+
+export interface NotificationListResponse {
+  data: Notification[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
 }

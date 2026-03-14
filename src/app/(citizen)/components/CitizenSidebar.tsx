@@ -7,7 +7,7 @@ import { authRepository } from "@/modules/auth/infrastructure/auth.repository.im
 
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 
-export default function CitizenSidebar({ unreadCount = 0 }: { unreadCount?: number }) {
+export default function CitizenSidebar() {
   const [user, setUser] = useState<{
     name: string;
     role: string;
@@ -38,9 +38,9 @@ export default function CitizenSidebar({ unreadCount = 0 }: { unreadCount?: numb
   const navItems: NavItem[] = [
     { icon: "🏠", label: "Trang chủ", href: "/home" },
     { icon: "📜", label: "Lịch sử", href: "/history" },
-    { icon: "🔔", label: "Thông báo", href: "/notifications", badge: unreadCount > 0 ? unreadCount : undefined },
+    { icon: "🔔", label: "Thông báo", href: "/notifications" }, // Có thể thêm badge logic sau
     { icon: "👤", label: "Cá nhân", href: "/profile" },
   ];
 
-  return <Sidebar navItems={navItems} user={user} />;
+  return <Sidebar navItems={navItems} user={user} />; 
 }

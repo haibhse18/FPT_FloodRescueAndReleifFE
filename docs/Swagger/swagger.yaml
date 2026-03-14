@@ -1739,7 +1739,11 @@ paths:
             default: 10
         - name: isRead
           in: query
-          description: "Filter by read status. `true` → only read. `false` → only unread. Omit to return all."
+          description: |
+            Filter by read status.
+            `true` → only read notifications.
+            `false` → only unread notifications.
+            Omit to return all.
           schema:
             type: boolean
           example: false
@@ -1758,7 +1762,7 @@ paths:
               - WITHDRAWN
         - name: sortOrder
           in: query
-          description: Sort direction by createdAt (default desc = newest first)
+          description: Sort direction by `createdAt` (default `desc` = newest first)
           schema:
             type: string
             enum:
@@ -1805,6 +1809,7 @@ paths:
       summary: Get notifications by user ID
       description: |
         Get notifications for a specific user by their ID.
+        Requires the caller to have an appropriate role.
         For the authenticated user's own notifications, prefer `GET /api/notifications/me`.
       operationId: getNotificationsByUser
       security:
@@ -1843,6 +1848,147 @@ paths:
                       $ref: "#/components/schemas/Notification"
                   meta:
                     $ref: "#/components/schemas/Pagination"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/notifications/detail/{notificationId}:
+    get:
+      tags:
+        - Notifications
+      summary: Get notification detail
+      description: Get a single notification by its ID.
+      operationId: getNotificationById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notification retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/Notification"
+        "404":
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/notifications/read/{notificationId}:
+    patch:
+      tags:
+        - Notifications
+      summary: Mark notification as read
+      description: Mark a single notification as read (`isRead = true`).
+      operationId: markNotificationAsRead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/Notification"
+        "404":
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/notifications/{notificationId}:
+    delete:
+      tags:
+        - Notifications
+      summary: Delete a notification
+      description: Delete a single notification by its ID.
+      operationId: deleteNotification
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notification deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Notification deleted successfully
+        "404":
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "401":
           description: Unauthorized
           content:
@@ -1904,140 +2050,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /api/notifications/detail/{notificationId}:
-    get:
-      tags:
-        - Notifications
-      summary: Get notification detail
-      description: Get detailed information about a specific notification
-      operationId: getNotificationById
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: notificationId
-          in: path
-          description: Notification ID
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Notification detail retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Notification"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "404":
-          description: Notification not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /api/notifications/read/{notificationId}:
-    patch:
-      tags:
-        - Notifications
-      summary: Mark notification as read
-      description: Mark a specific notification as read
-      operationId: markNotificationAsRead
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: notificationId
-          in: path
-          description: Notification ID
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Notification marked as read
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "404":
-          description: Notification not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /api/notifications/{notificationId}:
-    delete:
-      tags:
-        - Notifications
-      summary: Delete a notification
-      description: Delete a specific notification by ID
-      operationId: deleteNotification
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: notificationId
-          in: path
-          description: Notification ID
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Notification deleted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "404":
-          description: Notification not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
   /api/users:
     get:
       tags:
@@ -2054,7 +2066,7 @@ paths:
       parameters:
         - name: role
           in: query
-          description: Filter by user role. Coordinator can only filter Citizen, Rescue Team.
+          description: "Filter by user role. Coordinator can only filter: Citizen, Rescue Team."
           required: false
           schema:
             type: string
@@ -2166,7 +2178,7 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "User role updated to \"Rescue Team\" successfully"
+                    example: 'User role updated to "Rescue Team" successfully'
                   data:
                     $ref: "#/components/schemas/User"
         "400":
@@ -3324,7 +3336,7 @@ components:
       properties:
         role:
           type: string
-          description: New role to assign to the user
+          description: "New role to assign to the user"
           enum:
             - Citizen
             - Rescue Team
@@ -3591,13 +3603,10 @@ components:
         type:
           type: string
           enum:
-            - SUBMITTED
-            - ACCEPTED
-            - REJECTED
-            - IN_PROGRESS
-            - COMPLETED
-            - CANCELLED
-            - WITHDRAWN
+            - Info
+            - Warning
+            - Success
+            - Error
         isRead:
           type: boolean
           default: false

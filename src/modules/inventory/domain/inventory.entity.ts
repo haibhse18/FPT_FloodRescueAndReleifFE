@@ -3,35 +3,61 @@
  * Định nghĩa cấu trúc dữ liệu Inventory, không phụ thuộc framework
  */
 
-export type ItemCategory = 'food' | 'water' | 'medical' | 'equipment' | 'clothing' | 'other';
+import { Warehouse } from "./warehouse.entity";
 
-export type ItemStatus = 'available' | 'low' | 'out_of_stock' | 'expired';
+export type ItemCategory = 'FOOD'
+  | 'WATER'
+  | 'MEDICAL'
+  | 'CLOTHING'
+  | 'EQUIPMENT'
+  | 'OTHER';
+
+export type ItemStatus = 'SUBMITTED'
+  | 'CLOSED'
+  | 'CANCELLED';
 
 export interface InventoryItem {
     id: string;
-    name: string;
-    category: ItemCategory;
+    // reference to supply, populated on backend
+    supplyID: {
+          _id: string;
+           name?: string;
+           category?: ItemCategory;
+           unit?: string;
+           unitWeight?: number;
+           description?: string;
+           isActive?: boolean;
+           createdBy?: string; // user id
+           _status?: ItemStatus;
+           source?: string;
+           createdAt?: Date;
+           updatedAt?: Date;
+    } | string;
+    description?: string;
     quantity: number;
-    unit: string;
-    minQuantity: number;
-    status: ItemStatus;
-    location?: string;
-    expiryDate?: Date;
+    reservedQuantity: number;
+    unit?: string;
+    // warehouse reference populated
+    warehouse: Warehouse | string;
+    status: 'ACTIVE' | 'OUT_OF_STOCK' | 'RESERVED';
     lastUpdated: Date;
 }
 
 export interface UpdateInventoryData {
     quantity?: number;
-    location?: string;
-    expiryDate?: Date;
+    reservedQuantity?: number;
+    description?: string;
+    unit?: string;
+    warehouse?: string;
+    status?: 'ACTIVE' | 'OUT_OF_STOCK' | 'RESERVED';
 }
 
 export interface CreateInventoryItemData {
-    name: string;
-    category: ItemCategory;
+    supplyID: string;
+    description?: string;
     quantity: number;
-    unit: string;
-    minQuantity: number;
-    location?: string;
-    expiryDate?: Date;
+    reservedQuantity?: number;
+    unit?: string;
+    warehouse: string;
+    status?: 'ACTIVE' | 'OUT_OF_STOCK' | 'RESERVED';
 }

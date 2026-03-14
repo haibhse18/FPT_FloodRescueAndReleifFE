@@ -1,32 +1,66 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import type { AxiosError } from "axios";
-import { GetNotificationsUseCase } from "@/modules/notifications/application/getNotifications.usecase";
-import { MarkNotificationReadUseCase } from "@/modules/notifications/application/markNotificationRead.usecase";
-import { notificationRepository } from "@/modules/notifications/infrastructure/notification.repository.impl";
+import { useEffect } from "react";
+import { useNotificationStore } from "@/store/useNotification.store";
+import { useAuthStore } from "@/store/useAuth.store";
 
-// Initialize use cases with repository
-const getNotificationsUseCase = new GetNotificationsUseCase(
-  notificationRepository,
-);
-const markNotificationReadUseCase = new MarkNotificationReadUseCase(
-  notificationRepository,
-);
+// Maps notification type → UI presentation
+const TYPE_META: Record<
+  string,
+  {
+    uiType: "success" | "warning" | "info" | "emergency";
+    title: string;
+    icon: string;
+  }
+> = {
+  SUBMITTED: { uiType: "info", title: "Yêu cầu đã được gửi", icon: "📩" },
+  ACCEPTED: {
+    uiType: "success",
+    title: "Yêu cầu được tiếp nhận",
+    icon: "✅",
+  },
+  IN_PROGRESS: {
+    uiType: "warning",
+    title: "Đội cứu hộ đang xử lý",
+    icon: "⚙️",
+  },
+  COMPLETED: {
+    uiType: "success",
+    title: "Yêu cầu đã hoàn thành",
+    icon: "🎉",
+  },
+  REJECTED: { uiType: "emergency", title: "Yêu cầu bị từ chối", icon: "❌" },
+  CANCELLED: {
+    uiType: "warning",
+    title: "Yêu cầu đã được hủy",
+    icon: "🚫",
+  },
+  WITHDRAWN: { uiType: "warning", title: "Đội cứu hộ đã rút", icon: "↩️" },
+};
 
-interface Notification {
-  id: string;
-  type: "success" | "warning" | "info" | "emergency";
-  title: string;
-  message: string;
-  timestamp: string;
-  isRead: boolean;
-  actionLabel?: string;
-  actionLink?: string;
-}
+const NOTIFICATION_STYLES = {
+  success: {
+    bg: "bg-green-500/10",
+    border: "border-green-500/30",
+    dot: "bg-green-400",
+  },
+  warning: {
+    bg: "bg-yellow-500/10",
+    border: "border-yellow-500/30",
+    dot: "bg-yellow-400",
+  },
+  emergency: {
+    bg: "bg-red-500/10",
+    border: "border-red-500/30 border-l-4 border-l-red-500",
+    dot: "bg-red-400",
+  },
+  info: {
+    bg: "bg-blue-500/10",
+    border: "border-blue-500/30",
+    dot: "bg-blue-400",
+  },
+} as const;
 
-// Helper: convert ISO date → relative time string
 function toRelativeTime(isoString: string): string {
   try {
     const diff = Date.now() - new Date(isoString).getTime();
@@ -43,193 +77,25 @@ function toRelativeTime(isoString: string): string {
   }
 }
 
-// Maps API notification type → { uiType, title, actionLabel, actionLink }
-// Swagger Notification.type enum (uppercased): INFO | WARNING | SUCCESS | ERROR
-// Swagger request status enum: SUBMITTED | VERIFIED | REJECTED | IN_PROGRESS
-//                              | PARTIALLY_FULFILLED | FULFILLED | CLOSED | CANCELLED
-// Swagger Notification.type enum: SUBMITTED | ACCEPTED | REJECTED | IN_PROGRESS | COMPLETED | CANCELLED | WITHDRAWN
-const STATUS_META: Record<
-  string,
-  {
-    uiType: "success" | "warning" | "info" | "emergency";
-    title: string;
-    actionLabel?: string;
-    actionLink?: string;
-  }
-> = {
-  SUBMITTED: {
-    uiType: "info",
-    title: "Yêu cầu đã được gửi",
-    actionLabel: "Xem lịch sử",
-    actionLink: "/history",
-  },
-  ACCEPTED: {
-    uiType: "success",
-    title: "Yêu cầu được tiếp nhận",
-    actionLabel: "Theo dõi",
-    actionLink: "/history",
-  },
-  REJECTED: {
-    uiType: "emergency",
-    title: "Yêu cầu bị từ chối",
-    actionLabel: "Gửi lại",
-    actionLink: "/request",
-  },
-  IN_PROGRESS: {
-    uiType: "warning",
-    title: "Đội cứu hộ đang xử lý",
-    actionLabel: "Theo dõi",
-    actionLink: "/history",
-  },
-  COMPLETED: {
-    uiType: "success",
-    title: "Yêu cầu đã hoàn thành",
-    actionLabel: "Xem chi tiết",
-    actionLink: "/history",
-  },
-  CANCELLED: {
-    uiType: "warning",
-    title: "Yêu cầu đã được hủy",
-    actionLabel: "Xem lịch sử",
-    actionLink: "/history",
-  },
-  WITHDRAWN: {
-    uiType: "warning",
-    title: "Yêu cầu đã bị rút lại",
-    actionLabel: "Xem lịch sử",
-    actionLink: "/history",
-  },
-};
-
-// Helper: map raw API data → Notification UI model
-function mapApiToNotification(raw: any): Notification {
-  const apiType = (raw.type || raw.notificationType || "").toUpperCase();
-  const meta = STATUS_META[apiType];
-  return {
-    id: raw._id || raw.id || raw.notificationId || "",
-    type: meta?.uiType ?? "info",
-    title: raw.title || meta?.title || "Thông báo",
-    message: raw.message || raw.content || raw.body || "",
-    timestamp: toRelativeTime(raw.createdAt || raw.created_at || ""),
-    isRead: raw.isRead ?? raw.is_read ?? false,
-    actionLabel: raw.actionLabel || meta?.actionLabel,
-    actionLink: raw.actionLink || meta?.actionLink,
-  };
-}
-
-const NOTIFICATION_STYLES = {
-  success: {
-    bg: "bg-green-500/10",
-    border: "border-green-500/30",
-    icon: "✅",
-    dot: "bg-green-400",
-  },
-  warning: {
-    bg: "bg-yellow-500/10",
-    border: "border-yellow-500/30",
-    icon: "⚠️",
-    dot: "bg-yellow-400",
-  },
-  emergency: {
-    bg: "bg-red-500/10",
-    border: "border-red-500/30 border-l-4 border-l-red-500",
-    icon: "🚨",
-    dot: "bg-red-400",
-  },
-  info: {
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/30",
-    icon: "ℹ️",
-    dot: "bg-blue-400",
-  },
-} as const;
-
 export default function CitizenNotificationsPage() {
-  const [filter, setFilter] = useState<"all" | "unread">("all");
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const user = useAuthStore((s) => s.user);
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    deleteNotification,
+    deleteAll,
+    fetchNotifications,
+  } = useNotificationStore();
 
-  const fetchNotifications = useCallback(async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    else setIsRefreshing(true);
-    setError(null);
-    try {
-      // execute() always returns Notification[] (repository handles unwrapping)
-      const rawList = await getNotificationsUseCase.execute();
-      setNotifications(rawList.map(mapApiToNotification));
-    } catch (err: unknown) {
-      const axiosErr = err as AxiosError;
-      const status = axiosErr?.response?.status;
-      // Log full error for debugging
-      console.error("Lỗi khi tải thông báo:", {
-        status,
-        message: axiosErr?.message,
-        data: axiosErr?.response?.data,
-      });
-      // 401/403 → axios interceptor handles redirect to login; no UI error needed
-      if (status === 401 || status === 403) {
-        setError(null);
-        setNotifications([]);
-      } else if (status === 404) {
-        // Endpoint not yet implemented — show empty state, not error
-        setError(null);
-        setNotifications([]);
-      } else {
-        setError(
-          status
-            ? `Không thể tải thông báo (lỗi ${status}). Vui lòng thử lại.`
-            : "Không thể tải thông báo. Kiểm tra kết nối mạng và thử lại."
-        );
-      }
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, []);
+  const userId = user?._id || user?.id || "";
 
+  // Initial fetch (socket may already have fetched, but ensure data is loaded)
   useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
-
-  // Dispatch custom event so CitizenLayout refreshes badge count immediately
-  const notifyLayoutRefresh = () =>
-    window.dispatchEvent(new CustomEvent("notifications:updated"));
-
-  const markAsRead = async (id: string) => {
-    // Optimistic update first
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-    );
-    notifyLayoutRefresh();
-    try {
-      await markNotificationReadUseCase.execute(id);
-    } catch {
-      // Revert on failure
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: false } : n)),
-      );
-      notifyLayoutRefresh();
+    if (userId) {
+      fetchNotifications();
     }
-  };
-
-  const markAllAsRead = async () => {
-    const prev = notifications;
-    setNotifications((n) => n.map((item) => ({ ...item, isRead: true })));
-    notifyLayoutRefresh();
-    try {
-      await markNotificationReadUseCase.executeAll();
-    } catch {
-      setNotifications(prev);
-      notifyLayoutRefresh();
-    }
-  };
-
-  const filteredNotifications =
-    filter === "all" ? notifications : notifications.filter((n) => !n.isRead);
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  }, [userId, fetchNotifications]);
 
   return (
     <>
@@ -249,156 +115,72 @@ export default function CitizenNotificationsPage() {
               Cập nhật quan trọng về cứu hộ
             </p>
           </div>
-          <button
-            onClick={() => fetchNotifications(true)}
-            disabled={isRefreshing}
-            className="p-2 lg:p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all disabled:opacity-50"
-            aria-label="Làm mới thông báo"
-          >
-            <span
-              className={`text-xl inline-block ${isRefreshing ? "animate-spin" : ""}`}
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <button
+                onClick={() => {
+                  if (userId) deleteAll(userId);
+                }}
+                className="text-sm text-[#FF7700] hover:text-[#FF8800] font-bold underline underline-offset-2"
+              >
+                🗑️ Xoá tất cả
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (userId) fetchNotifications();
+              }}
+              className="p-2 lg:p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all"
+              aria-label="Làm mới thông báo"
             >
-              🔄
-            </span>
-          </button>
+              <span className="text-xl inline-block">🔄</span>
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="pb-24 lg:pb-0 overflow-auto">
         <div className="max-w-4xl mx-auto p-4 lg:p-8 space-y-5">
-
-          {/* Filter + Mark All */}
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setFilter("all")}
-                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-sm transition-all ${filter === "all"
-                  ? "bg-[#FF7700] text-white shadow-lg shadow-[#FF7700]/20"
-                  : "bg-white/5 text-gray-400 hover:bg-white/10"
-                  }`}
-              >
-                📋 Tất cả
-                <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${filter === "all" ? "bg-white/20" : "bg-white/10"
-                    }`}
-                >
-                  {notifications.length}
-                </span>
-              </button>
-              <button
-                onClick={() => setFilter("unread")}
-                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-sm transition-all relative ${filter === "unread"
-                  ? "bg-[#FF7700] text-white shadow-lg shadow-[#FF7700]/20"
-                  : "bg-white/5 text-gray-400 hover:bg-white/10"
-                  }`}
-              >
-                🔴 Chưa đọc
-                <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${filter === "unread" ? "bg-white/20" : "bg-white/10"
-                    }`}
-                >
-                  {unreadCount}
-                </span>
-              </button>
-            </div>
-            {unreadCount > 0 && (
-              <button
-                onClick={markAllAsRead}
-                className="text-sm text-[#FF7700] hover:text-[#FF8800] font-bold underline underline-offset-2"
-              >
-                ✓ Đánh dấu tất cả đã đọc
-              </button>
-            )}
-          </div>
-
           {/* Content */}
-          {isLoading ? (
-            // Skeleton matching card shape
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="bg-white/5 border border-white/10 rounded-xl p-5 animate-pulse"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-8 h-8 bg-white/10 rounded-full flex-shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-white/10 rounded w-3/4" />
-                      <div className="h-3 bg-white/10 rounded w-full" />
-                      <div className="h-3 bg-white/10 rounded w-1/2" />
-                      <div className="flex justify-between mt-3">
-                        <div className="h-3 bg-white/10 rounded w-20" />
-                        <div className="h-3 bg-white/10 rounded w-16" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : error ? (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-12 text-center">
-              <div className="text-6xl mb-4">⚠️</div>
-              <h3 className="text-xl font-bold text-red-400 mb-2">
-                Đã xảy ra lỗi
-              </h3>
-              <p className="text-gray-400 mb-4">{error}</p>
-              <button
-                onClick={() => fetchNotifications()}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#FF7700] hover:bg-[#FF8800] rounded-xl text-white font-bold transition-all"
-              >
-                🔄 Thử lại
-              </button>
-            </div>
-          ) : filteredNotifications.length === 0 ? (
+          {notifications.length === 0 ?
             <div className="text-center py-16">
               <div className="text-6xl mb-4">📭</div>
               <h3 className="text-xl font-bold text-white mb-2">
-                {filter === "unread"
-                  ? "Đã đọc hết rồi!"
-                  : "Chưa có thông báo nào"}
+                Chưa có thông báo nào
               </h3>
-              <p className="text-gray-400 mb-6">
-                {filter === "unread"
-                  ? "Bạn đã đọc tất cả thông báo"
-                  : "Thông báo mới sẽ hiện ở đây"}
-              </p>
-              {filter === "unread" && (
-                <button
-                  onClick={() => setFilter("all")}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-white font-bold text-sm transition-all"
-                >
-                  📋 Xem tất cả thông báo
-                </button>
-              )}
+              <p className="text-gray-400 mb-6">Thông báo mới sẽ hiện ở đây</p>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredNotifications.map((notification) => {
-                const style = NOTIFICATION_STYLES[notification.type];
+          : <div className="space-y-3">
+              {notifications.map((noti) => {
+                const meta = TYPE_META[noti.type];
+                const uiType = meta?.uiType ?? "info";
+                const style = NOTIFICATION_STYLES[uiType];
+                const icon = meta?.icon ?? "🔔";
+                const title = meta?.title ?? "Thông báo";
+
                 return (
                   <div
-                    key={notification.id}
-                    onClick={() =>
-                      !notification.isRead && markAsRead(notification.id)
-                    }
-                    className={`${style.bg} border ${style.border} rounded-xl p-5 transition-all duration-200 ${!notification.isRead
-                      ? "cursor-pointer hover:brightness-110 ring-1 ring-[#FF7700]/20"
+                    key={noti._id}
+                    onClick={() => !noti.isRead && markAsRead(noti._id)}
+                    className={`${style.bg} border ${style.border} rounded-xl p-5 transition-all duration-200 ${
+                      !noti.isRead ?
+                        "cursor-pointer hover:brightness-110 ring-1 ring-[#FF7700]/20"
                       : "opacity-80"
-                      }`}
+                    }`}
                   >
                     <div className="flex items-start gap-4">
                       {/* Icon */}
                       <div className="text-2xl flex-shrink-0 mt-0.5">
-                        {style.icon}
+                        {icon}
                       </div>
 
                       <div className="flex-1 min-w-0">
                         {/* Title row */}
                         <div className="flex items-start justify-between gap-2 mb-1.5">
                           <h3 className="text-base font-bold text-white leading-snug">
-                            {notification.title}
+                            {title}
                           </h3>
-                          {!notification.isRead && (
+                          {!noti.isRead && (
                             <span
                               className={`w-2 h-2 ${style.dot} rounded-full flex-shrink-0 mt-1.5 animate-pulse`}
                             />
@@ -407,28 +189,23 @@ export default function CitizenNotificationsPage() {
 
                         {/* Message */}
                         <p className="text-gray-300 text-sm leading-relaxed mb-3">
-                          {notification.message}
+                          {noti.message}
                         </p>
 
                         {/* Footer */}
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <span className="text-xs text-gray-500">
-                            🕐 {notification.timestamp}
+                            🕐 {toRelativeTime(noti.createdAt)}
                           </span>
-                          {notification.actionLabel &&
-                            notification.actionLink && (
-                              <Link
-                                href={notification.actionLink}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (!notification.isRead)
-                                    markAsRead(notification.id);
-                                }}
-                                className="text-xs font-bold text-[#FF7700] hover:text-[#FF8800] bg-[#FF7700]/10 hover:bg-[#FF7700]/20 px-3 py-1 rounded-lg transition-all"
-                              >
-                                {notification.actionLabel} →
-                              </Link>
-                            )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteNotification(noti._id);
+                            }}
+                            className="text-xs font-bold text-red-400/60 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 px-3 py-1 rounded-lg transition-all"
+                          >
+                            🗑️ Xoá
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -436,10 +213,9 @@ export default function CitizenNotificationsPage() {
                 );
               })}
             </div>
-          )}
+          }
         </div>
       </main>
     </>
   );
 }
-

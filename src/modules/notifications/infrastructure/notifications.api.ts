@@ -1,40 +1,78 @@
 /**
  * Notifications API - Infrastructure Layer
- * Handles user notifications
  *
- * Auth is injected automatically by the axios request interceptor (Bearer token).
- * No need to pass headers manually.
+ * Endpoints theo Noti-guide.md:
+ *   GET    /notifications/:userId?page=&limit=
+ *   PATCH  /notifications/read/:notificationId
+ *   DELETE /notifications/:notificationId
+ *   DELETE /notifications/user/:userId
+ *
+ * Không cần manual auth headers — axios interceptor tự thêm Authorization.
  */
 
-import { apiClient } from '@/services/apiClient';
-import type { ApiResponse } from '@/shared/types/api';
-import type { NotificationQueryParams } from '../domain/notification.entity';
+import { apiClient } from "@/services/apiClient";
+import type {
+  Notification,
+  NotificationListResponse,
+} from "../domain/notification.entity";
+
+interface ApiSuccessResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  meta?: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
 
 export const notificationsApi = {
-    /**
-     * Get current user's notifications
-     * GET /notifications/me
-     */
-    getNotifications: async (params?: NotificationQueryParams): Promise<ApiResponse> => {
-        return apiClient.get('/notifications/me', { params });
-    },
+  /**
+   * Lấy danh sách notification của user hiện tại
+   * GET /notifications/me?page=&limit=
+   */
+  getNotifications: async (
+    page = 1,
+    limit = 10,
+  ): Promise<ApiSuccessResponse<Notification[]>> => {
+    return apiClient.get<ApiSuccessResponse<Notification[]>>(
+      `/notifications/me?page=${page}&limit=${limit}`,
+    );
+  },
 
-    /**
-     * Mark notification as read
-     * PATCH /notifications/read/{notificationId}
-     */
-    markNotificationAsRead: async (notificationId: string): Promise<ApiResponse> => {
-        return apiClient.patch(`/notifications/read/${notificationId}`);
-    },
+  /**
+   * Đánh dấu đã đọc
+   * PATCH /notifications/read/:notificationId
+   */
+  markAsRead: async (
+    notificationId: string,
+  ): Promise<ApiSuccessResponse<Notification>> => {
+    return apiClient.patch<ApiSuccessResponse<Notification>>(
+      `/notifications/read/${notificationId}`,
+    );
+  },
 
-    /**
-     * Delete a notification
-     * DELETE /notifications/{notificationId}
-     */
-    deleteNotification: async (notificationId: string): Promise<ApiResponse> => {
-        return apiClient.delete(`/notifications/${notificationId}`);
-    },
+  /**
+   * Xoá 1 notification
+   * DELETE /notifications/:notificationId
+   */
+  deleteNotification: async (
+    notificationId: string,
+  ): Promise<ApiSuccessResponse<null>> => {
+    return apiClient.delete<ApiSuccessResponse<null>>(
+      `/notifications/${notificationId}`,
+    );
+  },
 
-    // NOTE: No bulk mark-all-read endpoint in swagger.
-    // Derived client-side: fetch list then mark each unread one individually.
+  /**
+   * Xoá tất cả notification của user
+   * DELETE /notifications/user/:userId
+   */
+  deleteAll: async (userId: string): Promise<ApiSuccessResponse<null>> => {
+    return apiClient.delete<ApiSuccessResponse<null>>(
+      `/notifications/user/${userId}`,
+    );
+  },
 };

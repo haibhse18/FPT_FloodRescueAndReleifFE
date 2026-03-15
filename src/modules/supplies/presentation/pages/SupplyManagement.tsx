@@ -45,7 +45,7 @@ export default function SupplyManagementPage() {
             toast({
                 title: "Import thành công",
                 description: "Dữ liệu đã được cập nhật vào kho vật tư",
-                variant: "success",
+                variant: "default",
             });
             setFile(null);
             fetchSupplies(); // Cập nhật bảng

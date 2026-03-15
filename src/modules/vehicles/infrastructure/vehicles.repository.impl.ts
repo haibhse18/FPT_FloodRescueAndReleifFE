@@ -1,5 +1,5 @@
 import { IVehicleRepository } from "../domain/vehicles.repository";
-import { Vehicle } from "../domain/vehicles.enity";
+import { Vehicle, VehicleStatus } from "../domain/vehicles.enity";
 import { vehicleApi } from "./vehicles.api";
 
 export class VehicleRepositoryImpl implements IVehicleRepository {
@@ -12,6 +12,16 @@ export class VehicleRepositoryImpl implements IVehicleRepository {
     total: result?.meta?.total ?? 0
   };
 }
+
+  async createVehicle(data: Partial<Vehicle>): Promise<Vehicle> {
+    const result = await vehicleApi.createVehicle(data);
+    return result?.data as Vehicle;
+  }
+
+  async updateVehicleStatus(id: string, status: VehicleStatus): Promise<void> {
+    await vehicleApi.updateVehicleStatus(id, status);
+  }
+
   async importExcel(file: File): Promise<void> {
           await vehicleApi.importExcel(file);
       }

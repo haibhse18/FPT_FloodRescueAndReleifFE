@@ -54,7 +54,11 @@ export function VehicleList({ vehicles, loading = false }: VehicleListProps) {
     {
       key: "assignedTo",
       header: "Đội",
-      render: (row: Vehicle) => row.assignedTo ?? "-"
+      render: (row: Vehicle) => {
+        if (!row.assignedTo) return "-";
+        if (typeof row.assignedTo === "string") return row.assignedTo;
+        return row.assignedTo.name ?? "-";
+      }
     }
   ];
 

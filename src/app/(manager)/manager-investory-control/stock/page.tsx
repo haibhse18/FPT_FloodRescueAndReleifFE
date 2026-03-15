@@ -1,24 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Table } from "@/shared/ui/components";
 import dynamic from "next/dynamic";
 
+import { Table } from "@/shared/ui/components";
 import { InventoryItem } from "@/modules/inventory/domain/inventory.entity";
 import { inventoryApi } from "@/modules/inventory/infrastructure/inventory.api";
 import { Warehouse } from "@/modules/inventory/domain/warehouse.entity";
 
-// tránh lỗi SSR
+// MAP
 const OpenMap = dynamic(
   () => import("@/modules/map/presentation/components/OpenMap"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-96 bg-slate-300 rounded-lg animate-pulse flex items-center justify-center text-slate-500">
-        Đang tải bản đồ...
-      </div>
-    ),
-  }
+  { ssr: false }
 );
 
 export default function SupplyStockPage() {
@@ -28,26 +21,43 @@ export default function SupplyStockPage() {
   const [loading, setLoading] = useState(true);
 
   const [keyword, setKeyword] = useState("");
+  const [file, setFile] = useState<File | null>(null);
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // warehouse locations
   const [warehouseLocations, setWarehouseLocations] = useState<
-    {
-      id: string;
-      name: string;
-      lat: number;
-      lon: number;
-    }[]
+    { id: string; name: string; lat: number; lon: number }[]
   >([]);
 
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
 
-  // ================================
+  // ===============================
+  // IMPORT EXCEL
+  // ===============================
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+    setFile(selectedFile);
+  };
+
+  const handleImportExcel = async () => {
+    if (!file) return;
+
+    try {
+      await inventoryApi.importExcel(file);
+      alert("Import thành công");
+      fetchInventory();
+    } catch (err) {
+      alert("Import thất bại");
+    }
+  };
+
+  // ===============================
   // FETCH INVENTORY
-  // ================================
+  // ===============================
+
   const fetchInventory = async (searchKeyword = "", pageNumber = 1) => {
 
     setLoading(true);
@@ -56,7 +66,7 @@ export default function SupplyStockPage() {
 
       const query =
         `?page=${pageNumber}&limit=10` +
-        (searchKeyword ? `&supplyName=${encodeURIComponent(searchKeyword)}` : "");
+        (searchKeyword ? `&supplyName=${searchKeyword}` : "");
 
       const res = await inventoryApi.getItems(query);
 
@@ -70,7 +80,7 @@ export default function SupplyStockPage() {
 
     } catch (err) {
 
-      console.error("Không thể lấy dữ liệu tồn kho", err);
+      console.error(err);
 
     } finally {
 
@@ -83,27 +93,15 @@ export default function SupplyStockPage() {
     fetchInventory(keyword, page);
   }, [page, keyword]);
 
-  // ================================
-  // SEARCH
-  // ================================
-  const handleSearch = () => {
-    setPage(1);
-    fetchInventory(keyword, 1);
-  };
-
-  // ================================
+  // ===============================
   // FETCH WAREHOUSE LOCATION
-  // ================================
-  const fetchAllWarehouseLocations = async () => {
+  // ===============================
+
+  const fetchWarehouseLocations = async () => {
 
     setIsLoadingLocation(true);
-    setLocationError(null);
 
     try {
-
-      if (!allItems.length) {
-        throw new Error("Không có dữ liệu tồn kho");
-      }
 
       const uniqueWarehouses = new Map<string, Warehouse>();
 
@@ -114,11 +112,11 @@ export default function SupplyStockPage() {
           const wh = item.warehouse as Warehouse;
 
           if (wh._id && !uniqueWarehouses.has(wh._id)) {
+
             uniqueWarehouses.set(wh._id, wh);
+
           }
-
         }
-
       });
 
       const locations = Array.from(uniqueWarehouses.values())
@@ -130,211 +128,182 @@ export default function SupplyStockPage() {
           lat: wh.location.coordinates[1],
         }));
 
-      if (!locations.length) {
-        throw new Error("Không có tọa độ hợp lệ");
-      }
-
       setWarehouseLocations(locations);
 
-    } catch (err: any) {
+    } catch (err) {
 
-      setLocationError(err?.message || "Lỗi lấy vị trí");
+      console.error(err);
 
     } finally {
 
       setIsLoadingLocation(false);
 
     }
-
   };
 
   useEffect(() => {
+    if (!loading) fetchWarehouseLocations();
+  }, [loading]);
 
-    if (!loading && allItems.length > 0) {
-      fetchAllWarehouseLocations();
-    }
+  // ===============================
+  // TABLE COLUMNS
+  // ===============================
 
-  }, [loading, allItems]);
-
-  // ================================
-  // TABLE
-  // ================================
   const columns = [
-
     { key: "name", header: "Tên vật tư" },
-    { key: "description", header: "Mô tả" },
     { key: "quantity", header: "Số lượng" },
     { key: "reservedQuantity", header: "Đã đặt" },
     { key: "unit", header: "Đơn vị" },
     { key: "warehouse", header: "Kho" },
-
-    {
-      key: "status",
-      header: "Trạng thái",
-      render: (row: InventoryItem) => {
-
-        const statusMap: Record<string, string> = {
-          ACTIVE: "🟢 Sẵn sàng",
-          OUT_OF_STOCK: "🔴 Hết hàng",
-          RESERVED: "🟡 Đã đặt",
-        };
-
-        return statusMap[row.status] || row.status || "-";
-
-      },
-    },
-
     { key: "lastUpdated", header: "Cập nhật" },
-
   ];
 
   const tableData = items.map((item) => ({
     ...item,
-
     name:
       typeof item.supplyID === "string"
         ? item.supplyID
         : item.supplyID?.name ?? "",
-
     unit:
       typeof item.supplyID === "string"
         ? ""
         : item.supplyID?.unit ?? "",
-
     warehouse:
       typeof item.warehouse === "string"
         ? item.warehouse
         : item.warehouse?.name ?? "",
-
     lastUpdated: new Date(item.lastUpdated).toLocaleString(),
-
   }));
 
-  // ================================
-  // UI
-  // ================================
-  return (
+  // ===============================
+  // STATS
+  // ===============================
 
-    <div className="p-4 lg:p-6 space-y-6">
+  const totalItems = items.length;
+
+  const activeItems = items.filter((i) => i.status === "ACTIVE").length;
+
+  const reservedItems = items.filter((i) => i.status === "RESERVED").length;
+
+  // ===============================
+  // UI
+  // ===============================
+
+  return (
+    <div className="p-6 space-y-6">
+
+      {/* HEADER */}
 
       <div>
-
-        <h1 className="text-3xl font-bold text-white mb-2">
-          Tồn kho vật tư
+        <h1 className="text-2xl font-bold text-white">
+          🏭 Tồn kho vật tư
         </h1>
-
-        <p className="text-gray-400">
-          Quản lý kho vật tư ({items.length} mục)
+        <p className="text-slate-400 text-sm">
+          Quản lý vật tư trong kho
         </p>
+      </div>
+
+      {/* STATS */}
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <p className="text-xs text-slate-400">Vật tư</p>
+          <p className="text-xl font-bold text-white">
+            {totalItems}
+          </p>
+        </div>
+
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <p className="text-xs text-slate-400">Kho</p>
+          <p className="text-xl font-bold text-orange-400">
+            {warehouseLocations.length}
+          </p>
+        </div>
+
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <p className="text-xs text-slate-400">Sẵn sàng</p>
+          <p className="text-xl font-bold text-emerald-400">
+            {activeItems}
+          </p>
+        </div>
+
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <p className="text-xs text-slate-400">Đã đặt</p>
+          <p className="text-xl font-bold text-amber-400">
+            {reservedItems}
+          </p>
+        </div>
 
       </div>
 
-      {/* SEARCH */}
-      <div className="flex items-center gap-3 max-w-2xl">
+      {/* SEARCH + IMPORT */}
 
-        <input
-          type="text"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="Tìm kiếm theo tên, ID hoặc kho..."
-          className="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20"
-        />
+      <div className="flex flex-wrap justify-between gap-3">
 
-        <button
-          onClick={handleSearch}
-          className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          Search
-        </button>
+        <div className="flex gap-2">
 
-      </div>
-
-      {/* TABLE */}
-      {loading ? (
-
-        <div className="text-center py-20 text-white">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white mx-auto"></div>
-        </div>
-
-      ) : (
-
-        <div className="bg-white/5 rounded-lg overflow-hidden text-white">
-          <Table columns={columns} data={tableData as any[]} striped hoverable />
-        </div>
-
-      )}
-
-      {/* PAGINATION */}
-      <div className="flex justify-center items-center gap-2">
-
-        <button
-          disabled={page === 1}
-          onClick={() => setPage(page - 1)}
-          className="px-3 py-1 rounded bg-white/10 text-white disabled:opacity-40"
-        >
-          Prev
-        </button>
-
-        {Array.from({ length: totalPages }, (_, i) => (
+          <input
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="Tìm vật tư..."
+            className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm"
+          />
 
           <button
-            key={i}
-            onClick={() => setPage(i + 1)}
-            className={`px-3 py-1 rounded ${
-              page === i + 1
-                ? "bg-blue-600 text-white"
-                : "bg-white/10 text-white"
-            }`}
+            onClick={() => fetchInventory(keyword, 1)}
+            className="px-4 py-2 bg-blue-600 rounded-lg text-sm"
           >
-            {i + 1}
+            Tìm
           </button>
-
-        ))}
-
-        <button
-          disabled={page === totalPages}
-          onClick={() => setPage(page + 1)}
-          className="px-3 py-1 rounded bg-white/10 text-white disabled:opacity-40"
-        >
-          Next
-        </button>
-
-      </div>
-
-      {/* MAP */}
-      <div className="bg-slate-200 rounded-xl p-5 shadow-lg border-l-4 border-[#FF7700]">
-
-        <div className="flex justify-between items-center mb-3">
-
-          <Button
-            onClick={fetchAllWarehouseLocations}
-            disabled={isLoadingLocation}
-            className="text-[#FF3535] text-sm font-bold uppercase"
-          >
-            {isLoadingLocation ? "Đang tải..." : "Cập nhật"}
-          </Button>
 
         </div>
 
-        {locationError && (
+        <div className="flex gap-2">
 
-          <div className="text-xs text-red-600 mb-2">
-            ⚠️ {locationError}
-          </div>
+          <label className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg cursor-pointer text-sm text-white">
+            📁 Chọn file
+            <input
+              type="file"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </label>
 
-        )}
+          <button
+            onClick={handleImportExcel}
+            className="px-4 py-2 bg-emerald-600 rounded-lg text-sm"
+          >
+            Import
+          </button>
 
-        <p className="text-slate-800 text-lg font-bold mb-2">
+        </div>
 
-          {isLoadingLocation
-            ? "Đang tải..."
-            : `Tìm thấy ${warehouseLocations.length} nhà kho`}
+      </div>
 
-        </p>
+      {/* MAIN LAYOUT */}
 
-        {warehouseLocations.length > 0 && (
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-5">
 
-          <div className="mt-4 h-64 rounded-lg overflow-hidden border-2 border-slate-300">
+        {/* TABLE */}
+
+        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden text-white">
+
+          {loading ? (
+            <div className="p-10 text-center text-slate-400">
+              Loading...
+            </div>
+          ) : (
+            <Table columns={columns} data={tableData as any[]} />
+          )}
+
+        </div>
+
+        {/* MAP */}
+
+        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+
+          <div className="h-[450px]">
 
             <OpenMap
               warehouses={warehouseLocations.map((wh) => ({
@@ -347,12 +316,42 @@ export default function SupplyStockPage() {
 
           </div>
 
-        )}
+          {/* WAREHOUSE LIST */}
+
+          <div className="border-t border-white/10 p-4">
+
+            <p className="text-sm text-slate-300 font-semibold mb-3">
+              Danh sách kho
+            </p>
+
+            <div className="space-y-2 max-h-44 overflow-y-auto">
+
+              {warehouseLocations.map((wh) => (
+
+                <div
+                  key={wh.id}
+                  className="flex items-center justify-between bg-white/5 hover:bg-white/10 px-3 py-2 rounded-lg"
+                >
+
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-400 rounded-full" />
+                    <span className="text-sm text-slate-200">
+                      {wh.name}
+                    </span>
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          </div>
+
+        </div>
 
       </div>
 
     </div>
-
   );
-
 }

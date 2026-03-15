@@ -1,0 +1,1 @@
+export { default as AdminUsersPage } from "@/modules/admin/presentation/page/ManageUser"

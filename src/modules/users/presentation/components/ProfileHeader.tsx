@@ -2,6 +2,7 @@
 
 interface ProfileHeaderProps {
   name: string;
+  role: string;
   phone: string;
   email: string;
   isLoading?: boolean;
@@ -11,6 +12,7 @@ interface ProfileHeaderProps {
 
 export default function ProfileHeader({
   name,
+  role,
   phone,
   email,
   isLoading = false,
@@ -44,7 +46,7 @@ export default function ProfileHeader({
           ) : (
             <>
               <h3 className="text-2xl lg:text-3xl font-black text-white">{name || "Người dùng"}</h3>
-              <p className="text-[#FF7700] font-semibold text-sm">Cư dân</p>
+              <p className="text-[#FF7700] font-semibold text-sm">{role}</p>
             </>
           )}
 

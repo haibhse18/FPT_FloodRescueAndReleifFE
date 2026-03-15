@@ -4,29 +4,27 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import "chart.js/auto";
 
+import { Supply } from "@/modules/supplies/domain/supply.entity";
 import { supplyRepository } from "@/modules/supplies/infrastructure/supply.repository.impl";
 import { GetSuppliesUseCase } from "@/modules/supplies/application/getSupplies.usecase";
+import { GetSupplyRequestsUseCase } from "@/modules/supplies/application/getSupplyRequests.usecase";
 
 import { vehicleRepository } from "@/modules/vehicles/infrastructure/vehicles.repository.impl";
 import { GetVehiclesUseCase } from "@/modules/vehicles/application/getVehicles.usecase";
-
-import { adminRepository } from "@/modules/admin/infrastructure/admin.repository.impl";
-import {GetListUserUseCase } from "@/modules/admin/applications/getListUser.usecase";
 
 const Bar = dynamic(() => import("react-chartjs-2").then((mod) => mod.Bar), {
   ssr: false,
 });
 
 const getSuppliesUseCase = new GetSuppliesUseCase(supplyRepository);
+const getSupplyRequestsUseCase = new GetSupplyRequestsUseCase(supplyRepository);
 const getVehiclesUseCase = new GetVehiclesUseCase(vehicleRepository);
-const getListUserUseCase = new GetListUserUseCase(adminRepository);
 
 export default function ManagerDashboardPage() {
 
-  const [usersTotal, setUsersTotal] = useState(0);
   const [suppliesTotal, setSuppliesTotal] = useState(0);
   const [vehiclesTotal, setVehiclesTotal] = useState(0);
-  const [requestsTotal, setRequestsTotal] = useState(0);
+  const [requestsProcessing, setRequestsProcessing] = useState(0);
 
   const [loading, setLoading] = useState(true);
 
@@ -35,16 +33,19 @@ export default function ManagerDashboardPage() {
     setLoading(true);
 
     try {
-      const [suppliesRes, vehiclesRes, usersRes] =
+
+      const [suppliesRes, requestsRes, vehiclesRes] =
         await Promise.all([
           getSuppliesUseCase.execute(),
+          getSupplyRequestsUseCase.execute(),
           getVehiclesUseCase.execute(),
-          getListUserUseCase.execute(),
         ]);
 
       setSuppliesTotal(suppliesRes.length ?? 0);
-      setVehiclesTotal(vehiclesRes.total ?? 0);
-      setUsersTotal(usersRes.total ?? 0);
+
+      setRequestsProcessing(requestsRes.length ?? 0);
+
+      setVehiclesTotal(vehiclesRes?.total ?? 0);
 
     } catch (err) {
 
@@ -62,19 +63,18 @@ export default function ManagerDashboardPage() {
   }, []);
 
   const chartData = {
-    labels: ["Người dùng", "Vật tư", "Phương tiện", "Requests"],
+    labels: ["Vật tư", "Phương tiện", "Yêu cầu đang xử lý"],
     datasets: [
       {
         label: "Thống kê hệ thống",
-        data: [usersTotal, suppliesTotal, vehiclesTotal, requestsTotal],
+        data: [suppliesTotal, vehiclesTotal, requestsProcessing],
         backgroundColor: [
           "rgba(59,130,246,0.8)",
-          "rgba(16,185,129,0.8)",
           "rgba(251,146,60,0.9)",
-          "rgba(236,72,153,0.85)",
+          "rgba(16,185,129,0.8)",
         ],
         borderRadius: 10,
-        barThickness: 70,
+        barThickness: 80,
       },
     ],
   };
@@ -104,14 +104,7 @@ export default function ManagerDashboardPage() {
 
       {/* Quick stats */}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-
-        <div className="bg-white/5 rounded-lg p-6 border border-gray-700">
-          <p className="text-gray-400 text-sm mb-2">👤 Tổng người dùng</p>
-          <p className="text-4xl font-bold text-white">
-            {loading ? "-" : usersTotal}
-          </p>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
 
         <div className="bg-white/5 rounded-lg p-6 border border-gray-700">
           <p className="text-gray-400 text-sm mb-2">📦 Tổng vật tư</p>
@@ -127,6 +120,13 @@ export default function ManagerDashboardPage() {
           </p>
         </div>
 
+        <div className="bg-white/5 rounded-lg p-6 border border-gray-700">
+          <p className="text-gray-400 text-sm mb-2">📋 Yêu cầu đang xử lý</p>
+          <p className="text-4xl font-bold text-white">
+            {loading ? "-" : requestsProcessing}
+          </p>
+        </div>
+
       </div>
 
       {/* Chart */}
@@ -137,36 +137,8 @@ export default function ManagerDashboardPage() {
           📊 Thống kê hệ thống
         </h1>
 
-
         <Bar data={chartData} options={chartOptions} />
 
-      </div>
-
-      {/* Quick Links / Navigation */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <a href="/admin-users" className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-600/30 p-4 rounded-lg flex items-center justify-between transition-colors">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">👥</span>
-            <span className="font-semibold">Quản lý người dùng</span>
-          </div>
-          <span>→</span>
-        </a>
-        
-        <a href="/admin-system" className="bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 border border-purple-600/30 p-4 rounded-lg flex items-center justify-between transition-colors">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">⚙️</span>
-            <span className="font-semibold">Cấu hình hệ thống</span>
-          </div>
-          <span>→</span>
-        </a>
-
-        <a href="/admin-monitoring" className="bg-green-600/10 hover:bg-green-600/20 text-green-400 border border-green-600/30 p-4 rounded-lg flex items-center justify-between transition-colors">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">📊</span>
-            <span className="font-semibold">Báo cáo & Giám sát</span>
-          </div>
-          <span>→</span>
-        </a>
       </div>
 
     </div>

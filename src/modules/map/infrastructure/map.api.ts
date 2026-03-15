@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from '@/services/apiClient';
+import { mapClient } from '@/services/mapClient';
 import type { ApiResponse } from '@/shared/types/api';
 
 export const mapApi = {
@@ -12,7 +13,9 @@ export const mapApi = {
      * GET /reverse-geocode
      */
     reverseGeocode: async (lat: number, lng: number): Promise<ApiResponse> => {
-        return apiClient.get(`/reverse-geocode?lat=${lat}&lng=${lng}`);
+        return mapClient.get(
+            `/geocode/reverse?latlng=${lat},${lng}&apikey=${process.env.NEXT_PUBLIC_OPENMAP_API_KEY}`
+        );
     },
 
     /**
@@ -20,7 +23,7 @@ export const mapApi = {
      * GET /geocode
      */
     geocode: async (address: string): Promise<ApiResponse> => {
-        return apiClient.get(`/geocode?address=${encodeURIComponent(address)}`);
+        return mapClient.get(`/geocode?address=${encodeURIComponent(address)}`);
     },
 
     /**

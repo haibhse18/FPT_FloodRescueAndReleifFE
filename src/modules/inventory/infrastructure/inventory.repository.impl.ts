@@ -28,5 +28,9 @@ export const inventoryRepository: IInventoryRepository = {
 
     async deleteItem(id: string): Promise<void> {
         throw new Error('Method not implemented.');
+    },
+
+    async importExcel(file: File): Promise<void> {
+        await inventoryApi.importExcel(file);
     }
 };

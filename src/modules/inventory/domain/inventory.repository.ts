@@ -36,4 +36,9 @@ export interface IInventoryRepository {
      * Xóa item
      */
     deleteItem(id: string): Promise<void>;
+
+    /**
+     * Import Excel
+     */
+    importExcel(file: File): Promise<void>;
 }

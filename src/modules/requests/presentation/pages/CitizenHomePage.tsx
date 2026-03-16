@@ -145,7 +145,7 @@ export default function CitizenHomePage() {
           const data = await response.json();
           // Nominatim field order: road > suburb > city_district > city > county > state
           const location =
-            data.address?.road ||
+            data.address?.road || 
             data.address?.suburb ||
             data.address?.city_district ||
             data.address?.city ||

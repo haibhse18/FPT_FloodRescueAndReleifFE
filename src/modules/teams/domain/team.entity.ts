@@ -26,6 +26,12 @@ export interface Team {
   leaderId?: string | null;
   status: TeamStatus;
   members?: TeamMember[];
+  teamLeader?: TeamMember | null;
+  memberStats?: {
+    total: number;
+    rescue: number;
+    active: number;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -46,6 +52,11 @@ export interface GetTeamsFilter {
   status?: TeamStatus;
   page?: number;
   limit?: number;
+  name?: string;
+  leader?: string;
+  active?: number;
+  sortBy?: "name" | "status" | "createdAt" | "active" | "leader" | string;
+  order?: "asc" | "desc" | string;
 }
 
 // ─── Input DTOs ──────────────────────────────────────────

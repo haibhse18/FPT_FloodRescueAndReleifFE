@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { teamRepository } from "@/modules/teams/infrastructure/team.repository.impl";
@@ -27,6 +28,13 @@ export default function TeamDetailPage({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState("");
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fetchTeam = useCallback(async () => {
     setLoading(true);
@@ -189,9 +197,10 @@ export default function TeamDetailPage({
     );
   }
 
-  const leader = team.members?.find((m) => m._id === team.leaderId);
+  const leaderIdStr = team.teamLeader?._id || (typeof team.leaderId === "string" ? team.leaderId : (team.leaderId as any)?._id);
+  const leader = team.teamLeader || team.members?.find((m) => m._id === leaderIdStr);
   const isAvailable = team.status === "AVAILABLE";
-  const memberCount = team.members?.length || 0;
+  const memberCount = team.memberStats?.total || team.members?.length || 0;
   const canDelete = isCoordinator && isAvailable && memberCount === 0;
 
   return (
@@ -265,7 +274,7 @@ export default function TeamDetailPage({
                 {leader?.displayName || leader?.userName || "Chưa chỉ định"}
               </span>
               <span className="text-gray-400 text-sm flex items-center gap-1">
-                👥 {memberCount} / 100 thành viên
+                👥 {memberCount} / 100 thành viên {team.memberStats && <span className="text-green-400 ml-1">({team.memberStats.active} active)</span>}
               </span>
             </div>
           </div>
@@ -321,7 +330,7 @@ export default function TeamDetailPage({
               </thead>
               <tbody>
                 {team.members.map((member) => {
-                  const isLeader = member._id === team.leaderId;
+                  const isLeader = member._id === leaderIdStr;
                   return (
                     <tr
                       key={member._id}
@@ -345,34 +354,25 @@ export default function TeamDetailPage({
                       <td className="py-3 px-2 text-gray-400">
                         {member.phoneNumber || "—"}
                       </td>
-                      <td className="py-3 px-2 text-gray-400">{member.role}</td>
+                      <td className="py-3 px-2 text-gray-400">
+                        {isLeader ? "Team leader" : "Team member"}
+                      </td>
                       <td className="py-3 px-2 text-right">
-                        <div className="flex justify-end gap-2">
-                          {/* Change Leader button (only Coordinator, only when AVAILABLE) */}
-                          {isCoordinator && !isLeader && isAvailable && (
+                        {!isLeader && (
+                          <div className="relative inline-block text-left">
                             <button
-                              onClick={() => handleChangeLeader(member._id)}
-                              disabled={actionLoading === "leader"}
-                              className="px-2 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 rounded text-xs transition-colors"
-                              title="Đặt làm Leader"
+                              onClick={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setDropdownPos({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX - 160 }); // Align rightish
+                                setOpenDropdown(openDropdown === member._id ? null : member._id);
+                              }}
+                              className="p-1 px-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors font-bold tracking-widest cursor-pointer"
+                              title="Hành động"
                             >
-                              ⭐ Leader
+                              •••
                             </button>
-                          )}
-                          {/* Remove button (not for leader, not for self if not coordinator) */}
-                          {!isLeader && (
-                            <button
-                              onClick={() => handleRemoveMember(member)}
-                              disabled={
-                                actionLoading === `remove-${member._id}`
-                              }
-                              className="px-2 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded text-xs transition-colors disabled:opacity-50"
-                              title="Xoá khỏi đội"
-                            >
-                              🗑️ Xoá
-                            </button>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
@@ -382,6 +382,54 @@ export default function TeamDetailPage({
           </div>
         }
       </div>
+
+      {/* Global Dropdown via Portal */}
+      {mounted && openDropdown && dropdownPos && createPortal(
+        <>
+          <div 
+            className="fixed inset-0 z-[60]" 
+            onClick={() => setOpenDropdown(null)}
+          />
+          <div 
+            className="fixed z-[70] w-48 bg-[#1a3a52] rounded-lg shadow-2xl border border-white/20 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100"
+            style={{ 
+              top: `${dropdownPos.top + 8}px`, 
+              left: `${dropdownPos.left}px` 
+            }}
+          >
+            {team.members?.find(m => m._id === openDropdown) && (() => {
+              const member = team.members.find(m => m._id === openDropdown)!;
+              return (
+                <>
+                  {isCoordinator && isAvailable && (
+                    <button
+                      onClick={() => {
+                        setOpenDropdown(null);
+                        handleChangeLeader(member._id);
+                      }}
+                      disabled={actionLoading === "leader"}
+                      className="w-full text-left px-4 py-3 text-sm text-yellow-300 hover:bg-white/10 transition-colors disabled:opacity-50 flex items-center gap-2 border-b border-white/5 last:border-0"
+                    >
+                      ⭐ Đặt làm Leader
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setOpenDropdown(null);
+                      handleRemoveMember(member);
+                    }}
+                    disabled={actionLoading === `remove-${member._id}`}
+                    className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-white/10 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    🗑️ Xoá khỏi đội
+                  </button>
+                </>
+              );
+            })()}
+          </div>
+        </>,
+        document.body
+      )}
 
       {/* Add Member Modal */}
       <AddMemberModal

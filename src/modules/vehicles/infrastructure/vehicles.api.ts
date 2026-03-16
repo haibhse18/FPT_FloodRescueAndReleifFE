@@ -1,4 +1,4 @@
-import { Vehicle } from "../domain/vehicles.enity";
+import { Vehicle, VehicleStatus } from "../domain/vehicles.enity";
 import axiosInstance from "@/lib/axios";
 import { ApiResponse } from "@/types";
 import { uploadFile } from "../../../services/uploadFile";
@@ -22,6 +22,15 @@ export const vehicleApi = {
       console.error("[VehicleAPI] Error fetching vehicles:", error);
       return { data: [], meta: { page: 1, totalPages: 1 } };
     }
+  },
+
+  createVehicle: async (data: Partial<Vehicle>) => {
+    const response = await axiosInstance.post<ApiResponse<Vehicle>>("/vehicles", data);
+    return response.data;
+  },
+
+  updateVehicleStatus: async (id: string, status: VehicleStatus) => {
+    await axiosInstance.patch(`/vehicles/${id}/status`, { status });
   },
 
     /**

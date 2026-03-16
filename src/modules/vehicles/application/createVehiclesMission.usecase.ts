@@ -11,7 +11,7 @@ export class CreateVehicleUseCase {
 
     const vehicle = await this.vehicleRepository.createVehicle(data);
 
-    if (!vehicle?.id) {
+    if (!vehicle?.licensePlate) {
       throw new Error("Cannot create vehicle");
     }
 

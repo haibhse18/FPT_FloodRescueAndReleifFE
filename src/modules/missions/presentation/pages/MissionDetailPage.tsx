@@ -163,60 +163,66 @@ export default function MissionDetailPage() {
     }
   }, [missionId]);
 
-  const fetchLocation = useCallback(async () => {
+  const fetchLocationFromRequest = useCallback(async () => {
     setIsLoadingLocation(true);
     setLocationError(null);
 
-    if (!("geolocation" in navigator)) {
-      setLocationError("Trình duyệt không hỗ trợ định vị");
-      setCurrentLocation("Không khả dụng");
-      setIsLoadingLocation(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        setCoordinates({ lat: latitude, lon: longitude });
-
-        try {
-          const response = await fetch(
-            `/api/reverse-geocode?lat=${latitude}&lon=${longitude}`,
-          );
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const data = await response.json();
-          const location =
-            data.address?.road ||
-            data.address?.suburb ||
-            data.address?.city_district ||
-            data.address?.city ||
-            data.address?.county ||
-            data.address?.state ||
-            data.display_name ||
-            `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-          setCurrentLocation(location);
-        } catch (error) {
-          if (error instanceof Error && error.name === "AbortError") {
-            setLocationError("Lấy địa chỉ hết thời gian chờ");
-          }
-          setCurrentLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-        } finally {
-          setIsLoadingLocation(false);
-        }
-      },
-      (error) => {
+    try {
+      // Get location from first request in mission
+      if (!missionRequests || missionRequests.length === 0) {
+        setLocationError("Không có request nào trong mission");
+        setCurrentLocation("Chưa có vị trí");
         setIsLoadingLocation(false);
-        setLocationError(error.message || "Không thể truy cập vị trí");
-        setCurrentLocation("Không khả dụng");
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
-    );
-  }, []);
+        return;
+      }
+
+      const firstRequest = missionRequests[0]?.requestDetails;
+      if (!firstRequest?.location?.coordinates || firstRequest.location.coordinates.length < 2) {
+        setLocationError("Request không có tọa độ hợp lệ");
+        setCurrentLocation("Tọa độ không hợp lệ");
+        setIsLoadingLocation(false);
+        return;
+      }
+
+      const [longitude, latitude] = firstRequest.location.coordinates;
+      setCoordinates({ lat: latitude, lon: longitude });
+
+      try {
+        // Reverse geocode to get address
+        const response = await fetch(
+          `/api/reverse-geocode?lat=${latitude}&lon=${longitude}`,
+        );
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const location =
+          data.address?.road ||
+          data.address?.suburb ||
+          data.address?.city_district ||
+          data.address?.city ||
+          data.address?.county ||
+          data.address?.state ||
+          data.display_name ||
+          `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+        setCurrentLocation(location);
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          setLocationError("Lấy địa chỉ hết thời gian chờ");
+        }
+        setCurrentLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Lỗi lấy vị trí";
+      setLocationError(msg);
+      setCurrentLocation("Lỗi");
+    } finally {
+      setIsLoadingLocation(false);
+    }
+  }, [missionRequests]);
 
   useEffect(() => {
     fetchData();
-    fetchLocation();
-  }, [fetchData, fetchLocation]);
+    fetchLocationFromRequest();
+  }, [fetchData, fetchLocationFromRequest]);
 
   // Auto-refresh on websocket notifications for this mission
   useEffect(() => {
@@ -566,10 +572,10 @@ export default function MissionDetailPage() {
             </span>
           </div>
           <button
-            onClick={fetchLocation}
+            onClick={fetchLocationFromRequest}
             disabled={isLoadingLocation}
             className="text-[#FF3535] text-sm font-bold uppercase hover:underline disabled:opacity-50 disabled:cursor-not-allowed transition-opacity focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 rounded px-2 py-1"
-            aria-label="Cập nhật vị trí"
+            aria-label="Cập nhật vị trí từ request"
           >
             {isLoadingLocation ? "Đang tải..." : "Cập nhật"}
           </button>
@@ -786,6 +792,7 @@ export default function MissionDetailPage() {
         onClose={() => setShowAddTeamsModal(false)}
         onAdd={handleAddTeams}
         teams={teams}
+        missionRequests={missionRequests}
       />
 
       {/* Abort Confirmation */}

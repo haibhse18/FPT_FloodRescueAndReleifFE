@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import type { RescueTeam } from "../../domain/mission.entity";
+import type { MissionRequest } from "../../domain/missionRequest.entity";
 
 // Dynamic import cho OpenMap để tránh SSR issues
 const OpenMap = dynamic(
@@ -24,6 +25,7 @@ interface AddTeamsModalProps {
   onAdd: (teamIds: string[], note?: string) => Promise<void>;
   teams: RescueTeam[];
   loading?: boolean;
+  missionRequests?: MissionRequest[];
 }
 
 export default function AddTeamsModal({
@@ -32,6 +34,7 @@ export default function AddTeamsModal({
   onAdd,
   teams,
   loading = false,
+  missionRequests = [],
 }: AddTeamsModalProps) {
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
   const [note, setNote] = useState("");
@@ -51,60 +54,64 @@ export default function AddTeamsModal({
     if (isOpen) {
       setSelectedTeams(new Set());
       setNote("");
-      fetchLocation();
+      fetchLocationFromRequest();
     }
-  }, [isOpen]);
+  }, [isOpen, missionRequests]);
 
-  const fetchLocation = async () => {
+  const fetchLocationFromRequest = async () => {
     setIsLoadingLocation(true);
     setLocationError(null);
 
-    if (!("geolocation" in navigator)) {
-      setLocationError("Trình duyệt không hỗ trợ định vị");
-      setCurrentLocation("Không khả dụng");
-      setIsLoadingLocation(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        setCoordinates({ lat: latitude, lon: longitude });
-
-        try {
-          // Proxy qua Next.js để tránh CORS (Nominatim)
-          const response = await fetch(
-            `/api/reverse-geocode?lat=${latitude}&lon=${longitude}`,
-          );
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const data = await response.json();
-          // Nominatim field order: road > suburb > city_district > city > county > state
-          const location =
-            data.address?.road ||
-            data.address?.suburb ||
-            data.address?.city_district ||
-            data.address?.city ||
-            data.address?.county ||
-            data.address?.state ||
-            data.display_name ||
-            `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-          setCurrentLocation(location);
-        } catch (error) {
-          if (error instanceof Error && error.name === "AbortError") {
-            setLocationError("Lấy địa chỉ hết thời gian chờ");
-          }
-          setCurrentLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-        } finally {
-          setIsLoadingLocation(false);
-        }
-      },
-      (error) => {
+    try {
+      // Get location from first request in mission
+      if (!missionRequests || missionRequests.length === 0) {
+        setLocationError("Không có request nào trong mission");
+        setCurrentLocation("Chưa có vị trí");
         setIsLoadingLocation(false);
-        setLocationError(error.message || "Không thể truy cập vị trí");
-        setCurrentLocation("Không khả dụng");
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
-    );
+        return;
+      }
+
+      const firstRequest = missionRequests[0]?.requestDetails;
+      if (!firstRequest?.location?.coordinates || firstRequest.location.coordinates.length < 2) {
+        setLocationError("Request không có tọa độ hợp lệ");
+        setCurrentLocation("Tọa độ không hợp lệ");
+        setIsLoadingLocation(false);
+        return;
+      }
+
+      const [longitude, latitude] = firstRequest.location.coordinates;
+      setCoordinates({ lat: latitude, lon: longitude });
+
+      try {
+        // Reverse geocode to get address
+        const response = await fetch(
+          `/api/reverse-geocode?lat=${latitude}&lon=${longitude}`,
+        );
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const location =
+          data.address?.road ||
+          data.address?.suburb ||
+          data.address?.city_district ||
+          data.address?.city ||
+          data.address?.county ||
+          data.address?.state ||
+          data.display_name ||
+          `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+        setCurrentLocation(location);
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          setLocationError("Lấy địa chỉ hết thời gian chờ");
+        }
+        setCurrentLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Lỗi lấy vị trí";
+      setLocationError(msg);
+      setCurrentLocation("Lỗi");
+    } finally {
+      setIsLoadingLocation(false);
+    }
   };
 
   if (!isOpen) return null;

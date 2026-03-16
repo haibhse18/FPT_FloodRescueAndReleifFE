@@ -143,12 +143,15 @@ export default function MissionDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [missionData, timelinesData, requestsData] = await Promise.all([
-        getMissionDetailUseCase.execute(missionId),
+      // Fetch mission detail first
+      const missionData = await getMissionDetailUseCase.execute(missionId);
+      setMission(missionData);
+      
+      // Then fetch timelines and requests in parallel
+      const [timelinesData, requestsData] = await Promise.all([
         getTimelinesUseCase.execute({ missionId }),
         getMissionRequestsUseCase.execute(missionId),
       ]);
-      setMission(missionData);
       setTimelines(timelinesData.data || []);
       setMissionRequests(requestsData || []);
     } catch (error) {

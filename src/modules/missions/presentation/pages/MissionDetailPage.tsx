@@ -91,6 +91,12 @@ export default function MissionDetailPage() {
   const missionId = params?.id as string;
   const { toast } = useToast();
 
+  // Debug log
+  useEffect(() => {
+    console.log("🔍 MissionDetailPage params:", params);
+    console.log("🔍 Extracted missionId:", missionId);
+  }, [params, missionId]);
+
   const [mission, setMission] = useState<Mission | null>(null);
   const [timelines, setTimelines] = useState<Timeline[]>([]);
   const [missionRequests, setMissionRequests] = useState<MissionRequest[]>([]);
@@ -98,6 +104,7 @@ export default function MissionDetailPage() {
   const [verifiedRequests, setVerifiedRequests] = useState<CoordinatorRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Modals state
   const [showAddRequestsModal, setShowAddRequestsModal] = useState(false);
@@ -110,6 +117,7 @@ export default function MissionDetailPage() {
   const fetchData = useCallback(async () => {
     if (!missionId) return;
     setLoading(true);
+    setError(null);
     try {
       const [missionData, timelinesData, requestsData] = await Promise.all([
         getMissionDetailUseCase.execute(missionId),
@@ -120,7 +128,9 @@ export default function MissionDetailPage() {
       setTimelines(timelinesData.data || []);
       setMissionRequests(requestsData || []);
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
       console.error("Failed to fetch mission:", error);
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -343,9 +353,17 @@ export default function MissionDetailPage() {
 
   if (!mission) {
     return (
-      <div className="p-6 text-center text-gray-400">
+      <div className="p-6 text-center">
         <p className="text-4xl mb-4">❓</p>
-        <p>Không tìm thấy nhiệm vụ</p>
+        {error ? (
+          <>
+            <p className="text-red-400 font-bold mb-2">Lỗi tải nhiệm vụ</p>
+            <p className="text-gray-400 text-sm mb-4">{error}</p>
+            <p className="text-gray-500 text-xs mb-4">ID: {missionId}</p>
+          </>
+        ) : (
+          <p className="text-gray-400">Không tìm thấy nhiệm vụ</p>
+        )}
         <button
           onClick={() => router.back()}
           className="mt-4 px-4 py-2 bg-white/5 rounded-lg text-gray-300 hover:bg-white/10"

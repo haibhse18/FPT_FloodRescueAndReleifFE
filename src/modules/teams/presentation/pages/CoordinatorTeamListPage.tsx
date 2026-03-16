@@ -31,15 +31,42 @@ export default function CoordinatorTeamListPage() {
   const [total, setTotal] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  // Filters & Sort States
+  const [searchName, setSearchName] = useState("");
+  const [searchLeader, setSearchLeader] = useState("");
+  const [searchActive, setSearchActive] = useState("");
+  const [debouncedSearchName, setDebouncedSearchName] = useState("");
+  const [debouncedSearchLeader, setDebouncedSearchLeader] = useState("");
+  const [debouncedSearchActive, setDebouncedSearchActive] = useState("");
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [order, setOrder] = useState("desc");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchName(searchName);
+      setDebouncedSearchLeader(searchLeader);
+      setDebouncedSearchActive(searchActive);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchName, searchLeader, searchActive]);
+
   const fetchTeams = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const filter: { status?: TeamStatus; page: number; limit: number } = {
+      const filter: { status?: TeamStatus; page: number; limit: number; sortBy: string; order: string; name?: string; leader?: string; active?: number } = {
         page,
         limit: 12,
+        sortBy,
+        order,
       };
       if (activeTab !== "ALL") filter.status = activeTab;
+      if (debouncedSearchName.trim()) filter.name = debouncedSearchName.trim();
+      if (debouncedSearchLeader.trim()) filter.leader = debouncedSearchLeader.trim();
+      if (debouncedSearchActive.trim() && !isNaN(Number(debouncedSearchActive))) {
+        filter.active = Number(debouncedSearchActive);
+      }
+      
       const result = await teamRepository.getTeams(filter);
       setTeams(result.data || []);
       setTotalPages(result.totalPages || 1);
@@ -49,15 +76,19 @@ export default function CoordinatorTeamListPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, page]);
+  }, [activeTab, page, sortBy, order, debouncedSearchName, debouncedSearchLeader, debouncedSearchActive]);
 
   useEffect(() => {
     fetchTeams();
   }, [fetchTeams]);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, sortBy, order, debouncedSearchName, debouncedSearchLeader, debouncedSearchActive]);
+
   const handleTabChange = (tab: TeamStatus | "ALL") => {
     setActiveTab(tab);
-    setPage(1);
   };
 
   const handleCreated = () => {
@@ -125,6 +156,53 @@ export default function CoordinatorTeamListPage() {
             ))}
           </div>
 
+          {/* Filters & Sort */}
+          <div className="flex flex-col md:flex-row gap-3 flex-wrap">
+            <input
+              type="text"
+              placeholder="🔍 Tìm tên đội..."
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-[#FF7700] flex-1 md:w-32"
+            />
+            <input
+              type="text"
+              placeholder="🔍 Tìm leader..."
+              value={searchLeader}
+              onChange={(e) => setSearchLeader(e.target.value)}
+              className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-[#FF7700] flex-1 md:w-32"
+            />
+            <input
+              type="number"
+              min="0"
+              placeholder="Số TV active"
+              value={searchActive}
+              onChange={(e) => setSearchActive(e.target.value)}
+              className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-[#FF7700] w-28"
+            />
+            <select
+              title="Sắp xếp"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-[#FF7700] w-full md:w-auto"
+            >
+              <option value="createdAt" className="bg-[#1a3a52]">Mới nhất</option>
+              <option value="name" className="bg-[#1a3a52]">Tên đội</option>
+              <option value="status" className="bg-[#1a3a52]">Trạng thái</option>
+              <option value="active" className="bg-[#1a3a52]">Thành viên Active</option>
+              <option value="leader" className="bg-[#1a3a52]">Tên Leader</option>
+            </select>
+            <select
+              title="Thứ tự"
+              value={order}
+              onChange={(e) => setOrder(e.target.value)}
+              className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-[#FF7700] w-full md:w-auto"
+            >
+              <option value="desc" className="bg-[#1a3a52]">Giảm dần</option>
+              <option value="asc" className="bg-[#1a3a52]">Tăng dần</option>
+            </select>
+          </div>
+
           {/* Error */}
           {error && (
             <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-red-200">
@@ -187,16 +265,17 @@ export default function CoordinatorTeamListPage() {
                           <span>👤</span>
                           <span>
                             Leader:{" "}
-                            {team.members?.find((m) => m._id === team.leaderId)
-                              ?.displayName ||
-                              team.members?.find((m) => m._id === team.leaderId)
-                                ?.userName ||
+                            {team.teamLeader ? 
+                              (team.teamLeader.displayName || team.teamLeader.userName) : 
                               "Chưa chỉ định"}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span>👥</span>
-                          <span>{team.members?.length || 0} thành viên</span>
+                          <span>
+                            {team.memberStats?.total || 0} thành viên{" "}
+                            {team.memberStats && <span className="text-green-400 ml-1">({team.memberStats.active} active)</span>}
+                          </span>
                         </div>
                       </div>
 

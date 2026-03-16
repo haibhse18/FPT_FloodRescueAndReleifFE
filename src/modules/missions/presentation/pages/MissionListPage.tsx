@@ -12,11 +12,13 @@ import type {
   GetMissionsFilter,
 } from "../../domain/mission.entity";
 import { useToast } from "@/hooks/use-toast";
+import { useNotificationStore } from "@/store/useNotification.store";
 
 // ─── Constants ────────────────────────────────────────────
 
 const STATUS_TABS: { label: string; value: MissionStatus | "ALL" }[] = [
   { label: "Tất cả", value: "ALL" },
+  { label: "📝 Bản nháp", value: "DRAFT" },
   { label: "📋 Kế hoạch", value: "PLANNED" },
   { label: "🔄 Đang chạy", value: "IN_PROGRESS" },
   { label: "⏸️ Tạm dừng", value: "PAUSED" },
@@ -25,6 +27,7 @@ const STATUS_TABS: { label: string; value: MissionStatus | "ALL" }[] = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
+  DRAFT: "bg-gray-500/20 text-gray-300 border-gray-500/30",
   PLANNED: "bg-blue-500/20 text-blue-300 border-blue-500/30",
   IN_PROGRESS: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
   PAUSED: "bg-orange-500/20 text-orange-300 border-orange-500/30",
@@ -63,6 +66,9 @@ export default function MissionListPage() {
   });
   const [creating, setCreating] = useState(false);
 
+  // Notifications for auto-refresh
+  const notifications = useNotificationStore((s) => s.notifications);
+
   const fetchMissions = useCallback(async () => {
     setLoading(true);
     try {
@@ -81,6 +87,17 @@ export default function MissionListPage() {
   useEffect(() => {
     fetchMissions();
   }, [fetchMissions]);
+
+  // Auto-refresh on websocket notification related to mission changes
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const latest = notifications[0];
+      // Only refetch if it indicates a mission/timeline status change might have occurred
+      if (latest.missionId || ["ACCEPTED", "IN_PROGRESS", "COMPLETED", "REJECTED", "WITHDRAWN"].includes(latest.type)) {
+        fetchMissions();
+      }
+    }
+  }, [notifications, fetchMissions]);
 
   const handleTabChange = (tab: MissionStatus | "ALL") => {
     setActiveTab(tab);

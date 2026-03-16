@@ -21,6 +21,8 @@ export const teamsApi = {
     order?: string;
     page?: number;
     limit?: number;
+    leader?: string;
+    active?: number;
   }): Promise<ApiResponse> => {
     const queryParams = new URLSearchParams();
     if (params) {

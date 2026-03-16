@@ -21,7 +21,7 @@ export default function VehiclesManagementPage() {
 
     try {
       const data = await getVehiclesUseCase.execute();
-      setVehicles(data);
+      setVehicles(data.vehicles);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Không thể tải danh sách xe";

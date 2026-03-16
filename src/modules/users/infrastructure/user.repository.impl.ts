@@ -45,7 +45,7 @@ export class ManagerRepositoryImpl implements IManagerRepository {
         return (response as any).data || [];
     }
 
-    async updateUser(userId: string, data: unknown): Promise<void> {
+    async updateUser(userId: string, data: { role: string }): Promise<void> {
         await managerApi.updateUser(userId, data);
     }
 

@@ -8,7 +8,7 @@
 import axiosInstance from "@/lib/axios";
 import { AxiosRequestConfig } from "axios";
 
-export interface ApiClientConfig extends AxiosRequestConfig {}
+export interface ApiClientConfig extends AxiosRequestConfig { }
 
 /**
  * Generic HTTP client wrapper using Axios

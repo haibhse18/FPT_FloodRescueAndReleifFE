@@ -68,7 +68,10 @@ export const requestsApi = {
     });
   },
 
-  /** POST /citizen/emergency-request */
+  /**
+   * @deprecated No matching endpoint in swagger.
+   * Use createRescueRequest (POST /requests) with CreateRescueRequestDTO instead.
+   */
   createEmergencyRequest: async (
     data: EmergencyRequestDTO,
   ): Promise<ApiResponse> => {
@@ -82,15 +85,15 @@ export const requestsApi = {
     const queryString =
       params ?
         "?" + new URLSearchParams(params as Record<string, string>).toString()
-      : "";
+        : "";
     return apiClient.get(`/requests/my${queryString}`, {
       headers: authSession.getAuthHeaders(),
     });
   },
 
-  /** GET /citizen/history */
+  /** GET /requests/my — alias for getMyRequests (replaces old /citizen/history) */
   getHistory: async (): Promise<ApiResponse> => {
-    return apiClient.get("/citizen/history", {
+    return apiClient.get("/requests/my", {
       headers: authSession.getAuthHeaders(),
     });
   },
@@ -102,7 +105,10 @@ export const requestsApi = {
     });
   },
 
-  /** PATCH /requests/{id}/confirm */
+  /**
+   * @deprecated No matching endpoint in swagger — this endpoint does not exist.
+   * Citizens should use cancelRequest if needed.
+   */
   confirmRequest: async (requestId: string): Promise<ApiResponse> => {
     return apiClient.patch(`/requests/${requestId}/confirm`, undefined, {
       headers: authSession.getAuthHeaders(),

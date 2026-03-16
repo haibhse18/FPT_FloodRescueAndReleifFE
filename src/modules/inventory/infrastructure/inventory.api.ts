@@ -4,6 +4,7 @@
  */
 
 import { InventoryItem } from '../domain/inventory.entity';
+import { Warehouse } from '../domain/warehouse.entity';
 import { ApiResponse } from '@/types';
 import axiosInstance from '@/lib/axios';
 
@@ -43,4 +44,21 @@ export const inventoryApi = {
     },
 
     // more methods (create, update, delete) can be added as needed
+
+    /**
+     * GET /api/warehouses
+     */
+    getWarehouses: async (): Promise<{ data: Warehouse[], meta: { page: number, totalPages: number } }> => {
+        try {
+            const response = await axiosInstance.get<ApiResponse<Warehouse[]>>(`/warehouses`);
+            const data = response.data?.data;
+            if (!Array.isArray(data)) {
+                return { data: [], meta: { page: 1, totalPages: 1 } };
+            }
+            return { data, meta: response.data?.meta || { page: 1, totalPages: 1 } };
+        } catch (error) {
+            console.error('[InventoryAPI] Error fetching warehouses:', error);
+            return { data: [], meta: { page: 1, totalPages: 1 } };
+        }
+    },
 };

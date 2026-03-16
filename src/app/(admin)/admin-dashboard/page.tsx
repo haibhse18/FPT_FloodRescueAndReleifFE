@@ -6,20 +6,18 @@ import "chart.js/auto";
 
 import { supplyRepository } from "@/modules/supplies/infrastructure/supply.repository.impl";
 import { GetSuppliesUseCase } from "@/modules/supplies/application/getSupplies.usecase";
-import { GetSupplyRequestsUseCase } from "@/modules/supplies/application/getSupplyRequests.usecase";
 
 import { vehicleRepository } from "@/modules/vehicles/infrastructure/vehicles.repository.impl";
 import { GetVehiclesUseCase } from "@/modules/vehicles/application/getVehicles.usecase";
 
 import { adminRepository } from "@/modules/admin/infrastructure/admin.repository.impl";
-import { GetListUserUseCase } from "@/modules/admin/applications/getListUser.usecase";
+import {GetListUserUseCase } from "@/modules/admin/applications/getListUser.usecase";
 
 const Bar = dynamic(() => import("react-chartjs-2").then((mod) => mod.Bar), {
   ssr: false,
 });
 
 const getSuppliesUseCase = new GetSuppliesUseCase(supplyRepository);
-const getSupplyRequestsUseCase = new GetSupplyRequestsUseCase(supplyRepository);
 const getVehiclesUseCase = new GetVehiclesUseCase(vehicleRepository);
 const getListUserUseCase = new GetListUserUseCase(adminRepository);
 
@@ -44,9 +42,9 @@ export default function ManagerDashboardPage() {
           getListUserUseCase.execute(),
         ]);
 
-      setSuppliesTotal(suppliesRes?.length ?? 0);
-      setVehiclesTotal(vehiclesRes?.total ?? 0);
-      setUsersTotal(usersRes?.length ?? 0);
+      setSuppliesTotal(suppliesRes.length ?? 0);
+      setVehiclesTotal(vehiclesRes.total ?? 0);
+      setUsersTotal(usersRes.total ?? 0);
 
     } catch (err) {
 
@@ -139,8 +137,36 @@ export default function ManagerDashboardPage() {
           📊 Thống kê hệ thống
         </h1>
 
+
         <Bar data={chartData} options={chartOptions} />
 
+      </div>
+
+      {/* Quick Links / Navigation */}
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="/admin-users" className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-600/30 p-4 rounded-lg flex items-center justify-between transition-colors">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">👥</span>
+            <span className="font-semibold">Quản lý người dùng</span>
+          </div>
+          <span>→</span>
+        </a>
+        
+        <a href="/admin-system" className="bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 border border-purple-600/30 p-4 rounded-lg flex items-center justify-between transition-colors">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">⚙️</span>
+            <span className="font-semibold">Cấu hình hệ thống</span>
+          </div>
+          <span>→</span>
+        </a>
+
+        <a href="/admin-monitoring" className="bg-green-600/10 hover:bg-green-600/20 text-green-400 border border-green-600/30 p-4 rounded-lg flex items-center justify-between transition-colors">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📊</span>
+            <span className="font-semibold">Báo cáo & Giám sát</span>
+          </div>
+          <span>→</span>
+        </a>
       </div>
 
     </div>

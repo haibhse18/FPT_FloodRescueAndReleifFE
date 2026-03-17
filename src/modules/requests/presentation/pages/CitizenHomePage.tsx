@@ -81,14 +81,6 @@ export default function CitizenHomePage() {
 
   const quickActions = [
     {
-      id: "rescue",
-      title: "Yêu cầu cứu trợ",
-      subtitle: "Thực phẩm, thuốc men",
-      href: "/request?type=relief",
-      color:
-        "bg-gradient-to-r from-[#FF7A1A] to-[#FF8F3A] hover:from-[#FF8A2C] hover:to-[#FFA24F]",
-    },
-    {
       id: "danger",
       title: "Đăng ký tình nguyện",
       subtitle: "Tham gia hỗ trợ cộng đồng",
@@ -104,6 +96,9 @@ export default function CitizenHomePage() {
         "bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600",
     },
   ];
+
+  const quickActionCardBaseClass =
+    "w-full min-h-[128px] lg:min-h-[156px] rounded-2xl p-6 lg:p-8 border border-white/15 flex items-center justify-center shadow-lg transition-all group";
 
   return (
     <>
@@ -215,13 +210,13 @@ export default function CitizenHomePage() {
                   <Link
                     href="/request"
                     className="sos-pulse relative w-48 h-48 lg:w-56 lg:h-56 rounded-full bg-[#FF3535] border-4 border-white shadow-[0_0_40px_rgba(255,53,53,0.7)] flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform z-20 group cursor-pointer hover:bg-red-600 focus:outline-none focus:ring-4 focus:ring-red-500/50"
-                    aria-label="Gửi yêu cầu cứu hộ khẩn cấp"
+                    aria-label="Gửi yêu cầu"
                   >
-                    <span className="text-2xl lg:text-3xl font-black tracking-wider text-white">
-                      CỨU HỘ
+                    <span className="text-xl lg:text-2xl font-black tracking-wider text-white">
+                      GỬI YÊU CẦU
                     </span>
-                    <span className="text-base lg:text-lg font-bold tracking-widest text-white">
-                      KHẨN CẤP
+                    <span className="text-sm lg:text-base font-bold tracking-widest text-white/90">
+                      Cứu hộ / Cứu trợ
                     </span>
                   </Link>
                 </>
@@ -231,17 +226,17 @@ export default function CitizenHomePage() {
 
           {/* Quick Options Section */}
           <section
-            className="space-y-4"
+            className="space-y-4 w-full"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 items-stretch w-full">
               {quickActions.map((action) => {
                 const content = (
                   <>
-                    <div className="flex flex-col flex-1 items-start justify-center min-h-[68px]">
-                      <span className="text-white font-extrabold text-lg lg:text-xl leading-tight tracking-tight">
+                    <div className="flex flex-col flex-1 items-center justify-center text-center">
+                      <span className="text-white font-extrabold text-xl lg:text-2xl leading-tight tracking-tight">
                         {action.title}
                       </span>
-                      <span className="text-white/90 text-sm lg:text-[15px] font-medium mt-1">
+                      <span className="text-white/90 text-base lg:text-lg font-medium mt-2">
                         {action.subtitle}
                       </span>
                     </div>
@@ -253,7 +248,7 @@ export default function CitizenHomePage() {
                     <button
                       key={action.id}
                       type="button"
-                      className={`${action.color} rounded-xl p-5 lg:p-6 border border-white/15 flex items-center shadow-lg transition-all cursor-default group focus:outline-none`}
+                      className={`${action.color} ${quickActionCardBaseClass} cursor-default focus:outline-none`}
                       aria-label={`${action.title}: ${action.subtitle}`}
                     >
                       {content}
@@ -265,7 +260,7 @@ export default function CitizenHomePage() {
                   <Link
                     key={action.id}
                     href={action.href}
-                    className={`${action.color} rounded-xl p-5 lg:p-6 border border-white/15 flex items-center shadow-lg transition-all cursor-pointer group hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50`}
+                    className={`${action.color} ${quickActionCardBaseClass} cursor-pointer hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50`}
                     aria-label={`${action.title}: ${action.subtitle}`}
                   >
                     {content}

@@ -177,7 +177,7 @@ export default function CitizenHomePage() {
       id: "rescue",
       title: "Yêu cầu cứu trợ",
       subtitle: "Thực phẩm, thuốc men",
-      href: "/request?type=rescue",
+      href: "/request?type=relief",
       color:
         "bg-gradient-to-r from-[#FF7A1A] to-[#FF8F3A] hover:from-[#FF8A2C] hover:to-[#FFA24F]",
     },

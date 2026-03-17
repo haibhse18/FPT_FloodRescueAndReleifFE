@@ -39,8 +39,7 @@ export default function CitizenSidebar() {
     { icon: "🏠", label: "Trang chủ", href: "/home" },
     { icon: "📜", label: "Lịch sử", href: "/history" },
     { icon: "🔔", label: "Thông báo", href: "/notifications" }, // Có thể thêm badge logic sau
-    { icon: "👤", label: "Cá nhân", href: "/profile" },
   ];
 
-  return <Sidebar navItems={navItems} user={user} />; 
+  return <Sidebar navItems={navItems} user={user} />;
 }

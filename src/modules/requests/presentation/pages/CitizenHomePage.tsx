@@ -120,7 +120,11 @@ export default function CitizenHomePage() {
             {/* User Greeting and Bell */}
             <div className="flex items-center gap-2 sm:gap-4">
               <NotificationBell />
-              <div className="flex items-center gap-3">
+              <Link
+                href="/profile"
+                className="flex items-center gap-3 rounded-xl px-1 py-1 hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50"
+                aria-label="Mở trang hồ sơ cá nhân"
+              >
                 <div className="text-right hidden sm:block">
                   <p className="text-xs text-white/60">Xin chào,</p>
                   <p className="text-sm font-bold text-white truncate max-w-[140px]">
@@ -132,7 +136,7 @@ export default function CitizenHomePage() {
                 <div className="w-10 h-10 rounded-full bg-[#FF7700]/30 border-2 border-[#FF7700]/50 flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
                   {isLoading ? "?" : userName.charAt(0).toUpperCase()}
                 </div>
-              </div>
+              </Link>
             </div>
           </div>
         </div>

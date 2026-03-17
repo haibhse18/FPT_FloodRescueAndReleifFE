@@ -84,6 +84,7 @@ export default function CitizenHomePage() {
       id: "danger",
       title: "Đăng ký tình nguyện",
       subtitle: "Tham gia hỗ trợ cộng đồng",
+      href: "/volunteer",
       color:
         "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500",
     },

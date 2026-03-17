@@ -3,11 +3,11 @@
  * Định nghĩa contract cho user operations, không phụ thuộc implementation
  */
 
-import { 
-    UserProfile, 
-    UpdateProfileData, 
-    DashboardStats, 
-    Report, 
+import {
+    UserProfile,
+    UpdateProfileData,
+    DashboardStats,
+    Report,
     ReportType,
     UserListItem,
     SystemConfig,
@@ -38,9 +38,9 @@ export interface IManagerRepository {
     getUsers(role?: string): Promise<UserListItem[]>;
 
     /**
-     * Cập nhật user
+     * Cập nhật role user
      */
-    updateUser(userId: string, data: unknown): Promise<void>;
+    updateUser(userId: string, data: { role: string }): Promise<void>;
 
     /**
      * Xóa user

@@ -145,7 +145,7 @@ export default function CitizenHomePage() {
           const data = await response.json();
           // Nominatim field order: road > suburb > city_district > city > county > state
           const location =
-            data.address?.road || 
+            data.address?.road ||
             data.address?.suburb ||
             data.address?.city_district ||
             data.address?.city ||
@@ -175,27 +175,26 @@ export default function CitizenHomePage() {
   const quickActions = [
     {
       id: "rescue",
-      icon: "🚑",
       title: "Yêu cầu cứu trợ",
       subtitle: "Thực phẩm, thuốc men",
       href: "/request?type=rescue",
-      color: "bg-[#FF7700] hover:bg-[#FF8820]",
+      color:
+        "bg-gradient-to-r from-[#FF7A1A] to-[#FF8F3A] hover:from-[#FF8A2C] hover:to-[#FFA24F]",
     },
     {
       id: "danger",
-      icon: "⚠️",
-      title: "Báo cáo nguy hiểm",
-      subtitle: "Sạt lở, nước dâng",
-      href: "/request?type=report",
-      color: "bg-red-600 hover:bg-red-700",
+      title: "Đăng ký tình nguyện",
+      subtitle: "Tham gia hỗ trợ cộng đồng",
+      color:
+        "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500",
     },
     {
       id: "guide",
-      icon: "📖",
       title: "Hướng dẫn an toàn",
       subtitle: "Kỹ năng sinh tồn",
       href: "/guide",
-      color: "bg-blue-600 hover:bg-blue-700",
+      color:
+        "bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600",
     },
   ];
 
@@ -225,7 +224,7 @@ export default function CitizenHomePage() {
                   <p className="text-sm font-bold text-white truncate max-w-[140px]">
                     {isLoading ?
                       <span className="inline-block w-24 h-4 bg-white/20 rounded animate-pulse" />
-                    : userName}
+                      : userName}
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-[#FF7700]/30 border-2 border-[#FF7700]/50 flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
@@ -336,35 +335,44 @@ export default function CitizenHomePage() {
             </h3>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {quickActions.map((action) => (
-                <Link
-                  key={action.id}
-                  href={action.href}
-                  className={`${action.color} rounded-xl p-5 flex items-center gap-4 shadow-lg transition-all cursor-pointer group hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50`}
-                  aria-label={`${action.title}: ${action.subtitle}`}
-                >
-                  <div
-                    className="w-14 h-14 rounded-lg bg-white/20 flex items-center justify-center text-3xl group-hover:bg-white/30 transition-colors"
-                    aria-hidden="true"
+              {quickActions.map((action) => {
+                const content = (
+                  <>
+                    <div className="flex flex-col flex-1 items-start justify-center min-h-[68px]">
+                      <span className="text-white font-extrabold text-lg lg:text-xl leading-tight tracking-tight">
+                        {action.title}
+                      </span>
+                      <span className="text-white/90 text-sm lg:text-[15px] font-medium mt-1">
+                        {action.subtitle}
+                      </span>
+                    </div>
+                  </>
+                );
+
+                if (!action.href) {
+                  return (
+                    <button
+                      key={action.id}
+                      type="button"
+                      className={`${action.color} rounded-xl p-5 lg:p-6 border border-white/15 flex items-center shadow-lg transition-all cursor-default group focus:outline-none`}
+                      aria-label={`${action.title}: ${action.subtitle}`}
+                    >
+                      {content}
+                    </button>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={action.id}
+                    href={action.href}
+                    className={`${action.color} rounded-xl p-5 lg:p-6 border border-white/15 flex items-center shadow-lg transition-all cursor-pointer group hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50`}
+                    aria-label={`${action.title}: ${action.subtitle}`}
                   >
-                    {action.icon}
-                  </div>
-                  <div className="flex flex-col flex-1">
-                    <span className="text-white font-bold text-lg leading-tight">
-                      {action.title}
-                    </span>
-                    <span className="text-white/80 text-sm">
-                      {action.subtitle}
-                    </span>
-                  </div>
-                  <span
-                    className="text-white/50 text-2xl group-hover:text-white/70 transition-colors"
-                    aria-hidden="true"
-                  >
-                    ›
-                  </span>
-                </Link>
-              ))}
+                    {content}
+                  </Link>
+                );
+              })}
             </div>
           </section>
 
@@ -400,7 +408,7 @@ export default function CitizenHomePage() {
                   <span className="w-4 h-4 border-2 border-slate-800 border-t-transparent rounded-full animate-spin"></span>
                   Đang tải...
                 </span>
-              : currentLocation}
+                : currentLocation}
             </p>
             {coordinates && (
               <div className="text-xs text-slate-500 font-mono mb-3">
@@ -408,7 +416,7 @@ export default function CitizenHomePage() {
                 {coordinates.lon.toFixed(4)}
               </div>
             )}
-   
+
             {/* Mini Map */}
             {coordinates && (
               <div className="mt-4 h-64 rounded-lg overflow-hidden border-2 border-slate-300 shadow-inner">

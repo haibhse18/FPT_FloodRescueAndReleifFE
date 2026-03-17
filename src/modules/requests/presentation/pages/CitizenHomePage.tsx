@@ -2,25 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 import NotificationBell from "@/modules/notifications/presentation/components/NotificationBell";
-
-// Dynamic import cho OpenMap để tránh SSR issues
-const OpenMap = dynamic(
-  () => import("@/modules/map/presentation/components/OpenMap"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-48 bg-slate-300 rounded-lg animate-pulse flex items-center justify-center text-slate-500">
-        Đang tải bản đồ...
-      </div>
-    ),
-  },
-);
 
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 
@@ -39,34 +24,9 @@ function normalizeStatus(status: unknown): string {
     .toUpperCase();
 }
 
-// Emergency contacts configuration
-const EMERGENCY_CONTACTS = [
-  { label: "Cấp cứu", number: "115", icon: "💊", ariaLabel: "Gọi cấp cứu 115" },
-  {
-    label: "Cảnh sát",
-    number: "113",
-    icon: "👮",
-    ariaLabel: "Gọi cảnh sát 113",
-  },
-  { label: "Cứu hỏa", number: "114", icon: "🔥", ariaLabel: "Gọi cứu hỏa 114" },
-  {
-    label: "Cứu nạn",
-    number: "1900",
-    icon: "⛑️",
-    ariaLabel: "Gọi cứu nạn 1900",
-  },
-] as const;
-
 export default function CitizenHomePage() {
   const [userName, setUserName] = useState("Người dùng");
   const [isLoading, setIsLoading] = useState(true);
-  const [currentLocation, setCurrentLocation] = useState("Đang tải vị trí...");
-  const [coordinates, setCoordinates] = useState<{
-    lat: number;
-    lon: number;
-  } | null>(null);
-  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
   const [activeRequest, setActiveRequest] = useState<{
     id: string;
     status: string;
@@ -116,61 +76,8 @@ export default function CitizenHomePage() {
     };
 
     fetchUser();
-    fetchLocation();
     checkActiveRequest();
   }, []);
-
-  const fetchLocation = async () => {
-    setIsLoadingLocation(true);
-    setLocationError(null);
-
-    if (!("geolocation" in navigator)) {
-      setLocationError("Trình duyệt không hỗ trợ định vị");
-      setCurrentLocation("Không khả dụng");
-      setIsLoadingLocation(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        setCoordinates({ lat: latitude, lon: longitude });
-
-        try {
-          // Proxy qua Next.js để tránh CORS (Nominatim)
-          const response = await fetch(
-            `/api/reverse-geocode?lat=${latitude}&lon=${longitude}`,
-          );
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const data = await response.json();
-          // Nominatim field order: road > suburb > city_district > city > county > state
-          const location =
-            data.address?.road ||
-            data.address?.suburb ||
-            data.address?.city_district ||
-            data.address?.city ||
-            data.address?.county ||
-            data.address?.state ||
-            data.display_name ||
-            `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-          setCurrentLocation(location);
-        } catch (error) {
-          if (error instanceof Error && error.name === "AbortError") {
-            setLocationError("Lấy địa chỉ hết thời gian chờ");
-          }
-          setCurrentLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-        } finally {
-          setIsLoadingLocation(false);
-        }
-      },
-      (error) => {
-        setIsLoadingLocation(false);
-        setLocationError(error.message || "Không thể truy cập vị trí");
-        setCurrentLocation("Không khả dụng");
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
-    );
-  };
 
   const quickActions = [
     {
@@ -325,15 +232,7 @@ export default function CitizenHomePage() {
           {/* Quick Options Section */}
           <section
             className="space-y-4"
-            aria-labelledby="quick-actions-heading"
           >
-            <h3
-              id="quick-actions-heading"
-              className="text-white font-bold text-xl lg:text-2xl px-2"
-            >
-              Lựa chọn nhanh
-            </h3>
-
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {quickActions.map((action) => {
                 const content = (
@@ -373,91 +272,6 @@ export default function CitizenHomePage() {
                   </Link>
                 );
               })}
-            </div>
-          </section>
-
-          {/* Location Bar with Mini Map */}
-          <div className="bg-slate-200 rounded-xl p-5 shadow-lg border-l-4 border-[#FF7700]">
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2 text-slate-600">
-                <span className="text-xl" aria-hidden="true">
-                  📍
-                </span>
-                <span className="text-sm font-bold uppercase tracking-wide">
-                  Vị trí hiện tại
-                </span>
-              </div>
-              <button
-                onClick={fetchLocation}
-                disabled={isLoadingLocation}
-                className="text-[#FF3535] text-sm font-bold uppercase hover:underline disabled:opacity-50 disabled:cursor-not-allowed transition-opacity focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 rounded px-2 py-1"
-                aria-label="Cập nhật vị trí hiện tại"
-              >
-                {isLoadingLocation ? "Đang tải..." : "Cập nhật"}
-              </button>
-            </div>
-            {locationError && (
-              <div className="text-xs text-red-600 mb-2 flex items-center gap-1">
-                <span>⚠️</span>
-                <span>{locationError}</span>
-              </div>
-            )}
-            <p className="text-slate-800 text-lg font-bold mb-2">
-              {isLoadingLocation ?
-                <span className="inline-flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-slate-800 border-t-transparent rounded-full animate-spin"></span>
-                  Đang tải...
-                </span>
-                : currentLocation}
-            </p>
-            {coordinates && (
-              <div className="text-xs text-slate-500 font-mono mb-3">
-                Lat: {coordinates.lat.toFixed(4)} • Long:{" "}
-                {coordinates.lon.toFixed(4)}
-              </div>
-            )}
-
-            {/* Mini Map */}
-            {coordinates && (
-              <div className="mt-4 h-64 rounded-lg overflow-hidden border-2 border-slate-300 shadow-inner">
-                <OpenMap
-                  latitude={coordinates.lat}
-                  longitude={coordinates.lon}
-                  address={currentLocation}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Emergency Contacts */}
-          <section
-            className="bg-white/5 border border-white/10 rounded-xl p-6"
-            aria-labelledby="emergency-contacts-heading"
-          >
-            <h2
-              id="emergency-contacts-heading"
-              className="text-white font-bold text-xl mb-4 flex items-center gap-2"
-            >
-              <span aria-hidden="true">📞</span>
-              <span>Liên hệ khẩn cấp</span>
-            </h2>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {EMERGENCY_CONTACTS.map((contact) => (
-                <a
-                  key={contact.number}
-                  href={`tel:${contact.number}`}
-                  className="bg-white/5 border border-white/10 rounded-xl p-4 text-center hover:bg-white/10 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50"
-                  aria-label={contact.ariaLabel}
-                >
-                  <div className="text-3xl mb-2" aria-hidden="true">
-                    {contact.icon}
-                  </div>
-                  <div className="text-white font-bold text-lg mb-1">
-                    {contact.number}
-                  </div>
-                  <div className="text-gray-400 text-xs">{contact.label}</div>
-                </a>
-              ))}
             </div>
           </section>
         </div>

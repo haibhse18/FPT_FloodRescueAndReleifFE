@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import { CreateRescueRequestUseCase } from "@/modules/requests/application/createRescueRequest.usecase";
@@ -40,7 +40,22 @@ const CONTEXT_EXTRA_SUPPLIES: Record<string, string[]> = {
   "Người bị thương": ["Băng gạc", "Thuốc sát trùng"],
 };
 
+const getCreatedRequestId = (request: unknown): string | null => {
+  if (!request || typeof request !== "object") {
+    return null;
+  }
+
+  const candidate = request as {
+    requestId?: string;
+    _id?: string;
+    id?: string;
+  };
+
+  return candidate.requestId || candidate._id || candidate.id || null;
+};
+
 export default function CitizenRequestPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
@@ -356,11 +371,19 @@ export default function CitizenRequestPage() {
         payload.imageUrls = uploadedImages;
       }
 
-      await createRescueRequestUseCase.execute(payload as any);
+      const createdRequest = await createRescueRequestUseCase.execute(payload as any);
+      const createdRequestId = getCreatedRequestId(createdRequest);
+
       toast({
         title: "Yêu cầu đã được gửi! 🎉",
         description: "Đội cứu hộ sẽ liên hệ với bạn sớm nhất có thể.",
       });
+
+      if (createdRequestId) {
+        router.push(`/history/${createdRequestId}`);
+        return;
+      }
+
       setRescueRequest({
         dangerType: "",
         description: "",
@@ -482,12 +505,18 @@ export default function CitizenRequestPage() {
         },
       };
 
-      await createRescueRequestUseCase.execute(payload as any);
+      const createdRequest = await createRescueRequestUseCase.execute(payload as any);
+      const createdRequestId = getCreatedRequestId(createdRequest);
 
       toast({
         title: "Yêu cầu cứu trợ đã được gửi",
         description: "Hệ thống đã tiếp nhận yêu cầu Relief của bạn.",
       });
+
+      if (createdRequestId) {
+        router.push(`/history/${createdRequestId}`);
+        return;
+      }
 
       setReliefNeeds([]);
       setReliefContexts([]);

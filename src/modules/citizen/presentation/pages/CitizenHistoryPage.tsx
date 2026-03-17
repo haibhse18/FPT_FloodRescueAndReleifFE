@@ -21,7 +21,7 @@ interface Request {
 
 export default function CitizenHistoryPage() {
   const [filter, setFilter] = useState<
-    "all" | "pending" | "in_progress" | "completed"
+    "all" | "pending" | "in_progress" | "completed" | "cancelled"
   >("all");
   const [requests, setRequests] = useState<Request[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -129,12 +129,12 @@ export default function CitizenHistoryPage() {
           CANCELLED: {
             text: "Đã hủy",
             color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
-            filter: "completed",
+            filter: "cancelled",
           },
           Cancelled: {
             text: "Đã hủy",
             color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
-            filter: "completed",
+            filter: "cancelled",
           },
         };
 
@@ -201,7 +201,7 @@ export default function CitizenHistoryPage() {
           r.id === requestId
             ? {
               ...r,
-              status: "completed",
+              status: "cancelled",
               originalStatus: "CANCELLED",
               statusText: "Đã hủy",
               statusColor: "bg-gray-500/20 text-gray-400 border-gray-500/30",
@@ -321,6 +321,7 @@ export default function CitizenHistoryPage() {
                 { value: "pending", label: "Chờ xử lý", icon: "⏱️", count: requests.filter((r) => r.status === "pending").length },
                 { value: "in_progress", label: "Đang xử lý", icon: "⏳", count: requests.filter((r) => r.status === "in_progress").length },
                 { value: "completed", label: "Hoàn thành", icon: "✅", count: requests.filter((r) => r.status === "completed").length },
+                { value: "cancelled", label: "Đã hủy", icon: "🚫", count: requests.filter((r) => r.status === "cancelled").length },
               ].map((btn) => (
                 <button
                   key={btn.value}
@@ -580,8 +581,8 @@ export default function CitizenHistoryPage() {
                       key={page}
                       onClick={() => handlePageChange(page)}
                       className={`w-10 h-10 rounded-lg font-bold transition-all ${currentPage === page
-                          ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40"
-                          : "bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white"
+                        ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40"
+                        : "bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white"
                         }`}
                     >
                       {page}

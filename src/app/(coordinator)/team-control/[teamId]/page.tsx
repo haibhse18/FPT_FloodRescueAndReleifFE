@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import TeamDetailPage from "@/modules/teams/presentation/pages/TeamDetailPage";
+import CoordinatorTeamDetailPage from "@/modules/teams/presentation/pages/CoordinatorTeamDetailPage";
 
 export default function Page() {
   const params = useParams();
@@ -13,5 +13,5 @@ export default function Page() {
     );
   }
 
-  return <TeamDetailPage teamId={teamId} isCoordinator={true} />;
+  return <CoordinatorTeamDetailPage teamId={teamId} isCoordinator={true} />;
 }

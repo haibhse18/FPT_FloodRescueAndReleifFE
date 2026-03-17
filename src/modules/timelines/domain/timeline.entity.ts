@@ -61,3 +61,30 @@ export interface GetTimelinesFilter {
 export interface TimelineCancelInput {
   note?: string;
 }
+
+export interface TimelineCompletionSupplyInput {
+  supplyId: string;
+  quantityDelivered: number;
+}
+
+export interface TimelineCompletionItemInput {
+  missionRequestId: string;
+  rescuedCount: number;
+  suppliesDelivered?: TimelineCompletionSupplyInput[];
+}
+
+export interface TimelineCompleteInput {
+  outcome: "COMPLETED" | "PARTIAL";
+  note?: string;
+  completions: TimelineCompletionItemInput[];
+}
+
+export interface TimelineFailInput {
+  failureReason: string;
+  note?: string;
+}
+
+export interface TimelineWithdrawInput {
+  withdrawalReason: string;
+  note?: string;
+}

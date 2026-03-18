@@ -10,10 +10,13 @@ export class WarehouseRepositoryImpl implements IWarehouseRepository {
         await warehouseApi.importExcel(file);
     }
 
-    async getWarehouses(): Promise<{ warehouses: Warehouse[]; total: number; }> {
+    async getWarehouses() {
         const result = await warehouseApi.getWarehouses();
 
-        return result?.data ?? [];
+        return {
+            warehouses: result?.data ?? [],
+            total: result?.meta?.total ?? 0
+        };
     }
 }
 export const warehouseRepository = new WarehouseRepositoryImpl();

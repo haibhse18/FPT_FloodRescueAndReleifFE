@@ -21,12 +21,12 @@ export default function SupplyListPage() {
   const [items, setItems] = useState<Supply[]>([]);
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
-const [file, setFile] = useState<File | null>(null);
-const [page, setPage] = useState(1);
-const [totalPages, setTotalPages] = useState(1);
- const [suppliesTotal, setSuppliesTotal] = useState(0);
+  const [file, setFile] = useState<File | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [suppliesTotal, setSuppliesTotal] = useState(0);
 
-const getSuppliesUseCase = new GetSuppliesUseCase(supplyRepository);
+  const getSuppliesUseCase = new GetSuppliesUseCase(supplyRepository);
 
 
 const fetchSupplies = async (searchKeyword = "", pageNumber = 1) => {

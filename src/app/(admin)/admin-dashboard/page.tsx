@@ -13,6 +13,9 @@ import { GetVehiclesUseCase } from "@/modules/vehicles/application/getVehicles.u
 import { adminRepository } from "@/modules/admin/infrastructure/admin.repository.impl";
 import {GetListUserUseCase } from "@/modules/admin/applications/getListUser.usecase";
 
+import { warehouseRepository } from "@/modules/warehouse/infrastructure/warehouse.repository.impl";
+import { GetWarehouseUseCase } from "@/modules/warehouse/application/getWarehouse.usecase";
+
 const Bar = dynamic(() => import("react-chartjs-2").then((mod) => mod.Bar), {
   ssr: false,
 });
@@ -20,13 +23,14 @@ const Bar = dynamic(() => import("react-chartjs-2").then((mod) => mod.Bar), {
 const getSuppliesUseCase = new GetSuppliesUseCase(supplyRepository);
 const getVehiclesUseCase = new GetVehiclesUseCase(vehicleRepository);
 const getListUserUseCase = new GetListUserUseCase(adminRepository);
+const getWarehouseUseCase = new GetWarehouseUseCase(warehouseRepository);
 
 export default function ManagerDashboardPage() {
 
   const [usersTotal, setUsersTotal] = useState(0);
   const [suppliesTotal, setSuppliesTotal] = useState(0);
   const [vehiclesTotal, setVehiclesTotal] = useState(0);
-  const [requestsTotal, setRequestsTotal] = useState(0);
+  const [warehouseTotal, setWarehouseTotal] = useState(0);
 
   const [loading, setLoading] = useState(true);
 
@@ -35,16 +39,18 @@ export default function ManagerDashboardPage() {
     setLoading(true);
 
     try {
-      const [suppliesRes, vehiclesRes, usersRes] =
+      const [suppliesRes, vehiclesRes, usersRes, warehouseRes] =
         await Promise.all([
           getSuppliesUseCase.execute(),
           getVehiclesUseCase.execute(),
           getListUserUseCase.execute(),
+          getWarehouseUseCase.execute(),
         ]);
 
-      setSuppliesTotal(suppliesRes.length ?? 0);
+      setSuppliesTotal(suppliesRes.meta?.total ?? 0);
       setVehiclesTotal(vehiclesRes.total ?? 0);
       setUsersTotal(usersRes.total ?? 0);
+      setWarehouseTotal(warehouseRes.total ?? 0);
 
     } catch (err) {
 
@@ -62,11 +68,11 @@ export default function ManagerDashboardPage() {
   }, []);
 
   const chartData = {
-    labels: ["Người dùng", "Vật tư", "Phương tiện", "Requests"],
+    labels: ["Người dùng", "Vật tư", "Phương tiện", "Kho"],
     datasets: [
       {
         label: "Thống kê hệ thống",
-        data: [usersTotal, suppliesTotal, vehiclesTotal, requestsTotal],
+        data: [usersTotal, suppliesTotal, vehiclesTotal, warehouseTotal],
         backgroundColor: [
           "rgba(59,130,246,0.8)",
           "rgba(16,185,129,0.8)",
@@ -107,23 +113,30 @@ export default function ManagerDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
 
         <div className="bg-white/5 rounded-lg p-6 border border-gray-700">
-          <p className="text-gray-400 text-sm mb-2">👤 Tổng người dùng</p>
+          <p className="text-gray-400 text-sm mb-2">Tổng người dùng</p>
           <p className="text-4xl font-bold text-white">
             {loading ? "-" : usersTotal}
           </p>
         </div>
 
         <div className="bg-white/5 rounded-lg p-6 border border-gray-700">
-          <p className="text-gray-400 text-sm mb-2">📦 Tổng vật tư</p>
+          <p className="text-gray-400 text-sm mb-2">Tổng vật tư</p>
           <p className="text-4xl font-bold text-white">
             {loading ? "-" : suppliesTotal}
           </p>
         </div>
 
         <div className="bg-white/5 rounded-lg p-6 border border-gray-700">
-          <p className="text-gray-400 text-sm mb-2">🚑 Tổng phương tiện</p>
+          <p className="text-gray-400 text-sm mb-2">Tổng phương tiện</p>
           <p className="text-4xl font-bold text-white">
             {loading ? "-" : vehiclesTotal}
+          </p>
+        </div>
+
+         <div className="bg-white/5 rounded-lg p-6 border border-gray-700">
+          <p className="text-gray-400 text-sm mb-2">Tổng kho</p>
+          <p className="text-4xl font-bold text-white">
+            {loading ? "-" : warehouseTotal}
           </p>
         </div>
 

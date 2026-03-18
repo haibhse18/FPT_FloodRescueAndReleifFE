@@ -11,9 +11,10 @@ const getListUserUseCase = new GetListUserUseCase(adminRepository);
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [usersTotal, setUsersTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-const [page, setPage] = useState(1);
-const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [keyword, setKeyword] = useState("");
 
 
@@ -38,6 +39,7 @@ const [totalPages, setTotalPages] = useState(1);
       setUsers(res.data || []);
       setPage(res.meta?.page || 1);
       setTotalPages(res.meta?.totalPages || 1);
+      setUsersTotal(res.meta?.total || 0);
   
     } catch (error) {
       console.error("Fetch supplies error:", error);
@@ -142,83 +144,80 @@ const [totalPages, setTotalPages] = useState(1);
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 lg:p-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-white mb-2">Danh sách người dùng</h1>
+        <p className="text-gray-400">Có {usersTotal} người dùng</p>
+      </div>
 
-      <h1 className="text-2xl font-bold text-white">
-        Quản lý người dùng
-      </h1>
+      <div className="flex items-center gap-3">
+        <div className="relative w-80">
+          <input
+            type="text"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="Tìm kiếm theo tên, ID hoặc loại..."
+            className="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20"
+          />
+        </div>
 
-      {/* FILTER */}
-
-       <div className="flex items-center gap-3">
-    <div className="relative w-80">
-      <input
-        type="text"
-        value={keyword}
-        onChange={(e) => setKeyword(e.target.value)}
-        placeholder="Tìm kiếm theo tên, ID hoặc loại..."
-        className="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20"
-      />
-    </div>
-
-    <button
-      onClick={handleSearch}
-      className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-    >
-      Search
-    </button>
-  </div>
+        <button
+          onClick={handleSearch}
+          className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          Search
+        </button>
+      </div>
 
       {/* TABLE */}
 
       {loading ? (
         <div className="text-center py-20 text-white">
-  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white mx-auto"></div>
-</div>
-) : users.length === 0 ? (
-  <div className="text-center py-20 text-white bg-white/5 rounded-lg">
-    <p>Không tìm thấy vật tư nào</p>
-  </div>
-) : (
-  <div className="bg-white/5 rounded-lg overflow-hidden text-white">
-    <Table columns={columns} data={users} striped hoverable />
-  </div>
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white mx-auto"></div>
+        </div>
+      ) : users.length === 0 ? (
+        <div className="text-center py-20 text-white bg-white/5 rounded-lg">
+          <p>Không tìm thấy vật tư nào</p>
+        </div>
+      ) : (
+        <div className="bg-white/5 rounded-lg overflow-hidden text-white">
+          <Table columns={columns} data={users} striped hoverable />
+        </div>
       )}
 
-      
+      {/* PAGINATION */}
       <div className="flex justify-center items-center gap-2 mt-6">
 
-  <button
-    disabled={page === 1}
-    onClick={() => setPage(page - 1)}
-    className="px-3 py-1 rounded bg-white/10 text-white disabled:opacity-40"
-  >
-    Prev
-  </button>
+      <button
+        disabled={page === 1}
+        onClick={() => setPage(page - 1)}
+        className="px-3 py-1 rounded bg-white/10 text-white disabled:opacity-40"
+      >
+        Prev
+      </button>
 
-  {Array.from({ length: totalPages }, (_, i) => (
-    <button
-      key={i}
-      onClick={() => setPage(i + 1)}
-      className={`px-3 py-1 rounded ${
-        page === i + 1
-          ? "bg-blue-600 text-white"
+      {Array.from({ length: totalPages }, (_, i) => (
+        <button
+          key={i}
+          onClick={() => setPage(i + 1)}
+          className={`px-3 py-1 rounded ${
+            page === i + 1
+              ? "bg-blue-600 text-white"
           : "bg-white/10 text-white"
-      }`}
-    >
-      {i + 1}
-    </button>
-  ))}
+          }`}
+        >
+          {i + 1}
+        </button>
+      ))}
 
-  <button
-    disabled={page === totalPages}
-    onClick={() => setPage(page + 1)}
-    className="px-3 py-1 rounded bg-white/10 text-white disabled:opacity-40"
-  >
-    Next
-  </button>
-</div>
-
+      <button
+        disabled={page === totalPages}
+        onClick={() => setPage(page + 1)}
+        className="px-3 py-1 rounded bg-white/10 text-white disabled:opacity-40"
+      >
+        Next
+      </button>
+      </div>
     </div>
   );
 }

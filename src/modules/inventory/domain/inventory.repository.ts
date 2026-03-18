@@ -11,10 +11,6 @@ export interface IInventoryRepository {
      */
     getItems(): Promise<InventoryItem[]>;
 
-    /**
-     * Tạo item mới
-     */
-    createItem(data: CreateInventoryItemData): Promise<InventoryItem>;
 
     /**
      * Cập nhật item

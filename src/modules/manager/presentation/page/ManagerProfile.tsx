@@ -27,7 +27,7 @@ interface RequestStats {
   inProgress: number;
 }
 
-export default function CitizenProfilePage() {
+export default function ManagerProfilePage() {
   const router = useRouter();
 
   const [isEditMode, setIsEditMode] = useState(false);
@@ -44,10 +44,10 @@ export default function CitizenProfilePage() {
 
   const [profile, setProfile] = useState<CitizenProfile>({
     name: "",
+    role:"",
     phone: "",
     email: "",
     address: "",
-    role: "",
   });
   const [editedProfile, setEditedProfile] = useState<CitizenProfile>(profile);
 
@@ -56,7 +56,7 @@ export default function CitizenProfilePage() {
     setError(null);
     try {
       // Fetch profile and request history in parallel
-      const [userData, requests] = await Promise.allSettled([
+      const [userData] = await Promise.allSettled([
         getCurrentUserUseCase.execute(),
         requestRepository.getMyRequests(),
       ]);
@@ -65,10 +65,10 @@ export default function CitizenProfilePage() {
         const u = userData.value;
         const newProfile: CitizenProfile = {
           name: u.displayName || u.userName || "Người dùng",
+          role:u.role,
           phone: u.phoneNumber || "",
           email: u.email || "",
           address: u.address || "",
-          role: u.role || "citizen",
         };
         setProfile(newProfile);
         setEditedProfile(newProfile);
@@ -76,20 +76,6 @@ export default function CitizenProfilePage() {
         throw new Error("Không tải được thông tin người dùng");
       }
 
-      if (requests.status === "fulfilled") {
-        const list = requests.value as any[];
-        setStats({
-          total: list.length,
-          completed: list.filter((r) =>
-            ["Completed", "COMPLETED"].includes(r.status),
-          ).length,
-          inProgress: list.filter((r) =>
-            ["In Progress", "IN_PROGRESS", "Accepted", "ACCEPTED"].includes(
-              r.status,
-            ),
-          ).length,
-        });
-      }
     } catch (err) {
       let msg = "Không thể tải thông tin cá nhân";
       if (err instanceof Error) {
@@ -203,55 +189,13 @@ export default function CitizenProfilePage() {
             {/* Profile Header */}
             <ProfileHeader
               name={profile.name}
+              role={profile.role}
               phone={profile.phone}
               email={profile.email}
-              role={profile.role}
               isLoading={isLoading}
               isEditMode={isEditMode}
               onEditToggle={() => setIsEditMode(!isEditMode)}
             />
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                {
-                  icon: "📊",
-                  label: "Tổng yêu cầu",
-                  value: stats.total,
-                  accent: "border-l-blue-500",
-                },
-                {
-                  icon: "✅",
-                  label: "Hoàn thành",
-                  value: stats.completed,
-                  accent: "border-l-green-500",
-                },
-                {
-                  icon: "⏳",
-                  label: "Đang xử lý",
-                  value: stats.inProgress,
-                  accent: "border-l-[#FF7700]",
-                },
-              ].map((s) => (
-                <div
-                  key={s.label}
-                  className={`bg-white/5 border border-white/10 border-l-4 ${s.accent} rounded-xl p-4`}
-                >
-                  <span className="text-2xl block mb-2">{s.icon}</span>
-                  <p className="text-2xl lg:text-3xl font-black text-white mb-1">
-                    {isLoading ? (
-                      <span className="inline-block w-8 h-7 bg-white/10 rounded animate-pulse align-middle" />
-                    ) : (
-                      s.value
-                    )}
-                  </p>
-                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">
-                    {s.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-
             {/* Profile Form */}
             <ProfileForm
               profile={profile}

@@ -47,6 +47,7 @@ export default function CitizenProfilePage() {
     phone: "",
     email: "",
     address: "",
+    role: "",
   });
   const [editedProfile, setEditedProfile] = useState<CitizenProfile>(profile);
 
@@ -67,6 +68,7 @@ export default function CitizenProfilePage() {
           phone: u.phoneNumber || "",
           email: u.email || "",
           address: u.address || "",
+          role: u.role || "citizen",
         };
         setProfile(newProfile);
         setEditedProfile(newProfile);
@@ -203,6 +205,7 @@ export default function CitizenProfilePage() {
               name={profile.name}
               phone={profile.phone}
               email={profile.email}
+              role={profile.role}
               isLoading={isLoading}
               isEditMode={isEditMode}
               onEditToggle={() => setIsEditMode(!isEditMode)}

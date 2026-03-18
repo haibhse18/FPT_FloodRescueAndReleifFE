@@ -4,10 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GetTimelinesUseCase } from "@/modules/timelines/application/getTimelines.usecase";
 import { timelineRepository } from "@/modules/timelines/infrastructure/timeline.repository.impl";
+import { GetMissionDetailUseCase } from "@/modules/missions/application/getMissionDetail.usecase";
+import { missionRepository } from "@/modules/missions/infrastructure/mission.repository.impl";
 import type {
   Timeline,
   TimelineStatus,
 } from "@/modules/timelines/domain/timeline.entity";
+import type { Mission } from "@/modules/missions/domain/mission.entity";
 import { useNotificationStore } from "@/store/useNotification.store";
 
 const STATUS_TABS: { label: string; value: TimelineStatus | "ALL" }[] = [
@@ -45,12 +48,14 @@ const TIMELINE_STATUS_LABELS: Record<string, string> = {
 };
 
 const getTimelinesUseCase = new GetTimelinesUseCase(timelineRepository);
+const getMissionDetailUseCase = new GetMissionDetailUseCase(missionRepository);
 
 export default function TeamMissionsPage() {
   const router = useRouter();
   const notifications = useNotificationStore((s) => s.notifications);
 
   const [timelines, setTimelines] = useState<Timeline[]>([]);
+  const [missionDetails, setMissionDetails] = useState<Record<string, Mission>>({});
   const [activeTab, setActiveTab] = useState<TimelineStatus | "ALL">("ALL");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -80,6 +85,38 @@ export default function TeamMissionsPage() {
     [activeTab, page],
   );
 
+  // Fetch mission details for timelines
+  useEffect(() => {
+    if (timelines.length === 0) return;
+
+    const fetchMissionDetails = async () => {
+      const missionDetailsMap: Record<string, Mission> = { ...missionDetails };
+      
+      // Extract mission IDs - handle both string and object formats
+      const newMissionIds = timelines
+        .map((tl) => {
+          const missionId = tl.missionId;
+          return typeof missionId === "string" ? missionId : (missionId as any)?._id;
+        })
+        .filter((id): id is string => !!id && !missionDetailsMap[id]);
+
+      if (newMissionIds.length === 0) return;
+
+      for (const missionId of newMissionIds) {
+        try {
+          const mission = await getMissionDetailUseCase.execute(missionId);
+          missionDetailsMap[missionId] = mission;
+        } catch (err) {
+          console.error(`Failed to fetch mission ${missionId}:`, err);
+        }
+      }
+
+      setMissionDetails(missionDetailsMap);
+    };
+
+    fetchMissionDetails();
+  }, [timelines, missionDetails]);
+
   useEffect(() => {
     fetchTimelines();
   }, [fetchTimelines]);
@@ -102,11 +139,11 @@ export default function TeamMissionsPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-[var(--color-text-inverse)]">
+            <h1 className="text-2xl md:text-3xl font-bold text-white">
               🚑 Nhiệm vụ của đội
             </h1>
             <p className="text-sm text-white/70 mt-1">
-              Xem và thực thi các nhiệm vụ được phân công cho đội của bạn.
+              Xem thông tin chi tiết mission code, người phân công và thực thi các nhiệm vụ được phân công cho đội của bạn.
             </p>
           </div>
           <button
@@ -149,15 +186,29 @@ export default function TeamMissionsPage() {
         ) : (
           <section className="space-y-3">
             {timelines.map((tl) => {
-              const mission: any = (tl as any).mission;
+              // Extract mission ID - handle both string and object formats
+              const missionId = typeof tl.missionId === "string" ? tl.missionId : (tl.missionId as any)?._id;
+              const mission = missionId ? missionDetails[missionId] : null;
+              
+              if (!mission) {
+                return (
+                  <div
+                    key={tl._id}
+                    className="w-full text-left bg-white/10 border border-white/20 rounded-2xl p-4 md:p-5 flex items-center gap-3"
+                  >
+                    <div className="h-5 w-5 rounded-full border-2 border-t-transparent border-white animate-spin" />
+                    <span className="text-white/70 text-sm">Đang tải...</span>
+                  </div>
+                );
+              }
+
               const missionType =
-                mission?.type === "RELIEF" ? "📦 Cứu trợ" : "🚨 Cứu hộ";
-              const missionId =
-                typeof tl.missionId === "string"
-                  ? tl.missionId
-                  : (tl.missionId as any)?._id;
-              const missionCode = mission?.code ?? missionId ?? "N/A";
-              const missionName = mission?.name ?? "Mission không tên";
+                mission.type === "RELIEF" ? "📦 Cứu trợ" : "🚨 Cứu hộ";
+              const coordinatorName = (
+                (mission.coordinatorId as any)?.displayName ||
+                (mission.coordinatorId as any)?.userName ||
+                "Coordinator"
+              );
 
               return (
                 <button
@@ -170,7 +221,7 @@ export default function TeamMissionsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-xs font-mono text-white/70">
-                        {missionCode}
+                        {mission.code}
                       </span>
                       <span className="px-2 py-0.5 rounded-full text-[11px] border bg-white/5 text-white/80">
                         {missionType}
@@ -185,10 +236,10 @@ export default function TeamMissionsPage() {
                       </span>
                     </div>
                     <h2 className="text-base md:text-lg font-semibold text-white truncate">
-                      {missionName}
+                      {mission.name}
                     </h2>
                     <p className="text-xs text-white/70 mt-1">
-                      Phân công lúc{" "}
+                      Phân công bởi <span className="font-medium">{coordinatorName}</span> lúc{" "}
                       {tl.assignedAt
                         ? new Date(tl.assignedAt).toLocaleString("vi-VN")
                         : tl.createdAt
@@ -197,11 +248,6 @@ export default function TeamMissionsPage() {
                     </p>
                   </div>
                   <div className="flex items-center justify-between md:justify-end gap-3 md:w-40 shrink-0">
-                    {typeof tl.rescuedCount === "number" && (
-                      <span className="text-xs text-green-300 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/40">
-                        🙋 Đã cứu: {tl.rescuedCount}
-                      </span>
-                    )}
                     <span className="text-white/80 text-xl md:text-2xl">
                       →
                     </span>

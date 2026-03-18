@@ -600,9 +600,9 @@ export default function MissionDetailPage() {
                         ❌ {tl.failureReason}
                       </p>
                     )}
-                    {tl.rescuedCount !== undefined && tl.rescuedCount > 0 && (
+                    {missionRequests && missionRequests.length > 0 && missionRequests.reduce((sum, mr) => sum + (mr.peopleRescued || 0), 0) > 0 && (
                       <p className="text-green-400 text-xs mt-1">
-                        🙋 Đã cứu: {tl.rescuedCount} người
+                        🙋 Đã cứu: {missionRequests.reduce((sum, mr) => sum + (mr.peopleRescued || 0), 0)} người
                       </p>
                     )}
                   </div>

@@ -16,7 +16,6 @@ export const timelineApi = {
   /** GET /timelines — list with filters */
   getTimelines: async (params?: {
     missionId?: string;
-    requestId?: string;
     teamId?: string;
     status?: string;
     page?: number;

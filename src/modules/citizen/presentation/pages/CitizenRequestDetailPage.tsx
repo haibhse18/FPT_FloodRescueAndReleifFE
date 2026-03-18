@@ -233,7 +233,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     const fetchTimelines = async () => {
         setTimelinesLoading(true);
         try {
-            const response = await timelineRepository.getTimelines({ requestId: request._id });
+            const response = await timelineRepository.getTimelines({ missionId: request.missionId });
             setTimelines(response.data || []);
         } catch (err: any) {
             // Timelines may not be accessible by citizen (e.g., 403 Forbidden)
@@ -624,13 +624,13 @@ export default function CitizenRequestDetailPage({ id }: Props) {
 
                                             {/* Details */}
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5 pt-5 border-t border-white/10">
-                                                {timeline.rescuedCount !== undefined && timeline.rescuedCount > 0 && (
+                                                {request.peopleRescued !== undefined && request.peopleRescued > 0 && (
                                                     <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3">
                                                         <p className="text-xs text-green-400 font-semibold">👥 Người được cứu</p>
-                                                        <p className="text-xl font-bold text-white mt-1">{timeline.rescuedCount}</p>
+                                                        <p className="text-xl font-bold text-white mt-1">{request.peopleRescued}</p>
                                                     </div>
                                                 )}
-                                                {!timeline.rescuedCount && (
+                                                {(!request.peopleRescued || request.peopleRescued === 0) && (
                                                     <div className="bg-gray-500/20 border border-gray-500/30 rounded-lg p-3">
                                                         <p className="text-xs text-gray-400 font-semibold">👥 Số người</p>
                                                         <p className="text-lg font-bold text-gray-300 mt-1">-</p>

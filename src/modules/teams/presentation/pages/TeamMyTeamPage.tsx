@@ -20,7 +20,7 @@ export default function TeamMyTeamPage({ teamId }: TeamMyTeamPageProps) {
       const data = await teamRepository.getTeamById(teamId);
       setTeam(data);
     } catch (err: any) {
-      setError(err?.message || "Khong the tai thong tin doi");
+      setError(err?.message || "Không thể tải thông tin đội");
     } finally {
       setLoading(false);
     }
@@ -54,12 +54,12 @@ export default function TeamMyTeamPage({ teamId }: TeamMyTeamPageProps) {
     return (
       <div className="relative z-10 p-8 pb-24 lg:pb-8 text-center">
         <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6 inline-block">
-          <p className="text-red-200 text-lg">⚠️ {error || "Khong tim thay doi"}</p>
+          <p className="text-red-200 text-lg">⚠️ {error || "Không tìm thấy đội"}</p>
           <button
             onClick={fetchTeam}
             className="mt-3 text-sm text-blue-400 underline hover:no-underline"
           >
-            Thu lai
+            Thử lại
           </button>
         </div>
       </div>
@@ -84,13 +84,13 @@ export default function TeamMyTeamPage({ teamId }: TeamMyTeamPageProps) {
                     : "bg-red-500/20 text-red-300 border-red-500/30"
                 }`}
               >
-                {isAvailable ? "🟢 San sang" : "🔴 Dang ban"}
+                {isAvailable ? "🟢 Sẵn sàng" : "🔴 Đang bận"}
               </span>
               <span className="text-gray-300 text-sm flex items-center gap-1">
                 👤 Leader: {leader?.displayName || leader?.userName || "Chua chi dinh"}
               </span>
               <span className="text-gray-300 text-sm flex items-center gap-1">
-                👥 {memberCount} / 100 thanh vien
+                👥 {memberCount}
                 {team.memberStats && (
                   <span className="text-green-400 ml-1">({team.memberStats.active} active)</span>
                 )}
@@ -102,23 +102,23 @@ export default function TeamMyTeamPage({ teamId }: TeamMyTeamPageProps) {
 
       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
         <h2 className="text-lg font-bold text-white mb-4">
-          👥 Danh sach thanh vien ({memberCount})
+          👥 Danh sách thành viên ({memberCount})
         </h2>
 
         {!team.members || team.members.length === 0 ? (
           <div className="text-center py-8">
             <div className="text-4xl mb-3">🫥</div>
-            <p className="text-gray-300">Doi chua co thanh vien nao</p>
+            <p className="text-gray-300">Đội chưa có thành viên nào</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-gray-300">
-                  <th className="text-left py-3 px-2">Ten</th>
+                  <th className="text-left py-3 px-2">Tên</th>
                   <th className="text-left py-3 px-2">Email</th>
                   <th className="text-left py-3 px-2">SDT</th>
-                  <th className="text-left py-3 px-2">Vai tro</th>
+                  <th className="text-left py-3 px-2">Vai trò</th>
                 </tr>
               </thead>
               <tbody>

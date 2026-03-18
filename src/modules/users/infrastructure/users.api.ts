@@ -61,7 +61,7 @@ export const managerApi = {
         });
     },
 
-    
+
 };
 
 export const adminApi = {

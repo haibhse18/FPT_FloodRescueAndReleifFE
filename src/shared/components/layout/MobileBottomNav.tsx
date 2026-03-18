@@ -19,7 +19,6 @@ const DEFAULT_ITEMS: NavItem[] = [
   { icon: "🏠", label: "Trang chủ", href: "/home" },
   { icon: "📜", label: "Lịch sử", href: "/history" },
   { icon: "🔔", label: "Thông báo", href: "/notifications" },
-  { icon: "👤", label: "Tôi", href: "/profile" },
 ];
 
 export default function MobileBottomNav({
@@ -44,8 +43,8 @@ export default function MobileBottomNav({
               <Link
                 href={item.href}
                 className={`flex flex-col items-center justify-center h-full w-full py-2 transition-all duration-300 ${isActive ? "text-[#FF7700]" : (
-                    "text-gray-400 hover:text-gray-200"
-                  )
+                  "text-gray-400 hover:text-gray-200"
+                )
                   }`}
               >
                 <div

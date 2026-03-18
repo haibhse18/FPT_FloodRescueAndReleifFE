@@ -1,10 +1,54 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
+
+const ACTIVE_REQUEST_STATUSES = new Set([
+  "SUBMITTED",
+  "VERIFIED",
+  "IN_PROGRESS",
+  "PARTIALLY_FULFILLED",
+  "ACCEPTED",
+]);
+
+function normalizeStatus(status: unknown): string {
+  return String(status ?? "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .toUpperCase();
+}
 
 export default function SafetyGuidePage() {
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
+  const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkActiveRequest = async () => {
+      try {
+        const requests = await requestRepository.getMyRequests({ page: 1, limit: 20 });
+        const sorted = [...(requests || [])].sort((a: any, b: any) => {
+          const aTime = new Date(a?.createdAt || 0).getTime();
+          const bTime = new Date(b?.createdAt || 0).getTime();
+          return bTime - aTime;
+        });
+
+        const active = sorted.find((req: any) =>
+          ACTIVE_REQUEST_STATUSES.has(normalizeStatus(req?.status)),
+        );
+
+        const activeRecord = active as
+          | { requestId?: string; _id?: string; id?: string }
+          | undefined;
+        const id = activeRecord?.requestId || activeRecord?._id || activeRecord?.id;
+        setActiveRequestId(id ? String(id) : null);
+      } catch {
+        setActiveRequestId(null);
+      }
+    };
+
+    checkActiveRequest();
+  }, []);
 
   const safetyGuides = [
     {
@@ -165,8 +209,8 @@ export default function SafetyGuidePage() {
 
               <div
                 className={`grid transition-all duration-300 ease-in-out ${isExpanded ?
-                    "grid-rows-[1fr] opacity-100"
-                    : "grid-rows-[0fr] opacity-0"
+                  "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0"
                   }`}
               >
                 <div className="overflow-hidden">
@@ -202,11 +246,11 @@ export default function SafetyGuidePage() {
           dụng nút SOS trong ứng dụng.
         </p>
         <Link
-          href="/request"
+          href={activeRequestId ? `/history/${activeRequestId}` : "/request"}
           className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#FF7700] to-orange-600 hover:from-[#FF7700]/90 hover:to-orange-600/90 rounded-xl text-white font-bold transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
         >
-          <span className="text-xl">🚨</span>
-          <span>Gửi yêu cầu cứu hộ ngay</span>
+          <span className="text-xl">{activeRequestId ? "📄" : "🚨"}</span>
+          <span>{activeRequestId ? "Xem yêu cầu đã gửi" : "Gửi yêu cầu cứu hộ ngay"}</span>
         </Link>
       </div>
     </div>

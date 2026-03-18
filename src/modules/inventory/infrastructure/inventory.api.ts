@@ -15,19 +15,19 @@ export const inventoryApi = {
      */
     getItems: async (query?: string): Promise<{ data: InventoryItem[], meta: { page: number, totalPages: number } }> => {
         try {
-        const response = await axiosInstance.get<ApiResponse<InventoryItem[]>>(
-            `/inventory/list` + (query || '') 
-        );
-         const data = response.data?.data;  
-        if (!Array.isArray(data)) {
-            console.warn('[InventoryAPI] Data is not array. Full response:', response.data);
+            const response = await axiosInstance.get<ApiResponse<InventoryItem[]>>(
+                `/inventory/list` + (query || '')
+            );
+            const data = response.data?.data;
+            if (!Array.isArray(data)) {
+                console.warn('[InventoryAPI] Data is not array. Full response:', response.data);
+                return { data: [], meta: { page: 1, totalPages: 1 } };
+            }
+            return { data, meta: response.data?.meta || { page: 1, totalPages: 1 } };
+        } catch (error) {
+            console.error('[InventoryAPI] Error fetching inventory items:', error);
             return { data: [], meta: { page: 1, totalPages: 1 } };
         }
-        return { data, meta: response.data?.meta || { page: 1, totalPages: 1 } };
-        } catch (error) {
-        console.error('[InventoryAPI] Error fetching inventory items:', error);
-        return { data: [], meta: { page: 1, totalPages: 1 } }; 
-    }
     },
 
     /**

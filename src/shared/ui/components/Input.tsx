@@ -18,10 +18,10 @@ export function Input({ label, error, helperText, className = '', required, disa
       <input
         className={`w-full px-4 py-3 border rounded-lg transition-all
           ${error 
-            ? 'border-[var(--color-error)] focus:border-[var(--color-error)] focus:ring-2 focus:ring-[var(--color-error-light)]' 
-            : 'border-[var(--color-border)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-teal-pale)]'
+            ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20' 
+            : 'border-zinc-200 dark:border-white/10 focus:border-blue-500 dark:focus:border-red-500/50 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-red-500/20'
           }
-          ${disabled ? 'bg-[var(--color-surface)] cursor-not-allowed opacity-60' : 'bg-white'}
+          ${disabled ? 'bg-zinc-100 dark:bg-zinc-900 cursor-not-allowed opacity-60' : 'bg-white dark:bg-zinc-950 dark:text-white'}
           outline-none ${className}`}
         required={required}
         disabled={disabled}

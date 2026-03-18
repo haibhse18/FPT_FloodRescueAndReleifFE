@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { Input } from "@/shared/ui/components/Input";
 import { Button } from "@/shared/ui/components/Button";
-import { Card } from "@/shared/ui/components/Card";
 import { Alert } from "@/shared/ui/components/Alert";
 import { Checkbox } from "@/shared/ui/components/Checkbox";
+import { Shield } from "lucide-react";
 import PasswordInput from "@/shared/components/forms/PasswordInput";
 import GoogleLoginButton from "@/shared/components/forms/GoogleLoginButton";
 import FormDivider from "@/shared/components/forms/FormDivider";
@@ -19,6 +19,7 @@ import { registerSchema } from "@/shared/schemas/validation";
 const registerUseCase = new RegisterUseCase(authRepository);
 
 export default function RegisterPage() {
+    // --- DO NOT TOUCH LOGIC ---
     const [formData, setFormData] = useState({
         userName: "",
         displayName: "",
@@ -85,64 +86,74 @@ export default function RegisterPage() {
             setLoading(false);
         }
     };
+    // --- END LOGIC ---
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-dark)] to-[var(--color-teal-dark)] flex items-center justify-center p-4 py-8">
-            {/* Decorative elements */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-40 -left-40 w-80 h-80 bg-[var(--color-accent)]/10 rounded-full blur-3xl" />
-                <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-[var(--color-teal-light)]/10 rounded-full blur-3xl" />
+        <div className="dark min-h-screen flex items-center justify-center p-4 py-12 relative bg-black text-foreground selection:bg-red-500/30 font-sans">
+            {/* Cinematic Background */}
+            <div className="absolute inset-0 z-0 fixed">
+                <img 
+                  src="https://images.unsplash.com/photo-1547683905-f686c993aae5?q=80&w=2000" 
+                  alt="Rescue background" 
+                  className="w-full h-full object-cover opacity-50 mix-blend-luminosity grayscale" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-zinc-950/90 to-black/70"></div>
+                {/* Subtle emergency red glow */}
+                <div className="absolute top-0 left-0 w-[40rem] h-[40rem] bg-red-900/10 rounded-full blur-[120px] pointer-events-none"></div>
             </div>
 
-            <div className="w-full max-w-md relative z-10">
+            <div className="w-full max-w-xl relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
                 {/* Logo & Branding */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--color-accent)] mb-4 shadow-lg">
-                        <svg className="w-8 h-8 text-[var(--color-primary)]" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                        </svg>
-                    </div>
-                    <h1 className="text-2xl font-bold text-[var(--color-text-inverse)] mb-1">
-                        FPT Flood Rescue
-                    </h1>
-                    <p className="text-[var(--color-teal-light)]">Hệ thống cứu trợ lũ lụt</p>
+                    <Link href="/" className="inline-flex items-center gap-3 font-bold text-3xl tracking-tight transition-transform hover:scale-105 mb-4 group text-white">
+                        <div className="bg-red-600 p-2.5 rounded-sm shadow-[0_0_20px_rgba(220,38,38,0.5)] group-hover:shadow-[0_0_30px_rgba(220,38,38,0.7)] transition-shadow">
+                            <Shield className="w-7 h-7 text-white" />
+                        </div>
+                        <span>FloodRescue</span>
+                    </Link>
+                    <p className="text-zinc-400 font-light tracking-wide uppercase text-sm">Ghi Danh Tình Nguyện Viên</p>
                 </div>
 
-                {/* Register Card */}
-                <Card variant="default" padding="lg" className="shadow-2xl backdrop-blur-sm">
-                    <div className="text-center mb-6">
-                        <h2 className="text-2xl font-bold text-[var(--color-primary)]">
-                            Tạo tài khoản mới
+                {/* Glassmorphism Register Card */}
+                <div className="bg-zinc-950/80 backdrop-blur-2xl border border-white/10 rounded-sm p-8 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+                    <div className="text-center mb-8">
+                        <h2 className="text-2xl font-black text-white tracking-tight uppercase">
+                            Tạo Hồ Sơ Mới
                         </h2>
-                        <p className="text-[var(--color-text-muted)] mt-1 text-sm">
-                            Đăng ký để tham gia hệ thống cứu trợ
+                        <p className="text-zinc-400 mt-2 text-sm font-light">
+                            Gia nhập lực lượng phản ứng nhanh
                         </p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Username Input */}
-                        <Input
-                            id="userName"
-                            name="userName"
-                            type="text"
-                            value={formData.userName}
-                            onChange={handleChange}
-                            label="Tên đăng nhập"
-                            placeholder="nguyenvana"
-                            required
-                        />
+                    <form onSubmit={handleSubmit} className="space-y-5 text-left">
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            {/* Username Input */}
+                            <Input
+                                id="userName"
+                                name="userName"
+                                type="text"
+                                value={formData.userName}
+                                onChange={handleChange}
+                                label="Tên đăng nhập"
+                                placeholder="nguyenvana"
+                                required
+                                className="bg-black/50 border-white/10 focus:border-red-500/50 text-white placeholder:text-zinc-600 rounded-sm"
+                            />
 
-                        {/* Display Name Input */}
-                        <Input
-                            id="displayName"
-                            name="displayName"
-                            type="text"
-                            value={formData.displayName}
-                            onChange={handleChange}
-                            label="Tên hiển thị"
-                            placeholder="Nguyễn Văn A"
-                            required
-                        />
+                            {/* Display Name Input */}
+                            <Input
+                                id="displayName"
+                                name="displayName"
+                                type="text"
+                                value={formData.displayName}
+                                onChange={handleChange}
+                                label="Tên hiển thị"
+                                placeholder="Nguyễn Văn A"
+                                required
+                                className="bg-black/50 border-white/10 focus:border-red-500/50 text-white placeholder:text-zinc-600 rounded-sm"
+                            />
+                        </div>
 
                         {/* Email Input */}
                         <Input
@@ -154,6 +165,7 @@ export default function RegisterPage() {
                             label="Email"
                             placeholder="example@email.com"
                             required
+                            className="bg-black/50 border-white/10 focus:border-red-500/50 text-white placeholder:text-zinc-600 rounded-sm"
                         />
 
                         {/* Phone Input (Optional) */}
@@ -165,10 +177,11 @@ export default function RegisterPage() {
                             onChange={handleChange}
                             label="Số điện thoại (không bắt buộc)"
                             placeholder="0123456789"
+                            className="bg-black/50 border-white/10 focus:border-red-500/50 text-white placeholder:text-zinc-600 rounded-sm"
                         />
 
                         {/* Password fields in grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <PasswordInput
                                 id="password"
                                 name="password"
@@ -189,37 +202,39 @@ export default function RegisterPage() {
                         </div>
 
                         {/* Password requirements hint */}
-                        <p className="text-xs text-[var(--color-text-muted)] -mt-2">
-                            Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số
+                        <p className="text-xs text-zinc-500 italic mt-1 font-light">
+                            * Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số.
                         </p>
 
                         {/* Terms and Conditions */}
-                        <div className="flex items-start gap-3 p-3 bg-[var(--color-surface)] rounded-lg">
+                        <div className="flex items-start gap-3 p-4 bg-black/40 border border-white/5 rounded-sm mt-2">
                             <Checkbox
                                 id="terms"
                                 checked={agreedToTerms}
                                 onChange={(e) => setAgreedToTerms(e.target.checked)}
+                                className="mt-1"
                             />
-                            <label htmlFor="terms" className="text-sm text-[var(--color-text-secondary)] leading-relaxed cursor-pointer">
-                                Tôi đồng ý với{" "}
+                            <label htmlFor="terms" className="text-sm text-zinc-400 leading-relaxed cursor-pointer select-none">
+                                Tôi đã đọc và cam kết tuân thủ đầy đủ{" "}
                                 <Link
                                     href="/terms"
-                                    className="text-[var(--color-accent)] hover:text-[var(--color-accent-dark)] font-medium"
+                                    className="text-white hover:text-red-400 font-medium underline underline-offset-4 decoration-white/30"
                                 >
-                                    Điều khoản dịch vụ
+                                    Quy định an toàn
                                 </Link>{" "}
                                 và{" "}
                                 <Link
                                     href="/privacy"
-                                    className="text-[var(--color-accent)] hover:text-[var(--color-accent-dark)] font-medium"
+                                    className="text-white hover:text-red-400 font-medium underline underline-offset-4 decoration-white/30"
                                 >
                                     Chính sách bảo mật
                                 </Link>
+                                {" "}của nền tảng.
                             </label>
                         </div>
 
                         {error && (
-                            <Alert variant="error">
+                            <Alert variant="error" className="bg-red-950/50 border-red-500/50 text-red-200">
                                 {error}
                             </Alert>
                         )}
@@ -227,49 +242,43 @@ export default function RegisterPage() {
                         {/* Submit Button */}
                         <Button
                             type="submit"
-                            variant="primary"
                             fullWidth
                             size="lg"
                             isLoading={loading}
                             disabled={loading}
+                            className="bg-white text-black hover:bg-gray-200 rounded-sm font-bold uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all mt-4"
                         >
-                            {loading ? "Đang đăng ký..." : "Tạo Tài Khoản"}
+                            {loading ? "Đang xử lý hồ sơ..." : "Ghi Danh Lực Lượng"}
                         </Button>
                     </form>
 
-                    <FormDivider text="hoặc đăng ký với" />
-                    <GoogleLoginButton />
+                    <div className="mt-6 mb-6">
+                        <FormDivider text="HOẶC ĐĂNG KÝ VỚI" />
+                    </div>
+                    
+                    <div className="hover:scale-[1.01] transition-transform">
+                        <GoogleLoginButton />
+                    </div>
 
                     {/* Login Link */}
-                    <div className="text-center mt-6 pt-6 border-t border-[var(--color-border)]">
-                        <span className="text-[var(--color-text-secondary)]">Đã có tài khoản? </span>
+                    <div className="text-center mt-8 pt-6 border-t border-white/10">
+                        <span className="text-zinc-500 text-sm">Đã nằm trong biên chế? </span>
                         <Link
                             href="/login"
-                            className="text-[var(--color-accent)] hover:text-[var(--color-accent-dark)] font-semibold transition-colors"
+                            className="text-white hover:text-red-400 font-bold transition-colors text-sm uppercase tracking-wide"
                         >
-                            Đăng nhập ngay
+                            Truy cập trung tâm
                         </Link>
                     </div>
-                </Card>
+                </div>
 
                 {/* Footer */}
-                <div className="text-center mt-6 space-y-2">
-                    <div className="flex items-center justify-center gap-4 text-[var(--color-teal-light)] text-sm">
-                        <Link href="/terms" className="hover:text-[var(--color-text-inverse)] transition-colors">
-                            Điều khoản
-                        </Link>
-                        <span>•</span>
-                        <Link href="/privacy" className="hover:text-[var(--color-text-inverse)] transition-colors">
-                            Bảo mật
-                        </Link>
-                        <span>•</span>
-                        <Link href="/help" className="hover:text-[var(--color-text-inverse)] transition-colors">
-                            Trợ giúp
-                        </Link>
+                <div className="text-center mt-8 space-y-3 pb-8">
+                    <div className="flex items-center justify-center gap-6 text-zinc-500 text-xs font-semibold uppercase tracking-wider">
+                        <Link href="/terms" className="hover:text-white transition-colors">Điều khoản</Link>
+                        <Link href="/privacy" className="hover:text-white transition-colors">Bảo mật</Link>
+                        <Link href="/help" className="hover:text-white transition-colors">Trợ giúp</Link>
                     </div>
-                    <p className="text-[var(--color-teal-light)]/70 text-sm">
-                        © 2026 FPT Flood Rescue and Relief
-                    </p>
                 </div>
             </div>
         </div>

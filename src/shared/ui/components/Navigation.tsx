@@ -3,7 +3,7 @@ import { Menu, X } from "lucide-react";
 
 export interface NavigationProps {
   logo?: React.ReactNode;
-  variant?: "light" | "dark";
+  variant?: "light" | "dark" | "transparent";
   actions?: React.ReactNode;
 }
 
@@ -14,14 +14,18 @@ export function Navigation({
 }: NavigationProps) {
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const bgColor = variant === "dark" ? "bg-[var(--color-primary)]" : "bg-white";
-  const textColor =
-    variant === "dark" ?
-      "text-[var(--color-text-inverse)]"
-    : "text-[var(--color-text-primary)]";
+  let bgColor = "bg-white border-b border-border";
+  let textColor = "text-foreground";
+  if (variant === "dark") {
+    bgColor = "bg-zinc-950 border-b border-white/10";
+    textColor = "text-white";
+  } else if (variant === "transparent") {
+    bgColor = "bg-transparent backdrop-blur-sm border-b border-white/5";
+    textColor = "text-white";
+  }
 
   return (
-    <nav className={`${bgColor} ${textColor} py-4 px-6`}>
+    <nav className={`${bgColor} ${textColor} py-4 px-6 transition-colors duration-300`}>
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center">
           {logo || <div className="text-xl font-bold">Logo</div>}

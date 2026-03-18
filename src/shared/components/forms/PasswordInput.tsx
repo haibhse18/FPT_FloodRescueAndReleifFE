@@ -32,10 +32,10 @@ export default function PasswordInput({
             {label && (
                 <label
                     htmlFor={id}
-                    className="block text-sm font-medium text-[var(--color-text-primary)] mb-2"
+                    className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2"
                 >
                     {label}
-                    {required && <span className="text-[var(--color-error)] ml-1">*</span>}
+                    {required && <span className="text-red-500 ml-1">*</span>}
                 </label>
             )}
             <div className="relative">
@@ -47,9 +47,10 @@ export default function PasswordInput({
                     onChange={onChange}
                     required={required}
                     placeholder={placeholder}
-                    className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition
+                    className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-red-500/20 focus:border-blue-500 dark:focus:border-red-500/50 transition
+                        bg-white dark:bg-zinc-950 dark:text-white
                         [&::-ms-reveal]:hidden [&::-ms-clear]:hidden
-                        ${error ? "border-[var(--color-error)]" : "border-[var(--color-border)]"}`}
+                        ${error ? "border-red-500" : "border-zinc-200 dark:border-white/10"}`}
                     style={{
                         // Ẩn icon mắt mặc định của browser (Edge, Chrome)
                         WebkitAppearance: 'none',
@@ -58,7 +59,7 @@ export default function PasswordInput({
                 <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition-colors"
                 >
                     {showPassword ? (
                         <svg

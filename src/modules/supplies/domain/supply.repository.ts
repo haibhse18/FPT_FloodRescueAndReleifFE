@@ -9,7 +9,7 @@ export interface ISupplyRepository {
     /**
      * Lấy danh sách supplies
      */
-    getSupplies(): Promise<Supply[]>;
+    getSupplies(): Promise<{ data: Supply[], meta: { page: number, totalPages: number, total: number } }>;
 
     /**
      * Lấy danh sách supply requests

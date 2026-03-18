@@ -12,10 +12,17 @@ import {
 import { supplyApi } from './supply.api';
 
 export class SupplyRepositoryImpl implements ISupplyRepository {
-    async getSupplies(): Promise<Supply[]> {
-    const result = await supplyApi.getSupplies();
-    return result?.data ?? [];
-}
+    async getSupplies(): Promise<{ data: Supply[], meta: { page: number, totalPages: number, total: number } }> {
+        const result = await supplyApi.getSupplies();
+        return {
+            data: result.data,
+            meta: {
+                page: result.meta.page,
+                totalPages: result.meta.totalPages,
+                total: result.meta.total //  fallback nếu BE không trả total
+            }
+        };
+    }
 
     async getSupplyRequests(): Promise<SupplyRequest[]> {
         const requests = await supplyApi.getSupplyRequests();

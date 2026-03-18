@@ -34,7 +34,7 @@ export const supplyApi = {
    * GET /api/supply  (backend mounts supply routes at /api/supply)
    * Fetches all supplies from backend
    */
-  getSupplies: async (query?: string): Promise<{ data: Supply[], meta: { page: number, totalPages: number } }> => {
+  getSupplies: async (query?: string): Promise<{ data: Supply[], meta: { page: number, totalPages: number, total: number } }> => {
     try {
       const response = await axiosInstance.get<ApiResponse<Supply[]>>(
         '/supply/list' + (query || '')
@@ -42,12 +42,12 @@ export const supplyApi = {
       const data = response.data?.data;
       if (!Array.isArray(data)) {
         console.warn('[SupplyAPI] Data is not array. Full response:', response.data);
-        return { data: [], meta: { page: 1, totalPages: 1 } };
+        return { data: [], meta: { page: 1, totalPages: 1, total: 0 } };
       }
-      return { data, meta: response.data?.meta || { page: 1, totalPages: 1 } };
+      return { data, meta: response.data?.meta || { page: 1, totalPages: 1, total: 0 } };
     } catch (error) {
       console.error('[SupplyAPI] Error fetching supplies:', error);
-      return { data: [], meta: { page: 1, totalPages: 1 } };
+      return { data: [], meta: { page: 1, totalPages: 1, total: 0 } };
     }
   },
 

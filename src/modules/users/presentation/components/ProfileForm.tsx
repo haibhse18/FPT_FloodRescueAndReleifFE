@@ -4,6 +4,7 @@ import { Card, Input, Skeleton } from "@/shared/ui/components";
 
 export interface CitizenProfile {
   name: string;
+  role: string;
   phone: string;
   email: string;
   address: string;
@@ -54,7 +55,7 @@ export default function ProfileForm({
       </div>
 
       <div className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-white">
           {/* Name */}
           <Input
             label="👤 Họ và tên"

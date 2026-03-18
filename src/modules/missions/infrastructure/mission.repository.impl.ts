@@ -92,6 +92,16 @@ export class MissionRepositoryImpl implements IMissionRepository {
     return ((response as any).data ?? response) as Mission;
   }
 
+  async updateMissionRequestProgress(
+    missionRequestId: string,
+    payload: {
+      peopleRescuedIncrement?: number;
+      suppliesDelivered?: { supplyId: string; quantityDelivered: number }[];
+    },
+  ): Promise<void> {
+    await missionApi.updateMissionRequestProgress(missionRequestId, payload);
+  }
+
   // ─── Status Control ──────────────────────────────────────
 
   async pauseMission(missionId: string): Promise<Mission> {

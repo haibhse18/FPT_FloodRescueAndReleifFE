@@ -19,15 +19,14 @@ export type TimelineStatus =
 
 export interface Timeline {
   _id: string;
+  /** Mission ID - Backend may populate this as full Mission object instead of just the ID string */
   missionId: string;
-  requestId: string;
   teamId: string;
   status: TimelineStatus;
   assignedAt: string;
   startedAt?: string | null;
   arrivedAt?: string | null;
   completedAt?: string | null;
-  rescuedCount?: number;
   failureReason?: string | null;
   withdrawalReason?: string | null;
   note?: string | null;
@@ -49,7 +48,6 @@ export interface PaginatedTimelines {
 
 export interface GetTimelinesFilter {
   missionId?: string;
-  requestId?: string;
   teamId?: string;
   status?: TimelineStatus;
   page?: number;
@@ -59,5 +57,32 @@ export interface GetTimelinesFilter {
 // ─── Input DTOs ──────────────────────────────────────────
 
 export interface TimelineCancelInput {
+  note?: string;
+}
+
+export interface TimelineCompletionSupplyInput {
+  supplyId: string;
+  quantityDelivered: number;
+}
+
+export interface TimelineCompletionItemInput {
+  missionRequestId: string;
+  rescuedCount: number;
+  suppliesDelivered?: TimelineCompletionSupplyInput[];
+}
+
+export interface TimelineCompleteInput {
+  outcome: "COMPLETED" | "PARTIAL";
+  note?: string;
+  completions: TimelineCompletionItemInput[];
+}
+
+export interface TimelineFailInput {
+  failureReason: string;
+  note?: string;
+}
+
+export interface TimelineWithdrawInput {
+  withdrawalReason: string;
   note?: string;
 }

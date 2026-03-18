@@ -4,7 +4,6 @@
  */
 
 import { InventoryItem, CreateInventoryItemData, UpdateInventoryData } from './inventory.entity';
-import { Warehouse } from './warehouse.entity';
 
 export interface IInventoryRepository {
     /**
@@ -12,20 +11,6 @@ export interface IInventoryRepository {
      */
     getItems(): Promise<InventoryItem[]>;
 
-    /**
-     * Lấy danh sách kho hàng (warehouses)
-     */
-    getWarehouses(): Promise<Warehouse[]>;
-
-    /**
-     * Lấy chi tiết item
-     */
-    getItemById(id: string): Promise<InventoryItem>;
-
-    /**
-     * Tạo item mới
-     */
-    createItem(data: CreateInventoryItemData): Promise<InventoryItem>;
 
     /**
      * Cập nhật item
@@ -36,4 +21,9 @@ export interface IInventoryRepository {
      * Xóa item
      */
     deleteItem(id: string): Promise<void>;
+
+    /**
+     * Import Excel
+     */
+    importExcel(file: File, importType: string): Promise<void>;
 }

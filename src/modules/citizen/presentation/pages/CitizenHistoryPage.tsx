@@ -21,7 +21,7 @@ interface Request {
 
 export default function CitizenHistoryPage() {
   const [filter, setFilter] = useState<
-    "all" | "pending" | "in_progress" | "completed"
+    "all" | "pending" | "in_progress" | "completed" | "cancelled"
   >("all");
   const [requests, setRequests] = useState<Request[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +49,7 @@ export default function CitizenHistoryPage() {
 
       const data = Array.isArray(response) ? response : (response as any).data || [];
       const metadata = (response as any);
-      
+
       if (metadata.total !== undefined) {
         setTotalRequests(metadata.total);
         setTotalPages(metadata.totalPages || Math.ceil(metadata.total / pageSize));
@@ -61,35 +61,80 @@ export default function CitizenHistoryPage() {
           string,
           { text: string; color: string; filter: string }
         > = {
+          SUBMITTED: {
+            text: "Chờ xử lý",
+            color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+            filter: "pending",
+          },
           Submitted: {
             text: "Chờ xử lý",
             color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
             filter: "pending",
+          },
+          VERIFIED: {
+            text: "Đã tiếp nhận",
+            color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+            filter: "in_progress",
           },
           Accepted: {
             text: "Đã chấp nhận",
             color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
             filter: "in_progress",
           },
+          REJECTED: {
+            text: "Bị từ chối",
+            color: "bg-red-500/20 text-red-400 border-red-500/30",
+            filter: "completed",
+          },
           Rejected: {
             text: "Bị từ chối",
             color: "bg-red-500/20 text-red-400 border-red-500/30",
             filter: "completed",
+          },
+          IN_PROGRESS: {
+            text: "Đang xử lý",
+            color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+            filter: "in_progress",
           },
           "In Progress": {
             text: "Đang xử lý",
             color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
             filter: "in_progress",
           },
+          FULFILLED: {
+            text: "Hoàn thành",
+            color: "bg-green-500/20 text-green-400 border-green-500/30",
+            filter: "completed",
+          },
+          PARTIALLY_FULFILLED: {
+            text: "Hoàn thành một phần",
+            color: "bg-green-500/20 text-green-400 border-green-500/30",
+            filter: "completed",
+          },
+          CLOSED: {
+            text: "Hoàn thành",
+            color: "bg-green-500/20 text-green-400 border-green-500/30",
+            filter: "completed",
+          },
+          COMPLETED: {
+            text: "Hoàn thành",
+            color: "bg-green-500/20 text-green-400 border-green-500/30",
+            filter: "completed",
+          },
           Completed: {
             text: "Hoàn thành",
             color: "bg-green-500/20 text-green-400 border-green-500/30",
             filter: "completed",
           },
+          CANCELLED: {
+            text: "Đã hủy",
+            color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+            filter: "cancelled",
+          },
           Cancelled: {
             text: "Đã hủy",
             color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
-            filter: "completed",
+            filter: "cancelled",
           },
         };
 
@@ -154,7 +199,13 @@ export default function CitizenHistoryPage() {
       setRequests((prev) =>
         prev.map((r) =>
           r.id === requestId
-            ? { ...r, originalStatus: "Cancelled", statusText: "Đã hủy" }
+            ? {
+              ...r,
+              status: "cancelled",
+              originalStatus: "CANCELLED",
+              statusText: "Đã hủy",
+              statusColor: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+            }
             : r,
         ),
       );
@@ -270,6 +321,7 @@ export default function CitizenHistoryPage() {
                 { value: "pending", label: "Chờ xử lý", icon: "⏱️", count: requests.filter((r) => r.status === "pending").length },
                 { value: "in_progress", label: "Đang xử lý", icon: "⏳", count: requests.filter((r) => r.status === "in_progress").length },
                 { value: "completed", label: "Hoàn thành", icon: "✅", count: requests.filter((r) => r.status === "completed").length },
+                { value: "cancelled", label: "Đã hủy", icon: "🚫", count: requests.filter((r) => r.status === "cancelled").length },
               ].map((btn) => (
                 <button
                   key={btn.value}
@@ -410,7 +462,9 @@ export default function CitizenHistoryPage() {
                           {(() => {
                             const isCancelled =
                               request.originalStatus === "Rejected" ||
-                              request.originalStatus === "Cancelled";
+                              request.originalStatus === "REJECTED" ||
+                              request.originalStatus === "Cancelled" ||
+                              request.originalStatus === "CANCELLED";
                             const steps = [
                               { label: "Gửi" },
                               { label: "Tiếp nhận" },
@@ -418,9 +472,9 @@ export default function CitizenHistoryPage() {
                               { label: "Xong" },
                             ];
                             const stepIndex =
-                              request.originalStatus === "Completed" ? 3
-                                : request.originalStatus === "In Progress" ? 2
-                                  : request.originalStatus === "Accepted" ? 1
+                              ["Completed", "COMPLETED", "FULFILLED", "PARTIALLY_FULFILLED", "CLOSED"].includes(request.originalStatus) ? 3
+                                : ["In Progress", "IN_PROGRESS"].includes(request.originalStatus) ? 2
+                                  : ["Accepted", "VERIFIED"].includes(request.originalStatus) ? 1
                                     : 0;
                             return (
                               <div className="mb-3">
@@ -479,6 +533,7 @@ export default function CitizenHistoryPage() {
                                   <p className="text-xs text-red-400 font-bold">
                                     ✕{" "}
                                     {request.originalStatus === "Rejected"
+                                      || request.originalStatus === "REJECTED"
                                       ? "Yêu cầu bị từ chối"
                                       : "Yêu cầu đã hủy"}
                                   </p>
@@ -495,16 +550,14 @@ export default function CitizenHistoryPage() {
                         >
                           👁️ Xem chi tiết
                         </Link>
-                        {request.originalStatus !== "Completed" &&
-                          request.originalStatus !== "Cancelled" &&
-                          request.originalStatus !== "Rejected" && (
-                            <button
-                              onClick={() => setCancelConfirmId(request.id)}
-                              className="flex-1 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-xl text-red-400 hover:text-red-300 text-sm font-bold transition-all"
-                            >
-                              🚫 Hủy
-                            </button>
-                          )}
+                        {!(["Completed", "COMPLETED", "FULFILLED", "PARTIALLY_FULFILLED", "CLOSED", "Cancelled", "CANCELLED", "Rejected", "REJECTED"].includes(request.originalStatus)) && (
+                          <button
+                            onClick={() => setCancelConfirmId(request.id)}
+                            className="flex-1 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-xl text-red-400 hover:text-red-300 text-sm font-bold transition-all"
+                          >
+                            🚫 Hủy
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))
@@ -527,11 +580,10 @@ export default function CitizenHistoryPage() {
                     <button
                       key={page}
                       onClick={() => handlePageChange(page)}
-                      className={`w-10 h-10 rounded-lg font-bold transition-all ${
-                        currentPage === page
-                          ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40"
-                          : "bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white"
-                      }`}
+                      className={`w-10 h-10 rounded-lg font-bold transition-all ${currentPage === page
+                        ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40"
+                        : "bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white"
+                        }`}
                     >
                       {page}
                     </button>

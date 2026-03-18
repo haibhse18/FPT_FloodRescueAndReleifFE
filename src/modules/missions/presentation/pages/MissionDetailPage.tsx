@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import { GetMissionDetailUseCase } from "../../application/getMissionDetail.usecase";
 import { AddRequestsToMissionUseCase } from "../../application/addRequestsToMission.usecase";
 import { RemoveRequestFromMissionUseCase } from "../../application/removeRequestFromMission.usecase";
@@ -26,6 +28,19 @@ import type { CoordinatorRequest } from "@/modules/requests/domain/request.entit
 import { useToast } from "@/hooks/use-toast";
 import { missionRequestApi } from "../../infrastructure/missionRequest.api";
 import { useNotificationStore } from "@/store/useNotification.store";
+
+// Dynamic import cho OpenMap để tránh SSR issues
+const OpenMap = dynamic(
+  () => import("@/modules/map/presentation/components/OpenMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-64 bg-slate-300 rounded-lg animate-pulse flex items-center justify-center text-slate-500">
+        Đang tải bản đồ...
+      </div>
+    ),
+  },
+);
 
 // ─── Use Cases ────────────────────────────────────────────
 
@@ -91,6 +106,12 @@ export default function MissionDetailPage() {
   const missionId = params?.id as string;
   const { toast } = useToast();
 
+  // Debug log
+  useEffect(() => {
+    console.log("🔍 MissionDetailPage params:", params);
+    console.log("🔍 Extracted missionId:", missionId);
+  }, [params, missionId]);
+
   const [mission, setMission] = useState<Mission | null>(null);
   const [timelines, setTimelines] = useState<Timeline[]>([]);
   const [missionRequests, setMissionRequests] = useState<MissionRequest[]>([]);
@@ -98,6 +119,16 @@ export default function MissionDetailPage() {
   const [verifiedRequests, setVerifiedRequests] = useState<CoordinatorRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Location states for minimap
+  const [currentLocation, setCurrentLocation] = useState("Đang tải vị trí...");
+  const [coordinates, setCoordinates] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
   
   // Modals state
   const [showAddRequestsModal, setShowAddRequestsModal] = useState(false);
@@ -110,25 +141,82 @@ export default function MissionDetailPage() {
   const fetchData = useCallback(async () => {
     if (!missionId) return;
     setLoading(true);
+    setError(null);
     try {
-      const [missionData, timelinesData, requestsData] = await Promise.all([
-        getMissionDetailUseCase.execute(missionId),
+      // Fetch mission detail first
+      const missionData = await getMissionDetailUseCase.execute(missionId);
+      setMission(missionData);
+      
+      // Then fetch timelines and requests in parallel
+      const [timelinesData, requestsData] = await Promise.all([
         getTimelinesUseCase.execute({ missionId }),
         getMissionRequestsUseCase.execute(missionId),
       ]);
-      setMission(missionData);
       setTimelines(timelinesData.data || []);
       setMissionRequests(requestsData || []);
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
       console.error("Failed to fetch mission:", error);
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
   }, [missionId]);
 
+  const fetchLocation = useCallback(async () => {
+    setIsLoadingLocation(true);
+    setLocationError(null);
+
+    if (!("geolocation" in navigator)) {
+      setLocationError("Trình duyệt không hỗ trợ định vị");
+      setCurrentLocation("Không khả dụng");
+      setIsLoadingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setCoordinates({ lat: latitude, lon: longitude });
+
+        try {
+          const response = await fetch(
+            `/api/reverse-geocode?lat=${latitude}&lon=${longitude}`,
+          );
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          const location =
+            data.address?.road ||
+            data.address?.suburb ||
+            data.address?.city_district ||
+            data.address?.city ||
+            data.address?.county ||
+            data.address?.state ||
+            data.display_name ||
+            `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+          setCurrentLocation(location);
+        } catch (error) {
+          if (error instanceof Error && error.name === "AbortError") {
+            setLocationError("Lấy địa chỉ hết thời gian chờ");
+          }
+          setCurrentLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        } finally {
+          setIsLoadingLocation(false);
+        }
+      },
+      (error) => {
+        setIsLoadingLocation(false);
+        setLocationError(error.message || "Không thể truy cập vị trí");
+        setCurrentLocation("Không khả dụng");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  }, []);
+
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    fetchLocation();
+  }, [fetchData, fetchLocation]);
 
   // Auto-refresh on websocket notifications for this mission
   useEffect(() => {
@@ -343,9 +431,17 @@ export default function MissionDetailPage() {
 
   if (!mission) {
     return (
-      <div className="p-6 text-center text-gray-400">
+      <div className="p-6 text-center">
         <p className="text-4xl mb-4">❓</p>
-        <p>Không tìm thấy nhiệm vụ</p>
+        {error ? (
+          <>
+            <p className="text-red-400 font-bold mb-2">Lỗi tải nhiệm vụ</p>
+            <p className="text-gray-400 text-sm mb-4">{error}</p>
+            <p className="text-gray-500 text-xs mb-4">ID: {missionId}</p>
+          </>
+        ) : (
+          <p className="text-gray-400">Không tìm thấy nhiệm vụ</p>
+        )}
         <button
           onClick={() => router.back()}
           className="mt-4 px-4 py-2 bg-white/5 rounded-lg text-gray-300 hover:bg-white/10"
@@ -456,6 +552,59 @@ export default function MissionDetailPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Location Bar with Mini Map */}
+      <div className="bg-slate-200 rounded-xl p-5 shadow-lg border-l-4 border-[#FF7700] mb-6">
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2 text-slate-600">
+            <span className="text-xl" aria-hidden="true">
+              📍
+            </span>
+            <span className="text-sm font-bold uppercase tracking-wide">
+              Vị trí nhiệm vụ hiện tại
+            </span>
+          </div>
+          <button
+            onClick={fetchLocation}
+            disabled={isLoadingLocation}
+            className="text-[#FF3535] text-sm font-bold uppercase hover:underline disabled:opacity-50 disabled:cursor-not-allowed transition-opacity focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 rounded px-2 py-1"
+            aria-label="Cập nhật vị trí"
+          >
+            {isLoadingLocation ? "Đang tải..." : "Cập nhật"}
+          </button>
+        </div>
+        {locationError && (
+          <div className="text-xs text-red-600 mb-2 flex items-center gap-1">
+            <span>⚠️</span>
+            <span>{locationError}</span>
+          </div>
+        )}
+        <p className="text-slate-800 text-lg font-bold mb-2">
+          {isLoadingLocation ?
+            <span className="inline-flex items-center gap-2">
+              <span className="w-4 h-4 border-2 border-slate-800 border-t-transparent rounded-full animate-spin"></span>
+              Đang tải...
+            </span>
+            : currentLocation}
+        </p>
+        {coordinates && (
+          <div className="text-xs text-slate-500 font-mono mb-3">
+            Lat: {coordinates.lat.toFixed(4)} • Long:{" "}
+            {coordinates.lon.toFixed(4)}
+          </div>
+        )}
+
+        {/* Mini Map */}
+        {coordinates && (
+          <div className="mt-4 h-64 rounded-lg overflow-hidden border-2 border-slate-300 shadow-inner">
+            <OpenMap
+              latitude={coordinates.lat}
+              longitude={coordinates.lon}
+              address={currentLocation}
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -600,9 +749,9 @@ export default function MissionDetailPage() {
                         ❌ {tl.failureReason}
                       </p>
                     )}
-                    {tl.rescuedCount !== undefined && tl.rescuedCount > 0 && (
+                    {missionRequests && missionRequests.length > 0 && missionRequests.reduce((sum, mr) => sum + (mr.peopleRescued || 0), 0) > 0 && (
                       <p className="text-green-400 text-xs mt-1">
-                        🙋 Đã cứu: {tl.rescuedCount} người
+                        🙋 Đã cứu: {missionRequests.reduce((sum, mr) => sum + (mr.peopleRescued || 0), 0)} người
                       </p>
                     )}
                   </div>

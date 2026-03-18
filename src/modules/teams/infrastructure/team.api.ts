@@ -10,6 +10,49 @@ import type { ApiResponse } from "@/shared/types/api";
 
 export const teamsApi = {
   // ────────────────────────────────────────────────────────
+  // TEAM APPLICATIONS (CITIZEN)
+  // ────────────────────────────────────────────────────────
+
+  /** POST /team-applications — submit volunteer application */
+  submitTeamApplication: async (input: {
+    motivation: string;
+    confirmPhoneNumber?: string;
+  }): Promise<ApiResponse> => {
+    return apiClient.post("/team-applications", input, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** GET /team-applications/my — list my volunteer applications */
+  getMyTeamApplications: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<ApiResponse> => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    const query = queryParams.toString();
+    const endpoint = query ? `/team-applications/my?${query}` : "/team-applications/my";
+
+    return apiClient.get(endpoint, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /team-applications/:applicationId/withdraw — withdraw my application */
+  withdrawTeamApplication: async (applicationId: string): Promise<ApiResponse> => {
+    return apiClient.patch(`/team-applications/${applicationId}/withdraw`, undefined, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  // ────────────────────────────────────────────────────────
   // CRUD
   // ────────────────────────────────────────────────────────
 

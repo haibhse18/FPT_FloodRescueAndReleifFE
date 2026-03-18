@@ -6,12 +6,16 @@
 import { apiClient } from "@/services/apiClient";
 import { authSession } from "@/services/authSession";
 import type { ApiResponse } from "@/shared/types/api";
+import type {
+  TimelineCompleteInput,
+  TimelineFailInput,
+  TimelineWithdrawInput,
+} from "../domain/timeline.entity";
 
 export const timelineApi = {
   /** GET /timelines — list with filters */
   getTimelines: async (params?: {
     missionId?: string;
-    requestId?: string;
     teamId?: string;
     status?: string;
     page?: number;
@@ -45,6 +49,58 @@ export const timelineApi = {
     input?: { note?: string },
   ): Promise<ApiResponse> => {
     return apiClient.patch(`/timelines/${timelineId}/cancel`, input ?? {}, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /timelines/{id}/accept — team accept assignment */
+  acceptTimeline: async (timelineId: string): Promise<ApiResponse> => {
+    return apiClient.patch(
+      `/timelines/${timelineId}/accept`,
+      {},
+      {
+        headers: authSession.getAuthHeaders(),
+      },
+    );
+  },
+
+  /** PATCH /timelines/{id}/arrive — team arrives on site */
+  arriveTimeline: async (timelineId: string): Promise<ApiResponse> => {
+    return apiClient.patch(
+      `/timelines/${timelineId}/arrive`,
+      {},
+      {
+        headers: authSession.getAuthHeaders(),
+      },
+    );
+  },
+
+  /** PATCH /timelines/{id}/complete — team reports completion (COMPLETED/PARTIAL) */
+  completeTimeline: async (
+    timelineId: string,
+    body: TimelineCompleteInput,
+  ): Promise<ApiResponse> => {
+    return apiClient.patch(`/timelines/${timelineId}/complete`, body, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /timelines/{id}/fail — team reports failure */
+  failTimeline: async (
+    timelineId: string,
+    body: TimelineFailInput,
+  ): Promise<ApiResponse> => {
+    return apiClient.patch(`/timelines/${timelineId}/fail`, body, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /timelines/{id}/withdraw — team withdraws from mission before executing */
+  withdrawTimeline: async (
+    timelineId: string,
+    body: TimelineWithdrawInput,
+  ): Promise<ApiResponse> => {
+    return apiClient.patch(`/timelines/${timelineId}/withdraw`, body, {
       headers: authSession.getAuthHeaders(),
     });
   },

@@ -40,7 +40,31 @@ export class RequestRepositoryImpl implements IRequestRepository {
 
   async getMyRequests(filters?: GetRequestsFilter): Promise<RescueRequest[]> {
     const response = await requestsApi.getMyRequests(filters);
-    return (response as any).data || [];
+    const result = response as any;
+    const items = Array.isArray(result)
+      ? result
+      : Array.isArray(result.data)
+        ? result.data
+        : [];
+    const total = result.total ?? result.meta?.total ?? items.length;
+    const page = result.page ?? result.meta?.page ?? filters?.page ?? 1;
+    const limit =
+      result.limit ??
+      result.meta?.limit ??
+      filters?.limit ??
+      items.length ??
+      1;
+    const totalPages =
+      result.totalPages ??
+      result.meta?.totalPages ??
+      Math.max(1, Math.ceil(total / Math.max(1, Number(limit))));
+
+    return Object.assign([...items], {
+      total,
+      page,
+      limit,
+      totalPages,
+    }) as RescueRequest[];
   }
 
   async getHistory(): Promise<RescueRequest[]> {

@@ -69,7 +69,7 @@ export default function LoginPage() {
   // --- END LOGIC ---
 
   return (
-    <div className="dark min-h-screen flex items-center justify-center p-4 relative bg-black text-foreground selection:bg-red-500/30 font-sans">
+    <div className="dark min-h-screen flex items-center justify-center p-4 relative bg-[#0a1f2e] text-foreground selection:bg-[#FF7700]/30 font-sans">
       {/* Cinematic Background */}
       <div className="absolute inset-0 z-0">
         <img 
@@ -77,10 +77,10 @@ export default function LoginPage() {
           alt="Rescue background" 
           className="w-full h-full object-cover opacity-50 mix-blend-luminosity grayscale" 
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-zinc-950/80 to-black/60"></div>
-        {/* Subtle emergency red glow */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#071520] via-[#0a1f2e]/80 to-[#071520]/60"></div>
+        {/* Subtle emergency glow */}
         <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-red-900/10 rounded-full blur-[120px] pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-blue-900/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-[#FF7700]/5 rounded-full blur-[120px] pointer-events-none"></div>
       </div>
 
       <div className="w-full max-w-md relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
@@ -98,7 +98,7 @@ export default function LoginPage() {
         </div>
 
         {/* Glassmorphism Login Card */}
-        <div className="bg-zinc-950/80 backdrop-blur-2xl border border-white/10 rounded-sm p-8 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+        <div className="bg-[#0d2536]/80 backdrop-blur-2xl border border-white/10 rounded-sm p-8 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-black text-white tracking-tight uppercase">
               Đăng Nhập
@@ -119,7 +119,7 @@ export default function LoginPage() {
                 label="Email"
                 placeholder="example@email.com"
                 required
-                className="bg-black/50 border-white/10 focus:border-red-500/50 text-white placeholder:text-zinc-600 rounded-sm"
+                className="bg-[#071520]/50 border-white/10 focus:border-[#FF7700]/50 text-white placeholder:text-zinc-600 rounded-sm"
               />
             </div>
 
@@ -150,7 +150,7 @@ export default function LoginPage() {
               size="lg"
               isLoading={loading}
               disabled={loading}
-              className="bg-white text-black hover:bg-gray-200 rounded-sm font-bold uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all"
+              className="bg-[#FF7700] text-white hover:bg-orange-500 rounded-sm font-bold uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(255,119,0,0.3)] transition-all"
             >
               {loading ? "Đang xử lý..." : "Truy Cập Hệ Thống"}
             </Button>
@@ -170,7 +170,7 @@ export default function LoginPage() {
             </span>
             <Link
               href="/register"
-              className="text-white hover:text-red-400 font-bold transition-colors text-sm uppercase tracking-wide"
+              className="text-white hover:text-[#FF7700] font-bold transition-colors text-sm uppercase tracking-wide"
             >
               Ghi danh ngay
             </Link>

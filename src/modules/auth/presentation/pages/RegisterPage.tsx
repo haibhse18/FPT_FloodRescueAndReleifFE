@@ -89,7 +89,7 @@ export default function RegisterPage() {
     // --- END LOGIC ---
 
     return (
-        <div className="dark min-h-screen flex items-center justify-center p-4 py-12 relative bg-black text-foreground selection:bg-red-500/30 font-sans">
+        <div className="dark min-h-screen flex items-center justify-center p-4 py-12 relative bg-[#0a1f2e] text-foreground selection:bg-[#FF7700]/30 font-sans">
             {/* Cinematic Background */}
             <div className="absolute inset-0 z-0 fixed">
                 <img 
@@ -97,9 +97,10 @@ export default function RegisterPage() {
                   alt="Rescue background" 
                   className="w-full h-full object-cover opacity-50 mix-blend-luminosity grayscale" 
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-zinc-950/90 to-black/70"></div>
-                {/* Subtle emergency red glow */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#071520] via-[#0a1f2e]/90 to-[#071520]/70"></div>
+                {/* Subtle emergency glow */}
                 <div className="absolute top-0 left-0 w-[40rem] h-[40rem] bg-red-900/10 rounded-full blur-[120px] pointer-events-none"></div>
+                <div className="absolute bottom-0 right-0 w-[30rem] h-[30rem] bg-[#FF7700]/5 rounded-full blur-[120px] pointer-events-none"></div>
             </div>
 
             <div className="w-full max-w-xl relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
@@ -115,7 +116,7 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Glassmorphism Register Card */}
-                <div className="bg-zinc-950/80 backdrop-blur-2xl border border-white/10 rounded-sm p-8 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+                <div className="bg-[#0d2536]/80 backdrop-blur-2xl border border-white/10 rounded-sm p-8 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
                     <div className="text-center mb-8">
                         <h2 className="text-2xl font-black text-white tracking-tight uppercase">
                             Tạo Hồ Sơ Mới
@@ -138,7 +139,7 @@ export default function RegisterPage() {
                                 label="Tên đăng nhập"
                                 placeholder="nguyenvana"
                                 required
-                                className="bg-black/50 border-white/10 focus:border-red-500/50 text-white placeholder:text-zinc-600 rounded-sm"
+                                className="bg-[#071520]/50 border-white/10 focus:border-[#FF7700]/50 text-white placeholder:text-zinc-600 rounded-sm"
                             />
 
                             {/* Display Name Input */}
@@ -151,7 +152,7 @@ export default function RegisterPage() {
                                 label="Tên hiển thị"
                                 placeholder="Nguyễn Văn A"
                                 required
-                                className="bg-black/50 border-white/10 focus:border-red-500/50 text-white placeholder:text-zinc-600 rounded-sm"
+                                className="bg-[#071520]/50 border-white/10 focus:border-[#FF7700]/50 text-white placeholder:text-zinc-600 rounded-sm"
                             />
                         </div>
 
@@ -207,7 +208,7 @@ export default function RegisterPage() {
                         </p>
 
                         {/* Terms and Conditions */}
-                        <div className="flex items-start gap-3 p-4 bg-black/40 border border-white/5 rounded-sm mt-2">
+                        <div className="flex items-start gap-3 p-4 bg-[#071520]/40 border border-white/5 rounded-sm mt-2">
                             <Checkbox
                                 id="terms"
                                 checked={agreedToTerms}
@@ -218,14 +219,14 @@ export default function RegisterPage() {
                                 Tôi đã đọc và cam kết tuân thủ đầy đủ{" "}
                                 <Link
                                     href="/terms"
-                                    className="text-white hover:text-red-400 font-medium underline underline-offset-4 decoration-white/30"
+                                    className="text-white hover:text-[#FF7700] font-medium underline underline-offset-4 decoration-white/30"
                                 >
                                     Quy định an toàn
                                 </Link>{" "}
                                 và{" "}
                                 <Link
                                     href="/privacy"
-                                    className="text-white hover:text-red-400 font-medium underline underline-offset-4 decoration-white/30"
+                                    className="text-white hover:text-[#FF7700] font-medium underline underline-offset-4 decoration-white/30"
                                 >
                                     Chính sách bảo mật
                                 </Link>
@@ -246,7 +247,7 @@ export default function RegisterPage() {
                             size="lg"
                             isLoading={loading}
                             disabled={loading}
-                            className="bg-white text-black hover:bg-gray-200 rounded-sm font-bold uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all mt-4"
+                            className="bg-[#FF7700] text-white hover:bg-orange-500 rounded-sm font-bold uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(255,119,0,0.3)] transition-all mt-4"
                         >
                             {loading ? "Đang xử lý hồ sơ..." : "Ghi Danh Lực Lượng"}
                         </Button>
@@ -265,7 +266,7 @@ export default function RegisterPage() {
                         <span className="text-zinc-500 text-sm">Đã nằm trong biên chế? </span>
                         <Link
                             href="/login"
-                            className="text-white hover:text-red-400 font-bold transition-colors text-sm uppercase tracking-wide"
+                            className="text-white hover:text-[#FF7700] font-bold transition-colors text-sm uppercase tracking-wide"
                         >
                             Truy cập trung tâm
                         </Link>

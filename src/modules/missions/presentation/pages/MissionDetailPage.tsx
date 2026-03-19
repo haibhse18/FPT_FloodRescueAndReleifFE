@@ -136,7 +136,7 @@ export default function MissionDetailPage() {
   const [showAbortConfirm, setShowAbortConfirm] = useState(false);
 
   // Notifications for auto-refresh
-  const notifications = useNotificationStore((s) => s.notifications);
+  const notifications = useNotificationStore(state => state.notifications);
 
   const fetchData = useCallback(async () => {
     if (!missionId) return;

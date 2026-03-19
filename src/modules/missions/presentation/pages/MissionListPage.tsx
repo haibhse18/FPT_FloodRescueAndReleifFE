@@ -67,7 +67,7 @@ export default function MissionListPage() {
   const [creating, setCreating] = useState(false);
 
   // Notifications for auto-refresh
-  const notifications = useNotificationStore((s) => s.notifications);
+  const notifications = useNotificationStore(state => state.notifications);
 
   const fetchMissions = useCallback(async () => {
     setLoading(true);

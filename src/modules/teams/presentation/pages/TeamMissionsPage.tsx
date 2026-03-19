@@ -52,7 +52,7 @@ const getMissionDetailUseCase = new GetMissionDetailUseCase(missionRepository);
 
 export default function TeamMissionsPage() {
   const router = useRouter();
-  const notifications = useNotificationStore((s) => s.notifications);
+  const notifications = useNotificationStore(state => state.notifications);
 
   const [timelines, setTimelines] = useState<Timeline[]>([]);
   const [missionDetails, setMissionDetails] = useState<Record<string, Mission>>({});

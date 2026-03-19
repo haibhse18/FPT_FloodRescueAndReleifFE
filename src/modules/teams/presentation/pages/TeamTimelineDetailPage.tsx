@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ErrorBoundary from "@/shared/components/ErrorBoundary";
 import { timelineRepository } from "@/modules/timelines/infrastructure/timeline.repository.impl";
@@ -38,7 +38,7 @@ function InternalTeamTimelineDetailPage({
   timelineId,
 }: TeamTimelineDetailPageProps) {
   const router = useRouter();
-  const notifications = useNotificationStore((s) => s.notifications);
+  const notifications = useNotificationStore(state => state.notifications);
 
   const [timeline, setTimeline] = useState<Timeline | null>(null);
   const [mission, setMission] = useState<Mission | null>(null);
@@ -58,6 +58,7 @@ function InternalTeamTimelineDetailPage({
   const [failNote, setFailNote] = useState("");
   const [validationErrors, setValidationErrors] = useState<Record<string, string | undefined>>({});
   const [isOnline, setIsOnline] = useState(true);
+  const lastProcessedNotificationRef = useRef<string | null>(null);
 
   // Monitor online/offline status
   useEffect(() => {
@@ -101,17 +102,26 @@ function InternalTeamTimelineDetailPage({
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, []); // Empty dependency array - only run once on mount
 
   useEffect(() => {
     if (!timeline) return;
     if (notifications.length === 0) return;
+    
     const latest = notifications[0];
+    const latestId = (latest as any)._id;
+    
+    // Skip if we already processed this notification
+    if (lastProcessedNotificationRef.current === latestId) return;
+    
     const missionId =
       typeof timeline.missionId === "string"
         ? timeline.missionId
         : (timeline.missionId as any)?._id;
+    
+    // Only reload if notification is related to current timeline/mission
     if ((latest as any).timelineId === timeline._id || (latest as any).missionId === missionId) {
+      lastProcessedNotificationRef.current = latestId;
       loadData();
     }
   }, [notifications, timeline, loadData]);

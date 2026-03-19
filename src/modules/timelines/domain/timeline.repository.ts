@@ -8,6 +8,9 @@ import {
   PaginatedTimelines,
   GetTimelinesFilter,
   TimelineCancelInput,
+  TimelineCompleteInput,
+  TimelineFailInput,
+  TimelineWithdrawInput,
 } from "./timeline.entity";
 
 export interface ITimelineRepository {
@@ -17,4 +20,18 @@ export interface ITimelineRepository {
     timelineId: string,
     input?: TimelineCancelInput,
   ): Promise<void>;
+  acceptTimeline(timelineId: string): Promise<Timeline>;
+  arriveTimeline(timelineId: string): Promise<Timeline>;
+  completeTimeline(
+    timelineId: string,
+    input: TimelineCompleteInput,
+  ): Promise<Timeline>;
+  failTimeline(
+    timelineId: string,
+    input: TimelineFailInput,
+  ): Promise<Timeline>;
+  withdrawTimeline(
+    timelineId: string,
+    input: TimelineWithdrawInput,
+  ): Promise<Timeline>;
 }

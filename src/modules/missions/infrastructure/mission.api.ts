@@ -129,6 +129,19 @@ export const missionApi = {
     });
   },
 
+  /** POST /mission-requests/{id}/progress — increments rescued people and delivered supplies */
+  updateMissionRequestProgress: async (
+    missionRequestId: string,
+    payload: {
+      peopleRescuedIncrement?: number;
+      suppliesDelivered?: { supplyId: string; quantityDelivered: number }[];
+    },
+  ): Promise<ApiResponse> => {
+    return apiClient.post(`/mission-requests/${missionRequestId}/progress`, payload, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
   // ────────────────────────────────────────────────────────
   // STATUS CONTROL
   // ────────────────────────────────────────────────────────

@@ -65,8 +65,8 @@ export default function SupplyManagementPage() {
     const fetchSupplies = async () => {
         setLoading(true);
         try {
-            const data = await getSuppliesUseCase.execute();
-            setSupplies(data);
+            const response = await getSuppliesUseCase.execute();
+            setSupplies(response.data);
         } catch (error) {
             const message = error instanceof Error ? error.message : "Lỗi khi tải vật tư";
             toast({

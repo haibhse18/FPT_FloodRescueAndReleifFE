@@ -24,16 +24,16 @@ const OpenMap = dynamic(
   },
 );
 
-interface TeamDetailPageProps {
+interface CoordinatorTeamDetailPageProps {
   teamId: string;
   /** true = Coordinator (full control), false = Team Leader (limited) */
   isCoordinator?: boolean;
 }
 
-export default function TeamDetailPage({
+export default function CoordinatorTeamDetailPage({
   teamId,
   isCoordinator = true,
-}: TeamDetailPageProps) {
+}: CoordinatorTeamDetailPageProps) {
   const router = useRouter();
   const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(true);

@@ -1,13 +1,13 @@
 
 // statuses mirror backend SUPPLY_STATUS
 export type VehicleStatus =
-  |'ACTIVE' 
-  |'INACTIVE' 
-  |'MAINTENANCE'
-  |'OUT_OF_SERVICE';
+  | 'ACTIVE'
+  | 'IN_USE'
+  | 'MAINTENANCE'
+  | 'OUT_OF_SERVICE';
 
-export type VehicleType = 
-  |  'AMBULANCE'
+export type VehicleType =
+  | 'AMBULANCE'
   | "RESCUE_BOAT"
   | "FIRE_TRUCK"
   | "TRUCK"
@@ -15,7 +15,7 @@ export type VehicleType =
   | "MOTORCYCLE"
   | "OTHERS";
 
-export type VehicleCapacityUnit = "Người"|  "LITERS"| "TONS"| "KG"; // KG for weight, CBM for volume
+export type VehicleCapacityUnit = "Người" | "LITERS" | "TONS" | "KG"; // KG for weight, CBM for volume
 export interface GeoPoint {
   type: "Point";
   coordinates: [number, number]; // [lng, lat]

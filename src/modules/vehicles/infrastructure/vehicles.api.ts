@@ -15,7 +15,7 @@ export const vehicleApi = {
         "/vehicles/list" + (query || "")
       );
 
-      return response.data; 
+      return response.data;
       // { data: Vehicle[], meta: { page, totalPages, limit, total } }
 
     } catch (error) {
@@ -33,12 +33,12 @@ export const vehicleApi = {
     await axiosInstance.patch(`/vehicles/${id}/status`, { status });
   },
 
-    /**
-       * POST /api/vehicles/import
-       * Import vehicles from Excel
-       */
-     importExcel: async (file: File) => {
-    const response = await uploadFile<ApiResponse<{message:string,total:number}>>(
+  /**
+     * POST /api/vehicles/import
+     * Import vehicles from Excel
+     */
+  importExcel: async (file: File) => {
+    const response = await uploadFile<ApiResponse<{ message: string, total: number }>>(
       "/vehicles/import",
       file
     );

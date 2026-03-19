@@ -211,6 +211,24 @@ axiosInstance.interceptors.response.use(
       }
     }
 
+    // Xử lý lỗi 422 - Validation Error
+    if (error.response?.status === 422) {
+      const data = error.response.data as any;
+      if (data?.error?.code === 'SUPPLY_OVER_DELIVERY') {
+        // Special handling for supply over-delivery errors
+        const normalized: ApiResponse<null> = {
+          success: false,
+          message: 'Vượt quá số lượng vật tư yêu cầu. Vui lòng kiểm tra lại số lượng đã nhập.',
+          data: null,
+          error: {
+            code: 'SUPPLY_OVER_DELIVERY',
+            details: data?.error?.details || [],
+          },
+        };
+        error.response.data = normalized;
+      }
+    }
+
     // Xử lý lỗi 403, 500 - Log handled by UI/Caller as per request
     return Promise.reject(error);
   },

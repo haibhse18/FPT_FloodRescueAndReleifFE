@@ -40,6 +40,52 @@ const CONTEXT_EXTRA_SUPPLIES: Record<string, string[]> = {
   "Người bị thương": ["Băng gạc", "Thuốc sát trùng"],
 };
 
+const quickReliefActions = [
+  {
+    id: "heavy-rain",
+    icon: "🌧️",
+    label: "Mưa lớn kéo dài",
+    description: "Mưa to liên tục, nguy cơ cô lập và thiếu nhu yếu phẩm",
+    needs: ["Nước uống", "Thực phẩm", "Áo phao"],
+    contexts: [],
+    note: "Khu vực đang mưa lớn kéo dài, cần hỗ trợ nhu yếu phẩm sớm.",
+  },
+  {
+    id: "flooded-area",
+    icon: "🌊",
+    label: "Ngập lụt",
+    description: "Nước dâng cao, đi lại khó khăn, thiếu nguồn cung cơ bản",
+    needs: ["Nước uống", "Thực phẩm", "Chăn / quần áo", "Áo phao"],
+    contexts: [],
+    note: "Khu vực đang ngập lụt, gia đình cần hỗ trợ nhu yếu phẩm khẩn cấp.",
+  },
+  {
+    id: "landslide-risk",
+    icon: "⛰️",
+    label: "Sạt lở",
+    description: "Khu vực có nguy cơ hoặc đã xảy ra sạt lở đất đá",
+    needs: ["Nước uống", "Thực phẩm", "Thuốc"],
+    contexts: ["Người bị thương"],
+    note: "Khu vực có sạt lở đất đá, cần hỗ trợ vật phẩm cứu trợ an toàn.",
+  },
+  {
+    id: "storm-wind",
+    icon: "💨",
+    label: "Gió mạnh / bão",
+    description: "Thời tiết xấu gây mất điện, thiếu nước và vật dụng thiết yếu",
+    needs: ["Nước uống", "Thực phẩm", "Chăn / quần áo"],
+    contexts: [],
+    note: "Khu vực có gió mạnh/bão, sinh hoạt bị gián đoạn cần hỗ trợ khẩn.",
+  },
+] as const;
+
+const RELIEF_INCIDENT_TYPE_BY_CONDITION: Record<string, "Flood" | "Landslide" | "Other"> = {
+  "heavy-rain": "Other",
+  "flooded-area": "Flood",
+  "landslide-risk": "Landslide",
+  "storm-wind": "Other",
+};
+
 const getCreatedRequestId = (request: unknown): string | null => {
   if (!request || typeof request !== "object") {
     return null;
@@ -83,6 +129,9 @@ export default function CitizenRequestPage() {
   const [reliefExtraNeeds, setReliefExtraNeeds] = useState<string[]>([]);
   const [reliefMedicineDetails, setReliefMedicineDetails] = useState("");
   const [reliefNote, setReliefNote] = useState("");
+  const [selectedReliefQuickAction, setSelectedReliefQuickAction] = useState<
+    string | null
+  >(null);
 
   // Quick action templates
   const quickRescueActions = [
@@ -280,7 +329,24 @@ export default function CitizenRequestPage() {
       setReliefExtraNeeds([]);
       setReliefMedicineDetails("");
       setReliefNote("");
+      setSelectedReliefQuickAction(null);
     }
+  };
+
+  const applyReliefQuickAction = (actionId: string) => {
+    const action = quickReliefActions.find((item) => item.id === actionId);
+    if (!action) return;
+
+    setSelectedReliefQuickAction(action.id);
+    setReliefNeeds([...action.needs]);
+    setReliefContexts([...action.contexts]);
+    setReliefExtraNeeds([]);
+
+    if (!action.needs.includes(MEDICINE_NEED)) {
+      setReliefMedicineDetails("");
+    }
+
+    setReliefNote(action.note);
   };
 
   // Xử lý submit form cứu hộ
@@ -475,7 +541,15 @@ export default function CitizenRequestPage() {
       return;
     }
 
+    const selectedCondition = quickReliefActions.find(
+      (action) => action.id === selectedReliefQuickAction,
+    );
+    const reliefIncidentType = selectedCondition
+      ? RELIEF_INCIDENT_TYPE_BY_CONDITION[selectedCondition.id]
+      : "Other";
+
     const reliefDescription = [
+      selectedCondition ? `Tình trạng khu vực: ${selectedCondition.label}` : "",
       `Ghi chú: ${reliefNote.trim()}`,
       `Nhu cầu cứu trợ: ${selectedSupplies.join(", ")}`,
       reliefContexts.length > 0 ? `Gia đình có: ${reliefContexts.join(", ")}` : "",
@@ -496,7 +570,7 @@ export default function CitizenRequestPage() {
     try {
       const payload: Record<string, unknown> = {
         type: "Relief",
-        incidentType: "Other",
+        incidentType: reliefIncidentType,
         description: reliefDescription,
         peopleCount: 1,
         location: {
@@ -865,7 +939,30 @@ export default function CitizenRequestPage() {
               <div className="bg-white/5 border border-white/10 rounded-2xl p-7 space-y-5">
                 <h2 className="text-white font-bold text-xl flex items-center gap-3">
                   <span className="bg-white/20 w-9 h-9 rounded-full flex items-center justify-center text-base">2</span>
-                  Chọn nhanh (checkbox)
+                  Chọn nhanh tình huống cứu trợ
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {quickReliefActions.map((action) => (
+                    <div
+                      key={action.id}
+                      onClick={() => applyReliefQuickAction(action.id)}
+                      className={`cursor-pointer rounded-xl p-5 border-2 transition-all ${selectedReliefQuickAction === action.id
+                        ? "bg-[#FF7700]/10 border-[#FF7700]"
+                        : "bg-white/5 border-white/10 hover:bg-white/10"
+                        }`}
+                    >
+                      <div className="text-4xl mb-3">{action.icon}</div>
+                      <div className="font-bold text-white text-base mb-1">{action.label}</div>
+                      <div className="text-sm text-gray-300">{action.description}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-7 space-y-5">
+                <h2 className="text-white font-bold text-xl flex items-center gap-3">
+                  <span className="bg-white/20 w-9 h-9 rounded-full flex items-center justify-center text-base">3</span>
+                  Chọn nhanh vật phẩm
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {RELIEF_NEEDS.map((item) => (
@@ -889,7 +986,7 @@ export default function CitizenRequestPage() {
 
               <div className="bg-white/5 border border-white/10 rounded-2xl p-7 space-y-5">
                 <h2 className="text-white font-bold text-xl flex items-center gap-3">
-                  <span className="bg-white/20 w-9 h-9 rounded-full flex items-center justify-center text-base">3</span>
+                  <span className="bg-white/20 w-9 h-9 rounded-full flex items-center justify-center text-base">4</span>
                   Tình trạng gia đình (linh hoạt)
                 </h2>
                 <p className="text-gray-300 text-base font-semibold">Gia đình bạn có:</p>
@@ -944,7 +1041,7 @@ export default function CitizenRequestPage() {
 
               <div className="bg-white/5 border border-white/10 rounded-2xl p-7 space-y-4">
                 <h2 className="text-white font-bold text-xl flex items-center gap-3">
-                  <span className="bg-white/20 w-9 h-9 rounded-full flex items-center justify-center text-base">4</span>
+                  <span className="bg-white/20 w-9 h-9 rounded-full flex items-center justify-center text-base">5</span>
                   Ghi chú
                 </h2>
                 <div className="flex justify-between items-center">
@@ -969,7 +1066,7 @@ export default function CitizenRequestPage() {
           <div className="bg-white/5 border border-white/10 rounded-2xl p-7 space-y-5">
             <h2 className="text-white font-bold text-xl flex items-center gap-3">
               <span className="bg-white/20 w-9 h-9 rounded-full flex items-center justify-center text-base">
-                {requestType === "Rescue" ? "4" : "5"}
+                {requestType === "Rescue" ? "4" : "6"}
               </span>
               Vị trí hiện tại
             </h2>

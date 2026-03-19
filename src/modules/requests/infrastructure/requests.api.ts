@@ -117,7 +117,7 @@ export const requestsApi = {
     });
   },
 
-  /** GET /requests/{id} */
+  /** GET /requests/{requestId} */
   getRequestDetail: async (requestId: string): Promise<ApiResponse> => {
     return apiClient.get(`/requests/${requestId}`, {
       headers: authSession.getAuthHeaders(),

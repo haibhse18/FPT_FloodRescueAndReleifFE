@@ -17,7 +17,7 @@ export const inventoryApi = {
         try {
 
             const response = await axiosInstance.get<ApiResponse<InventoryItem[]>>(
-                `/inventory/list` + (query || '')
+                `/inventory/` + (query || '')
             );
             const data = response.data?.data;
             if (!Array.isArray(data)) {

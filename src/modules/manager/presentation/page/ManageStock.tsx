@@ -237,21 +237,20 @@ export default function StockPage() {
     page: number; totalPages: number;
     onPrev: () => void; onNext: () => void; onPage: (p: number) => void;
   }) => (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center justify-center gap-3">
       <button disabled={page === 1} onClick={onPrev}
-        className="px-3 py-1 rounded bg-white/10 text-white disabled:opacity-40">Prev</button>
+        className="px-5 py-2 rounded-full bg-white border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 shadow-sm font-medium">Prev</button>
       {Array.from({ length: totalPages }, (_, i) => (
         <button key={i} onClick={() => onPage(i + 1)}
-          className={`px-3 py-1 rounded ${page === i + 1 ? "bg-blue-600 text-white" : "bg-white/10 text-white"}`}>
+          className={`w-10 h-10 rounded-full font-bold shadow-sm flex items-center justify-center transition-colors ${page === i + 1 ? "bg-emerald-700 text-white" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}>
           {i + 1}
         </button>
       ))}
       <button disabled={page === totalPages} onClick={onNext}
-        className="px-3 py-1 rounded bg-white/10 text-white disabled:opacity-40">Next</button>
+        className="px-5 py-2 rounded-full bg-white border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 shadow-sm font-medium">Next</button>
     </div>
   );
 
-  // Component ImportBar dùng chung
   const ImportBar = ({
     file, importType, onFileChange, onTypeChange, onImport,
   }: {
@@ -261,30 +260,31 @@ export default function StockPage() {
     onTypeChange: (t: ImportType) => void;
     onImport: () => void;
   }) => (
-    <div className="flex gap-2 items-center">
+    <div className="flex gap-2 items-center w-full md:w-auto">
       <select
         value={importType}
         onChange={(e) => onTypeChange(e.target.value as ImportType)}
-        className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm"
+        className="px-4 py-3 rounded-full bg-gray-50 border border-gray-200 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
       >
         <option value="SUPPLY">Vật tư</option>
         <option value="VEHICLE">Phương tiện</option>
       </select>
 
-      <label className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg cursor-pointer text-sm text-white">
+      <label className="px-5 py-3 bg-white border border-gray-200 rounded-full cursor-pointer text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
         📁 Chọn file
         <input type="file" className="hidden"
           onChange={(e) => onFileChange(e.target.files?.[0] ?? null)} />
       </label>
 
       {file && (
-        <span className="text-green-400 text-sm bg-green-400/10 px-3 py-1 rounded">
+        <span className="text-emerald-700 text-sm font-medium bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-full">
           {file.name}
         </span>
       )}
 
       <button onClick={onImport}
-        className="px-4 py-2 bg-emerald-600 rounded-lg text-sm text-white">
+        disabled={!file}
+        className="px-6 py-3 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 rounded-full text-sm font-bold text-white shadow-sm transition-colors">
         Import
       </button>
     </div>
@@ -295,25 +295,27 @@ export default function StockPage() {
   // ===============================
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 lg:p-6 space-y-6">
 
       {/* HEADER */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">Quản lý kho</h1>
-        <p className="text-slate-400 text-sm">Quản lý vật tư và phương tiện cứu hộ</p>
+      <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">Quản lý kho</h1>
+          <p className="text-sm text-gray-500 mt-1">Quản lý vật tư và phương tiện cứu hộ</p>
+        </div>
       </div>
 
       {/* TABS */}
-      <div className="flex gap-2 border-b border-white/10">
+      <div className="flex gap-4 border-b border-gray-200">
         {([
           { key: "supply",  label: "Vật tư"     },
           { key: "vehicle", label: "Phương tiện" },
         ] as { key: Tab; label: string }[]).map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`px-5 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-5 py-3 text-sm font-bold border-b-2 -mb-[1px] transition-colors ${
               activeTab === tab.key
-                ? "border-blue-500 text-blue-400"
-                : "border-transparent text-slate-400 hover:text-white"
+                ? "border-emerald-700 text-emerald-800"
+                : "border-transparent text-gray-500 hover:text-gray-800"
             }`}>
             {tab.label}
           </button>
@@ -323,44 +325,40 @@ export default function StockPage() {
       {/* ==================== SUPPLY TAB ==================== */}
       {activeTab === "supply" && (
         <>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-xs text-slate-400">Vật tư</p>
-              <p className="text-xl font-bold text-white">{supplyStats.total}</p>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="bg-emerald-800 rounded-3xl p-6 shadow-md relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+              <p className="text-emerald-100 text-sm font-medium mb-2 relative z-10 flex items-center justify-between">Vật tư</p>
+              <p className="text-4xl font-bold text-white relative z-10">{supplyStats.total}</p>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-xs text-slate-400">Kho</p>
-              <p className="text-xl font-bold text-emerald-400">{allWarehouses.length}</p>
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+              <p className="text-gray-500 text-sm font-medium mb-2">Kho</p>
+              <p className="text-4xl font-bold text-emerald-600">{allWarehouses.length}</p>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-xs text-slate-400">Sẵn sàng</p>
-              <p className="text-xl font-bold text-amber-400">{supplyStats.active}</p>
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+              <p className="text-gray-500 text-sm font-medium mb-2">Sẵn sàng</p>
+              <p className="text-4xl font-bold text-emerald-500">{supplyStats.active}</p>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-xs text-slate-400">Đã đặt</p>
-              <p className="text-xl font-bold text-blue-400">{supplyStats.reserved}</p>
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+              <p className="text-gray-500 text-sm font-medium mb-2">Đã đặt</p>
+              <p className="text-4xl font-bold text-amber-500">{supplyStats.reserved}</p>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-xs text-slate-400">Hết hàng</p>
-              <p className="text-xl font-bold text-red-400">{supplyStats.out_of_stock}</p>
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+              <p className="text-gray-500 text-sm font-medium mb-2">Hết hàng</p>
+              <p className="text-4xl font-bold text-red-500">{supplyStats.out_of_stock}</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-between gap-3">
-            <div className="flex gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3 w-full md:w-auto">
               <input value={supplyKeyword}
                 onChange={(e) => setSupplyKeyword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && fetchSupplyItems(supplyKeyword, 1)}
                 placeholder="Tìm vật tư..."
-                className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm" />
+                className="w-full md:w-80 px-6 py-3 rounded-full bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
               <button onClick={() => fetchSupplyItems(supplyKeyword, 1)}
-                className="px-4 py-2 bg-blue-600 rounded-lg text-sm text-white">Tìm</button>
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-full font-bold text-white shadow-sm transition-colors">Tìm</button>
             </div>
-
-            <Pagination page={supplyPage} totalPages={supplyTotalPages}
-              onPrev={() => setSupplyPage(supplyPage - 1)}
-              onNext={() => setSupplyPage(supplyPage + 1)}
-              onPage={setSupplyPage} />
 
             <ImportBar
               file={supplyFile}
@@ -372,13 +370,24 @@ export default function StockPage() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-5">
-            <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden text-white">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden text-gray-900 flex flex-col">
               {supplyLoading
-                ? <div className="p-10 text-center text-slate-400">Loading...</div>
-                : <Table columns={supplyColumns} data={supplyTableData as any[]} />}
+                ? <div className="p-20 text-center text-gray-500 font-medium">Loading...</div>
+                : <>
+                    <div className="overflow-x-auto p-2">
+                      <Table columns={supplyColumns} data={supplyTableData as any[]} />
+                    </div>
+                    <div className="p-4 mt-auto border-t border-gray-100">
+                      <Pagination page={supplyPage} totalPages={supplyTotalPages}
+                        onPrev={() => setSupplyPage(supplyPage - 1)}
+                        onNext={() => setSupplyPage(supplyPage + 1)}
+                        onPage={setSupplyPage} />
+                    </div>
+                  </>
+                }
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
               <div className="h-[450px]">
                 <OpenMap warehouses={allWarehouses.map((wh) => ({
                   id: wh._id!, name: wh.name,
@@ -386,18 +395,18 @@ export default function StockPage() {
                   latitude:  wh.location.coordinates[1],
                 }))} />
               </div>
-              <div className="border-t border-white/10 p-4">
-                <p className="text-sm text-slate-300 font-semibold mb-3">
+              <div className="border-t border-gray-100 p-6">
+                <p className="text-sm text-gray-900 font-bold mb-4">
                   Danh sách kho ({allWarehouses.length})
                 </p>
-                <div className="space-y-2 max-h-44 overflow-y-auto">
+                <div className="space-y-3 max-h-44 overflow-y-auto custom-scrollbar">
                   {allWarehouses.length === 0
-                    ? <p className="text-xs text-slate-500">Không có kho nào</p>
+                    ? <p className="text-sm font-medium text-gray-400">Không có kho nào</p>
                     : allWarehouses.map((wh) => (
                         <div key={wh._id}
-                          className="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-2 rounded-lg">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full flex-shrink-0" />
-                          <span className="text-sm text-slate-200">{wh.name}</span>
+                          className="flex items-center gap-3 bg-gray-50 hover:bg-emerald-50 border border-gray-100 px-4 py-3 rounded-2xl transition-colors">
+                          <div className="w-3 h-3 bg-emerald-500 rounded-full flex-shrink-0" />
+                          <span className="text-sm font-bold text-gray-900">{wh.name}</span>
                         </div>
                       ))}
                 </div>
@@ -411,43 +420,39 @@ export default function StockPage() {
       {activeTab === "vehicle" && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-xs text-slate-400">Tổng</p>
-              <p className="text-xl font-bold text-white">{vehicleStats.total}</p>
+            <div className="bg-emerald-800 rounded-3xl p-6 shadow-md relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+              <p className="text-emerald-100 text-sm font-medium mb-2 relative z-10 flex items-center justify-between">Tổng</p>
+              <p className="text-4xl font-bold text-white relative z-10">{vehicleStats.total}</p>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-xs text-slate-400">Sẵn sàng</p>
-              <p className="text-xl font-bold text-emerald-400">{vehicleStats.active}</p>
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+              <p className="text-gray-500 text-sm font-medium mb-2">Sẵn sàng</p>
+              <p className="text-4xl font-bold text-emerald-500">{vehicleStats.active}</p>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-xs text-slate-400">Đang dùng</p>
-              <p className="text-xl font-bold text-amber-400">{vehicleStats.in_use}</p>
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+              <p className="text-gray-500 text-sm font-medium mb-2">Đang dùng</p>
+              <p className="text-4xl font-bold text-amber-500">{vehicleStats.in_use}</p>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-xs text-slate-400">Bảo trì</p>
-              <p className="text-xl font-bold text-blue-400">{vehicleStats.maintenance}</p>
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+              <p className="text-gray-500 text-sm font-medium mb-2">Bảo trì</p>
+              <p className="text-4xl font-bold text-blue-500">{vehicleStats.maintenance}</p>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-xs text-slate-400">Ngưng hoạt động</p>
-              <p className="text-xl font-bold text-red-400">{vehicleStats.out_of_service}</p>
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+              <p className="text-gray-500 text-sm font-medium mb-2">Ngưng hoạt động</p>
+              <p className="text-4xl font-bold text-red-500">{vehicleStats.out_of_service}</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-between gap-3">
-            <div className="flex gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3 w-full md:w-auto">
               <input value={vehicleKeyword}
                 onChange={(e) => setVehicleKeyword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && fetchVehicles(vehicleKeyword, 1)}
                 placeholder="Tìm biển số..."
-                className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm" />
+                className="w-full md:w-80 px-6 py-3 rounded-full bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
               <button onClick={() => fetchVehicles(vehicleKeyword, 1)}
-                className="px-4 py-2 bg-blue-600 rounded-lg text-sm text-white">Tìm</button>
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-full font-bold text-white shadow-sm transition-colors">Tìm</button>
             </div>
-
-            <Pagination page={vehiclePage} totalPages={vehicleTotalPages}
-              onPrev={() => setVehiclePage(vehiclePage - 1)}
-              onNext={() => setVehiclePage(vehiclePage + 1)}
-              onPage={setVehiclePage} />
 
             <ImportBar
               file={vehicleFile}
@@ -459,13 +464,24 @@ export default function StockPage() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-5">
-            <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden text-white">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden text-gray-900 flex flex-col">
               {vehicleLoading
-                ? <div className="p-10 text-center text-slate-400">Loading...</div>
-                : <Table columns={vehicleColumns} data={vehicleTableData as any[]} />}
+                ? <div className="p-20 text-center text-gray-500 font-medium">Loading...</div>
+                : <>
+                    <div className="overflow-x-auto p-2">
+                      <Table columns={vehicleColumns} data={vehicleTableData as any[]} />
+                    </div>
+                    <div className="p-4 mt-auto border-t border-gray-100">
+                      <Pagination page={vehiclePage} totalPages={vehicleTotalPages}
+                        onPrev={() => setVehiclePage(vehiclePage - 1)}
+                        onNext={() => setVehiclePage(vehiclePage + 1)}
+                        onPage={setVehiclePage} />
+                    </div>
+                  </>
+                }
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
               <div className="h-[450px]">
                  <OpenMap warehouses={allWarehouses.map((wh) => ({
                   id: wh._id!, name: wh.name,
@@ -473,13 +489,13 @@ export default function StockPage() {
                   latitude:  wh.location.coordinates[1],
                 }))} />
               </div>
-              <div className="border-t border-white/10 p-4">
-                <p className="text-sm text-slate-300 font-semibold mb-3">
+              <div className="border-t border-gray-100 p-6">
+                <p className="text-sm font-bold text-gray-900 mb-4">
                   Kho chứa phương tiện
                 </p>
-                <div className="space-y-2 max-h-44 overflow-y-auto">
+                <div className="space-y-3 max-h-44 overflow-y-auto custom-scrollbar">
                   {allVehicleItems.length === 0
-                    ? <p className="text-xs text-slate-500">Chưa có phương tiện nào</p>
+                    ? <p className="text-sm text-gray-400 font-medium">Chưa có phương tiện nào</p>
                     : [...new Map(
                         allVehicleItems
                           .map((item: any) => item.warehouse)
@@ -490,9 +506,9 @@ export default function StockPage() {
                           ])
                       ).entries()].map(([id, name]) => (
                         <div key={id}
-                          className="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-2 rounded-lg">
-                          <div className="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0" />
-                          <span className="text-sm text-slate-200">{name}</span>
+                          className="flex items-center gap-3 bg-gray-50 hover:bg-emerald-50 border border-gray-100 px-4 py-3 rounded-2xl transition-colors">
+                          <div className="w-3 h-3 bg-emerald-500 rounded-full flex-shrink-0" />
+                          <span className="text-sm font-bold text-gray-900">{name}</span>
                         </div>
                       ))
                   }

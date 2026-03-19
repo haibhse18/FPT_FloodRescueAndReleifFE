@@ -142,17 +142,19 @@ export default function ManagerProfilePage() {
   };
 
   return (
-    <div className="bg-[#133249] min-h-screen">
+    <div className="bg-gray-50 min-h-screen">
       <div className="flex flex-col relative">
         {/* Header */}
-        <header className="sticky top-0 z-50 p-4 lg:p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-white text-xl lg:text-2xl font-extrabold mb-0.5">
-              Hồ sơ cá nhân
-            </h1>
-            <p className="text-white/70 text-xs lg:text-sm">
-              Cập nhật thông tin và cài đặt
-            </p>
+        <header className="sticky top-0 z-50 p-4 lg:p-6 border-b border-gray-200 bg-white/80 backdrop-blur-md">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div>
+              <h1 className="text-gray-900 text-xl lg:text-3xl font-extrabold mb-1">
+                Hồ sơ cá nhân
+              </h1>
+              <p className="text-gray-500 text-sm font-medium">
+                Cập nhật thông tin và cài đặt
+              </p>
+            </div>
           </div>
         </header>
 

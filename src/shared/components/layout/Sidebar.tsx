@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Shield } from 'lucide-react';
 
 export interface NavItem {
   icon: string;
@@ -30,27 +31,31 @@ export default function Sidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 lg:w-64 bg-gradient-to-b from-[#133249] to-[#0f2a3f] border-r border-white/10 z-40 shadow-xl">
+    <aside className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 lg:w-64 bg-white border-r border-gray-100 z-40 shadow-sm">
       {/* Logo Section */}
-      <div className="p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent">
+      <div className="p-8 pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-dark)] flex items-center justify-center text-2xl shadow-lg ring-1 ring-white/10">
-            🛟
+          <div className="w-10 h-10 rounded-xl bg-emerald-700 flex items-center justify-center text-xl text-white shadow-sm">
+             <Shield />
           </div>
           <div>
-            <h1 className="text-xl font-black text-white tracking-tight uppercase leading-none mb-1">
+            <h1 className="text-lg font-extrabold text-gray-900 tracking-tight leading-none">
               {title}
             </h1>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest mt-1">
               {subtitle}
             </p>
           </div>
         </div>
       </div>
 
+      <div className="px-8 py-2">
+        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Menu</p>
+      </div>
+
       {/* Navigation */}
-      <nav className="flex-1 p-4 overflow-y-auto custom-scrollbar">
-        <ul className="space-y-2">
+      <nav className="flex-1 overflow-y-auto custom-scrollbar">
+        <ul className="space-y-1">
           {navItems.map((item, index) => {
             const isActive =
               pathname === item.href ||
@@ -62,37 +67,33 @@ export default function Sidebar({
               <li key={index}>
                 <Link
                   href={item.href}
-                  className={`group relative w-full flex items-center gap-4 px-4 py-3.5 rounded-xl font-semibold transition-all duration-300 ${
+                  className={`group relative w-full flex items-center gap-4 px-8 py-3 transition-colors duration-200 ${
                     isActive ?
-                      "bg-[var(--color-primary)] text-white shadow-lg shadow-[var(--color-primary)]/20"
-                    : "text-gray-400 hover:bg-white/5 hover:text-white"
+                      "text-gray-900 font-bold border-l-4 border-emerald-700"
+                    : "text-gray-500 font-medium hover:text-gray-900 hover:bg-gray-50 border-l-4 border-transparent"
                   }`}
                 >
                   <span
-                    className={`text-2xl transition-transform duration-300 ${
-                      isActive ? "scale-110" : "group-hover:scale-110"
+                    className={`text-xl transition-colors duration-200 ${
+                      isActive ? "text-emerald-700" : "text-gray-400 group-hover:text-emerald-700"
                     }`}
                   >
                     {item.icon}
                   </span>
-                  <span className="text-sm font-bold tracking-wide">
+                  <span className="text-sm tracking-wide">
                     {item.label}
                   </span>
 
                   {item.badge && item.badge > 0 && (
                     <span
-                      className={`ml-auto text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-sm transform transition-transform duration-300 ${
+                      className={`ml-auto text-[10px] font-bold rounded-md min-w-[24px] h-5 flex items-center justify-center px-1.5 ${
                         isActive ?
-                          "bg-white text-[var(--color-primary)] scale-110"
-                        : "bg-red-500 text-white group-hover:scale-110"
+                          "bg-emerald-700 text-white"
+                        : "bg-emerald-100 text-emerald-700"
                       }`}
                     >
                       {item.badge}
                     </span>
-                  )}
-
-                  {isActive && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>
                   )}
                 </Link>
               </li>
@@ -101,27 +102,35 @@ export default function Sidebar({
         </ul>
       </nav>
 
-      {/* User Info Footer */}
-      <div className="p-4 border-t border-white/10 bg-gradient-to-br from-white/5 to-transparent">
-        <Link
-          href="/profile"
-          className="group flex items-center gap-3 p-3.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-95 border border-white/5 hover:border-white/10"
-        >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-lg font-bold shadow-md ring-2 ring-white/10 group-hover:ring-white/30 transition-all">
-            {user.name.charAt(0).toUpperCase()}
+      {/* User Info Footer - matching the mobile app download card from the image */}
+      <div className="p-6">
+        <div className="p-5 rounded-2xl bg-emerald-900 text-white relative overflow-hidden shadow-lg">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+          <div className="absolute -left-4 -bottom-4 w-24 h-24 bg-emerald-500/20 rounded-full blur-2xl"></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white text-lg font-bold border border-white/10">
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-white truncate">
+                  {user.name}
+                </p>
+                <p className="text-[11px] text-emerald-200 font-medium truncate">
+                  {user.role}
+                </p>
+              </div>
+            </div>
+            
+            <Link
+              href="/profile"
+              className="block w-full text-center py-2 bg-emerald-700 hover:bg-emerald-600 transition-colors rounded-xl text-xs font-bold"
+            >
+              Xem Hồ Sơ
+            </Link>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white truncate group-hover:text-blue-200 transition-colors">
-              {user.name}
-            </p>
-            <p className="text-xs text-gray-400 font-medium truncate group-hover:text-gray-300 transition-colors">
-              {user.role}
-            </p>
-          </div>
-          <span className="text-gray-500 group-hover:text-white transition-colors text-lg">
-            ›
-          </span>
-        </Link>
+        </div>
       </div>
     </aside>
   );

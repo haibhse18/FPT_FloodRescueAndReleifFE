@@ -89,7 +89,7 @@ export default function RegisterPage() {
     // --- END LOGIC ---
 
     return (
-        <div className="dark min-h-screen flex items-center justify-center p-4 py-12 relative bg-[#0a1f2e] text-foreground selection:bg-[#FF7700]/30 font-sans">
+        <div className="min-h-screen flex items-center justify-center p-4 py-12 relative bg-background text-slate-900 font-sans selection:bg-primary/20">
             {/* Cinematic Background */}
             <div className="absolute inset-0 z-0 fixed">
                 <img 
@@ -97,32 +97,32 @@ export default function RegisterPage() {
                   alt="Rescue background" 
                   className="w-full h-full object-cover opacity-50 mix-blend-luminosity grayscale" 
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#071520] via-[#0a1f2e]/90 to-[#071520]/70"></div>
-                {/* Subtle emergency glow */}
-                <div className="absolute top-0 left-0 w-[40rem] h-[40rem] bg-red-900/10 rounded-full blur-[120px] pointer-events-none"></div>
-                <div className="absolute bottom-0 right-0 w-[30rem] h-[30rem] bg-[#FF7700]/5 rounded-full blur-[120px] pointer-events-none"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-blue-50/80 via-white/40 to-slate-50"></div>
+                {/* Subtle trust glow */}
+                <div className="absolute top-0 left-0 w-[40rem] h-[40rem] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
+                <div className="absolute bottom-0 right-0 w-[30rem] h-[30rem] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none"></div>
             </div>
 
             <div className="w-full max-w-xl relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
                 {/* Logo & Branding */}
                 <div className="text-center mb-8">
-                    <Link href="/" className="inline-flex items-center gap-3 font-bold text-3xl tracking-tight transition-transform hover:scale-105 mb-4 group text-white">
-                        <div className="bg-red-600 p-2.5 rounded-sm shadow-[0_0_20px_rgba(220,38,38,0.5)] group-hover:shadow-[0_0_30px_rgba(220,38,38,0.7)] transition-shadow">
+                    <div className="inline-flex items-center gap-3 font-bold text-3xl tracking-tight transition-transform hover:scale-105 mb-4 group">
+                        <div className="bg-primary p-2.5 rounded-sm shadow-md transition-shadow">
                             <Shield className="w-7 h-7 text-white" />
                         </div>
-                        <span>FloodRescue</span>
-                    </Link>
-                    <p className="text-zinc-400 font-light tracking-wide uppercase text-sm">Đăng kí để truy cập hệ thống</p>
+                        <span className="text-primary hover:no-underline">FloodRescue</span>
+                    </div>
+                    <p className="text-slate-500 font-light tracking-wide uppercase text-sm">Đăng kí để tham gia cùng chúng tôi</p>
                 </div>
 
                 {/* Glassmorphism Register Card */}
-                <div className="bg-[#0d2536]/80 backdrop-blur-2xl border border-white/10 rounded-sm p-8 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+                <div className="bg-white/90 backdrop-blur-xl border border-primary/10 rounded-lg p-8 shadow-xl shadow-slate-200/50">
                     <div className="text-center mb-8">
-                        <h2 className="text-2xl font-black text-white tracking-tight uppercase">
+                        <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase">
                             Tạo Hồ Sơ Mới
                         </h2>
-                        <p className="text-zinc-400 mt-2 text-sm font-light">
-                            Điền thông tin để đăng kí tài khoản
+                        <p className="text-slate-500 mt-2 text-sm font-light">
+                            Gia nhập mạng lưới cứu trợ an toàn
                         </p>
                     </div>
 
@@ -139,7 +139,7 @@ export default function RegisterPage() {
                                 label="Tên đăng nhập"
                                 placeholder="nguyenvana"
                                 required
-                                className="bg-[#071520]/50 border-white/10 focus:border-[#FF7700]/50 text-white placeholder:text-zinc-600 rounded-sm"
+                                className="bg-slate-50 border-slate-200 focus:border-primary/50 text-slate-900 placeholder:text-slate-300 rounded-sm"
                             />
 
                             {/* Display Name Input */}
@@ -152,7 +152,7 @@ export default function RegisterPage() {
                                 label="Tên hiển thị"
                                 placeholder="Nguyễn Văn A"
                                 required
-                                className="bg-[#071520]/50 border-white/10 focus:border-[#FF7700]/50 text-white placeholder:text-zinc-600 rounded-sm"
+                                className="bg-slate-50 border-slate-200 focus:border-primary/50 text-slate-900 placeholder:text-slate-300 rounded-sm"
                             />
                         </div>
 
@@ -166,7 +166,7 @@ export default function RegisterPage() {
                             label="Email"
                             placeholder="example@email.com"
                             required
-                            className="bg-black/50 border-white/10 focus:border-red-500/50 text-white placeholder:text-zinc-600 rounded-sm"
+                            className="bg-slate-50 border-slate-200 focus:border-primary/50 text-slate-900 placeholder:text-slate-300 rounded-sm"
                         />
 
                         {/* Phone Input (Optional) */}
@@ -178,7 +178,7 @@ export default function RegisterPage() {
                             onChange={handleChange}
                             label="Số điện thoại (không bắt buộc)"
                             placeholder="0123456789"
-                            className="bg-black/50 border-white/10 focus:border-red-500/50 text-white placeholder:text-zinc-600 rounded-sm"
+                            className="bg-slate-50 border-slate-200 focus:border-primary/50 text-slate-900 placeholder:text-slate-300 rounded-sm"
                         />
 
                         {/* Password fields in grid */}
@@ -208,7 +208,7 @@ export default function RegisterPage() {
                         </p>
 
                         {/* Terms and Conditions */}
-                        <div className="p-4 bg-[#071520]/40 border border-white/5 rounded-sm mt-2">
+                        <div className="p-4 bg-blue-100/30 border border-primary/10 rounded-sm mt-2">
                             <Checkbox
                                 id="terms"
                                 checked={agreedToTerms}
@@ -219,14 +219,14 @@ export default function RegisterPage() {
                                     Tôi đã đọc và cam kết tuân thủ đầy đủ{" "}
                                     <Link
                                         href="/terms"
-                                        className="text-white hover:text-[#FF7700] font-medium underline underline-offset-4 decoration-white/30"
+                                        className="text-primary hover:underline font-medium underline-offset-4 decoration-primary/30"
                                     >
                                         Quy định an toàn
                                     </Link>{" "}
                                     và{" "}
                                     <Link
                                         href="/privacy"
-                                        className="text-white hover:text-[#FF7700] font-medium underline underline-offset-4 decoration-white/30"
+                                        className="text-primary hover:underline font-medium underline-offset-4 decoration-primary/30"
                                     >
                                         Chính sách bảo mật
                                     </Link>
@@ -248,14 +248,14 @@ export default function RegisterPage() {
                             size="lg"
                             isLoading={loading}
                             disabled={loading}
-                            className="bg-[#FF7700] text-white border border-white/40 hover:bg-white hover:text-[#0a1f2e] hover:rounded-full active:bg-[#FF7700] active:text-white rounded-sm font-bold uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(255,119,0,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] transition-all duration-300 active:scale-[0.98] mt-4"
+                            className="bg-primary text-white border-none hover:bg-primary/90 rounded-sm font-bold uppercase tracking-widest text-sm shadow-lg shadow-primary/20 transition-all duration-300 active:scale-[0.98] mt-4"
                         >
                             {loading ? "Đang xử lý hồ sơ..." : "Đăng kí"}
                         </Button>
                     </form>
 
                     <div className="mt-6 mb-6">
-                        <FormDivider text="HOẶC" />
+                        {/* <FormDivider text="HOẶC" /> */}
                     </div>
                     
                     <div className="hover:scale-[1.01] transition-transform">
@@ -267,7 +267,7 @@ export default function RegisterPage() {
                         <span className="text-zinc-500 text-sm">Đã có tài khoản? </span>
                         <Link
                             href="/login"
-                            className="text-white hover:text-[#FF7700] font-bold transition-colors text-sm uppercase tracking-wide"
+                            className="text-primary hover:text-primary/80 font-bold transition-colors text-sm uppercase tracking-wide"
                         >
                             Đăng nhâp ngay
                         </Link>
@@ -277,9 +277,9 @@ export default function RegisterPage() {
                 {/* Footer */}
                 <div className="text-center mt-8 space-y-3 pb-8">
                     <div className="flex items-center justify-center gap-6 text-zinc-500 text-xs font-semibold uppercase tracking-wider">
-                        <Link href="/terms" className="hover:text-white transition-colors">Điều khoản</Link>
-                        <Link href="/privacy" className="hover:text-white transition-colors">Bảo mật</Link>
-                        <Link href="/help" className="hover:text-white transition-colors">Trợ giúp</Link>
+                        <Link href="/terms" className="hover:text-primary transition-colors">Điều khoản</Link>
+                        <Link href="/privacy" className="hover:text-primary transition-colors">Bảo mật</Link>
+                        <Link href="/help" className="hover:text-primary transition-colors">Trợ giúp</Link>
                     </div>
                 </div>
             </div>

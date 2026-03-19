@@ -69,7 +69,7 @@ export default function LoginPage() {
   // --- END LOGIC ---
 
   return (
-    <div className="dark min-h-screen flex items-center justify-center p-4 relative bg-[#0a1f2e] text-foreground selection:bg-[#FF7700]/30 font-sans">
+    <div className="min-h-screen flex items-center justify-center p-4 relative bg-background text-slate-900 font-sans selection:bg-primary/20">
       {/* Cinematic Background */}
       <div className="absolute inset-0 z-0">
         <img 
@@ -77,20 +77,20 @@ export default function LoginPage() {
           alt="Rescue background" 
           className="w-full h-full object-cover opacity-50 mix-blend-luminosity grayscale" 
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#071520] via-[#0a1f2e]/80 to-[#071520]/60"></div>
-        {/* Subtle emergency glow */}
-        <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-red-900/10 rounded-full blur-[120px] pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-[#FF7700]/5 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-blue-50/80 via-white/40 to-slate-50"></div>
+        {/* Subtle trust glow */}
+        <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none"></div>
       </div>
 
       <div className="w-full max-w-md relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
         {/* Logo & Branding */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-3 font-bold text-3xl tracking-tight transition-transform hover:scale-105 mb-4 group text-white">
-             <div className="bg-red-600 p-2.5 rounded-sm shadow-[0_0_20px_rgba(220,38,38,0.5)] group-hover:shadow-[0_0_30px_rgba(220,38,38,0.7)] transition-shadow">
-                <Shield className="w-7 h-7 text-white" />
+             <div className="bg-primary p-2.5 rounded-sm shadow-md transition-shadow">
+              <Shield className="w-7 h-7 text-white" />
              </div>
-             <span>FloodRescue</span>
+             <span className="text-primary">FloodRescue</span>
           </Link>
           <p className="text-zinc-400 font-light tracking-wide uppercase text-sm">
             Nền tảng Điều phối Khẩn cấp
@@ -98,9 +98,9 @@ export default function LoginPage() {
         </div>
 
         {/* Glassmorphism Login Card */}
-        <div className="bg-[#0d2536]/80 backdrop-blur-2xl border border-white/10 rounded-sm p-8 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+        <div className="bg-white/90 backdrop-blur-xl border border-primary/10 rounded-lg p-8 shadow-xl shadow-slate-200/50">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-black text-white tracking-tight uppercase">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">
               Đăng Nhập
             </h2>
             <p className="text-zinc-400 mt-2 text-sm font-light">
@@ -119,7 +119,7 @@ export default function LoginPage() {
                 label="Email"
                 placeholder="example@email.com"
                 required
-                className="bg-[#071520]/50 border-white/10 focus:border-[#FF7700]/50 text-white placeholder:text-zinc-600 rounded-sm"
+                className="bg-slate-50 border-slate-200 focus:border-primary/50 text-slate-900 placeholder:text-slate-300 rounded-sm"
               />
             </div>
 
@@ -150,27 +150,27 @@ export default function LoginPage() {
               size="lg"
               isLoading={loading}
               disabled={loading}
-              className="bg-[#FF7700] text-white border border-white/40 hover:bg-white hover:text-[#0a1f2e] hover:rounded-full active:bg-[#FF7700] active:text-white rounded-sm font-bold uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(255,119,0,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] transition-all duration-300 active:scale-[0.98]"
+              className="bg-primary text-white hover:bg-primary/90 rounded-sm font-bold uppercase tracking-widest text-sm shadow-lg shadow-primary/20 transition-all duration-300 active:scale-[0.98]"
             >
               {loading ? "Đang xử lý..." : "Đăng nhập"}
             </Button>
           </form>
 
           <div className="mt-6 mb-6">
-            <FormDivider text="HOẶC TIẾP TỤC VỚI" />
+            {/* <FormDivider text="HOẶC TIẾP TỤC VỚI" /> */}
           </div>
           
           <div className="hover:scale-[1.02] transition-transform">
              <GoogleLoginButton />
           </div>
 
-          <div className="text-center mt-8 pt-6 border-t border-white/10">
-            <span className="text-zinc-500 text-sm">
+          <div className="text-center mt-8 pt-6 border-t border-primary/10">
+            <span className="text-slate-500 text-sm">
               Công dân mới?{" "}
             </span>
             <Link
               href="/register"
-              className="text-white hover:text-[#FF7700] font-bold transition-colors text-sm uppercase tracking-wide"
+              className="text-primary hover:text-primary/80 font-bold transition-colors text-sm uppercase tracking-wide"
             >
               Đăng kí ngay 
             </Link>

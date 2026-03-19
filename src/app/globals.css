@@ -78,7 +78,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
 
 @layer base {
   :root {
-        --background: 210 40% 98.5%;
+        --background: 200 100% 70%; /* #66CCFF - Sky Blue */
         --foreground: 222.2 47.4% 11.2%;
         --card: 0 0% 100%;
         --card-foreground: 222.2 47.4% 11.2%;

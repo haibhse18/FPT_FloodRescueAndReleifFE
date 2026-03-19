@@ -9,29 +9,49 @@ import { mapApi } from './map.api';
 
 export class MapRepositoryImpl implements IMapRepository {
     async reverseGeocode(coordinates: Coordinates): Promise<Location> {
-        const response = await mapApi.reverseGeocode(coordinates.latitude, coordinates.longitude);
-        const data = (response as any);
+        let display = `${coordinates.latitude.toFixed(4)}, ${coordinates.longitude.toFixed(4)}`;
+        let street = "";
+        let districtStr = "";
+        let city = "";
 
-        // OpenMap API returns: { results: [{ formatted_address, address_components, ... }], status: "OK" }
-        const result = data?.results?.[0];
-        const components = result?.address_components || [];
+        // Chỉ dùng OpenMap API
+        try {
+            const response = await mapApi.reverseGeocode(coordinates.latitude, coordinates.longitude);
+            const data = (response as any);
+            const result = data?.results?.[0] || data?.data?.results?.[0];
 
-        // Component order: [0] name, [1] street, [2] ward, [3] district, [4] city
-        const street   = components[1]?.long_name || components[0]?.long_name;
-        const ward     = components[2]?.long_name;
-        const district = components[3]?.long_name;
-        const city     = components[4]?.long_name || components[3]?.long_name;
+            if (result && result.formatted_address) {
+                const components = result.address_components || [];
+                // Component order: [0] name, [1] street, [2] ward, [3] district, [4] city
+                street = components[1]?.long_name || components[0]?.long_name || "";
+                const ward = components[2]?.long_name || "";
+                const district = components[3]?.long_name || "";
+                city = components[4]?.long_name || components[3]?.long_name || "";
+                districtStr = ward ? `${ward}, ${district}` : district;
 
-        const display =
-            result?.formatted_address ||
-            `${coordinates.latitude.toFixed(4)}, ${coordinates.longitude.toFixed(4)}`;
+                display = result.formatted_address;
 
+                return {
+                    coordinates,
+                    address: {
+                        display,
+                        street,
+                        district: districtStr,
+                        city,
+                    },
+                };
+            }
+        } catch (error) {
+            console.error("Lỗi lấy dữ liệu từ OpenMap API:", error);
+        }
+
+        // Trả về dữ liệu tọa độ nếu OpenMap API bị lỗi
         return {
             coordinates,
             address: {
                 display,
                 street,
-                district: ward ? `${ward}, ${district}` : district,
+                district: districtStr,
                 city,
             },
         };

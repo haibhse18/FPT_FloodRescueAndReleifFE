@@ -102,14 +102,14 @@ export default function CitizenHistoryPage() {
             filter: "in_progress",
           },
           FULFILLED: {
-            text: "Hoàn thành",
-            color: "bg-green-500/20 text-green-400 border-green-500/30",
-            filter: "completed",
+            text: "Đã xử lý xong (chờ đóng)",
+            color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+            filter: "in_progress",
           },
           PARTIALLY_FULFILLED: {
-            text: "Hoàn thành một phần",
-            color: "bg-green-500/20 text-green-400 border-green-500/30",
-            filter: "completed",
+            text: "Xử lý một phần (chờ đóng)",
+            color: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+            filter: "in_progress",
           },
           CLOSED: {
             text: "Hoàn thành",

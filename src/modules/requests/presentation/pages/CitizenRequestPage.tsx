@@ -6,8 +6,6 @@ import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import { CreateRescueRequestUseCase } from "@/modules/requests/application/createRescueRequest.usecase";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
-import { GetSuppliesUseCase } from "@/modules/supplies/application/getSupplies.usecase";
-import { supplyRepository } from "@/modules/supplies/infrastructure/supply.repository.impl";
 import type { Supply } from "@/modules/supplies/domain/supply.entity";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,7 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 const createRescueRequestUseCase = new CreateRescueRequestUseCase(
   requestRepository,
 );
-const getSuppliesUseCase = new GetSuppliesUseCase(supplyRepository);
 
 // Dynamic import cho OpenMap để tránh SSR issues
 const OpenMap = dynamic(
@@ -198,6 +195,21 @@ const getCreatedRequestId = (request: unknown): string | null => {
   return candidate.requestId || candidate._id || candidate.id || null;
 };
 
+const ACTIVE_REQUEST_STATUSES = new Set([
+  "SUBMITTED",
+  "VERIFIED",
+  "IN_PROGRESS",
+  "FULFILLED",
+  "PARTIALLY_FULFILLED",
+  "ACCEPTED",
+]);
+
+const normalizeStatus = (status: unknown): string =>
+  String(status ?? "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .toUpperCase();
+
 export default function CitizenRequestPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -230,11 +242,29 @@ export default function CitizenRequestPage() {
   const [selectedReliefComboId, setSelectedReliefComboId] = useState<string | null>(
     null,
   );
-  const [availableSupplies, setAvailableSupplies] = useState<Supply[]>([]);
-  const [isLoadingSupplies, setIsLoadingSupplies] = useState(false);
   const [selectedReliefQuickAction, setSelectedReliefQuickAction] = useState<
     string | null
   >(null);
+
+  const findActiveRequestId = async (): Promise<string | null> => {
+    try {
+      const requests = await requestRepository.getMyRequests({ page: 1, limit: 20 });
+      const sorted = [...(requests || [])].sort((a: any, b: any) => {
+        const aTime = new Date(a?.createdAt || 0).getTime();
+        const bTime = new Date(b?.createdAt || 0).getTime();
+        return bTime - aTime;
+      });
+
+      const active = sorted.find((req: any) =>
+        ACTIVE_REQUEST_STATUSES.has(normalizeStatus(req?.status)),
+      ) as { requestId?: string; _id?: string; id?: string } | undefined;
+
+      return active?.requestId || active?._id || active?.id || null;
+    } catch (lookupError) {
+      console.error("Cannot resolve active request:", lookupError);
+      return null;
+    }
+  };
 
   // Quick action templates
   const quickRescueActions = [
@@ -308,22 +338,6 @@ export default function CitizenRequestPage() {
   useEffect(() => {
     getCurrentLocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const loadSupplies = async () => {
-      setIsLoadingSupplies(true);
-      try {
-        const result = await getSuppliesUseCase.execute();
-        setAvailableSupplies(result.data.filter((supply) => supply.isActive));
-      } catch (error) {
-        console.error("Cannot load supplies for relief combo:", error);
-      } finally {
-        setIsLoadingSupplies(false);
-      }
-    };
-
-    loadSupplies();
   }, []);
 
   const stripMedicineNoteLine = (note: string) =>
@@ -458,7 +472,7 @@ export default function CitizenRequestPage() {
     if (!action) return;
 
     setSelectedReliefQuickAction(action.id);
-    setReliefNeedMedicine(action.needs.includes(MEDICINE_NEED));
+    setReliefNeedMedicine(action.needs.some((need) => need === MEDICINE_NEED));
     setReliefContexts([...action.contexts]);
     setReliefExtraNeeds([]);
 
@@ -600,8 +614,14 @@ export default function CitizenRequestPage() {
         /already has an? active request/i.test(rawMsg) ||
         /active.*request/i.test(rawMsg)
       ) {
-        displayMsg =
-          "Bạn đang có một yêu cầu cứu hộ đang xử lý. Vui lòng chờ yêu cầu hiện tại hoàn thành.";
+        const activeRequestId = await findActiveRequestId();
+        displayMsg = activeRequestId
+          ? "Bạn đang có một yêu cầu đang xử lý. Hệ thống sẽ chuyển đến yêu cầu hiện tại của bạn."
+          : "Bạn đang có một yêu cầu đang xử lý. Vui lòng chờ yêu cầu hiện tại hoàn thành.";
+
+        if (activeRequestId) {
+          router.push(`/history/${activeRequestId}`);
+        }
       } else if (/validation failed/i.test(rawMsg) || /valid/i.test(rawMsg)) {
         displayMsg = `Dữ liệu không hợp lệ: ${rawMsg}. Vui lòng kiểm tra thông tin và thử lại.`;
       } else if (/unauthorized/i.test(rawMsg) || /401/.test(rawMsg)) {
@@ -675,7 +695,6 @@ export default function CitizenRequestPage() {
     const comboLines = selectedCombo.items.map(
       (item) => `${item.label}: ${item.qty}`,
     );
-    const comboMapping = mapComboToRequestSupplies(selectedCombo, availableSupplies);
 
     const reliefDescription = [
       selectedCondition ? `Tình trạng khu vực: ${selectedCondition.label}` : "",
@@ -684,9 +703,6 @@ export default function CitizenRequestPage() {
       `Ghi chú: ${reliefNote.trim()}`,
       selectedSupplies.length > 0 ? `Nhu cầu bổ sung: ${selectedSupplies.join(", ")}` : "",
       reliefContexts.length > 0 ? `Gia đình có: ${reliefContexts.join(", ")}` : "",
-      comboMapping.missing.length > 0
-        ? `Vật phẩm chưa map kho: ${comboMapping.missing.join(", ")}`
-        : "",
     ]
       .filter(Boolean)
       .join("\n");
@@ -712,10 +728,6 @@ export default function CitizenRequestPage() {
           coordinates: [coordinates.lon, coordinates.lat] as [number, number],
         },
       };
-
-      if (comboMapping.matched.length > 0) {
-        payload.requestSupplies = comboMapping.matched;
-      }
 
       const createdRequest = await createRescueRequestUseCase.execute(payload as any);
       const createdRequestId = getCreatedRequestId(createdRequest);
@@ -751,10 +763,29 @@ export default function CitizenRequestPage() {
         err?.message ||
         "Lỗi khi gửi yêu cầu cứu trợ";
 
+      let displayMsg = rawMsg;
+      if (
+        /already has an? active request/i.test(rawMsg) ||
+        /active.*request/i.test(rawMsg)
+      ) {
+        const activeRequestId = await findActiveRequestId();
+        displayMsg = activeRequestId
+          ? "Bạn đang có một yêu cầu đang xử lý. Hệ thống sẽ chuyển đến yêu cầu hiện tại của bạn."
+          : "Bạn đang có một yêu cầu đang xử lý. Vui lòng chờ yêu cầu hiện tại hoàn thành.";
+
+        if (activeRequestId) {
+          router.push(`/history/${activeRequestId}`);
+        }
+      } else if (/validation failed/i.test(rawMsg) || /valid/i.test(rawMsg)) {
+        displayMsg = `Dữ liệu không hợp lệ: ${rawMsg}. Vui lòng kiểm tra thông tin và thử lại.`;
+      } else if (/unauthorized/i.test(rawMsg) || /401/.test(rawMsg)) {
+        displayMsg = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+      }
+
       toast({
         variant: "destructive",
         title: "Gửi yêu cầu thất bại",
-        description: rawMsg,
+        description: displayMsg,
       });
     } finally {
       setIsSubmitting(false);
@@ -1124,13 +1155,6 @@ export default function CitizenRequestPage() {
                     </button>
                   ))}
                 </div>
-                {(isLoadingSupplies || availableSupplies.length > 0) && (
-                  <div className="rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-gray-300">
-                    {isLoadingSupplies
-                      ? "Đang đồng bộ vật tư trong kho để map requestSupplies..."
-                      : `Đã tải ${availableSupplies.length} vật tư trong kho. Hệ thống sẽ tự map combo theo tên danh mục.`}
-                  </div>
-                )}
                 <div className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-3">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input

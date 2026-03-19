@@ -32,11 +32,16 @@ export const supplyApi = {
     },
 
     /**
-     * GET /api/supplies
+     * GET /api/supplies (NEW Swagger endpoint)
+     * Fallback to GET /api/supply/list (legacy)
      * Fetches all supplies from backend
+     * 
+     * Note: Citizens may not have permission to access this endpoint.
+     * If 401/403, returns empty array (supplies mapping will be skipped).
      */
     getSupplies: async (query?: string): Promise<{ data: Supply[], meta: { page: number, totalPages: number, total: number } }> => {
         try {
+            // Try new Swagger endpoint first
             const response = await axiosInstance.get<ApiResponse<Supply[]>>(
                 '/supplies' + (query || '')
             );
@@ -46,9 +51,35 @@ export const supplyApi = {
                 return { data: [], meta: { page: 1, totalPages: 1, total: 0 } };
             }
             return { data, meta: response.data?.meta || { page: 1, totalPages: 1, total: 0 } };
-        } catch (error) {
-            console.error('[SupplyAPI] Error fetching supplies:', error);
-            return { data: [], meta: { page: 1, totalPages: 1, total: 0 } };
+        } catch (error: any) {
+            // If unauthorized/forbidden, return empty (citizen may not have permission)
+            if (error.response?.status === 401 || error.response?.status === 403) {
+                console.warn('[SupplyAPI] User does not have permission to access /supplies (403/401). Supplies mapping will be skipped.');
+                return { data: [], meta: { page: 1, totalPages: 1, total: 0 } };
+            }
+
+            console.warn('[SupplyAPI] /supplies endpoint failed (not 403/401), trying fallback /supply/list:', error);
+            try {
+                // Fallback to legacy endpoint
+                const fallbackResponse = await axiosInstance.get<ApiResponse<Supply[]>>(
+                    '/supply/list' + (query || '')
+                );
+                const data = fallbackResponse.data?.data;
+                if (!Array.isArray(data)) {
+                    console.warn('[SupplyAPI] Fallback data is not array. Full response:', fallbackResponse.data);
+                    return { data: [], meta: { page: 1, totalPages: 1, total: 0 } };
+                }
+                console.log('[SupplyAPI] Successfully loaded supplies from fallback endpoint');
+                return { data, meta: fallbackResponse.data?.meta || { page: 1, totalPages: 1, total: 0 } };
+            } catch (fallbackError: any) {
+                // If fallback also fails due to permission, return empty
+                if (fallbackError.response?.status === 401 || fallbackError.response?.status === 403) {
+                    console.warn('[SupplyAPI] User does not have permission to access /supply/list either (403/401). Supplies mapping will be skipped.');
+                    return { data: [], meta: { page: 1, totalPages: 1, total: 0 } };
+                }
+                console.error('[SupplyAPI] Both /supplies and /supply/list failed:', fallbackError);
+                return { data: [], meta: { page: 1, totalPages: 1, total: 0 } };
+            }
         }
     },
 

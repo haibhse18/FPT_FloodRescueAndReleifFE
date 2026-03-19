@@ -7,6 +7,7 @@ export interface AlertProps {
   children: React.ReactNode;
   dismissible?: boolean;
   onDismiss?: () => void;
+  className?: string;
 }
 
 export function Alert({ 
@@ -14,7 +15,8 @@ export function Alert({
   title, 
   children, 
   dismissible = false, 
-  onDismiss 
+  onDismiss,
+  className = ''
 }: AlertProps) {
   const variants = {
     info: {
@@ -46,7 +48,7 @@ export function Alert({
   const style = variants[variant];
   
   return (
-    <div className={`${style.bg} ${style.border} ${style.text} border rounded-lg p-4 animate-in slide-in-from-top duration-300`}>
+    <div className={`${style.bg} ${style.border} ${style.text} border rounded-lg p-4 animate-in slide-in-from-top duration-300 ${className}`}>
       <div className="flex items-start gap-3">
         <div className="shrink-0 mt-0.5">
           {style.icon}

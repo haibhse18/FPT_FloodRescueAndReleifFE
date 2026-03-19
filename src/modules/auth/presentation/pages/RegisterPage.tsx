@@ -112,7 +112,7 @@ export default function RegisterPage() {
                         </div>
                         <span>FloodRescue</span>
                     </Link>
-                    <p className="text-zinc-400 font-light tracking-wide uppercase text-sm">Ghi Danh Tình Nguyện Viên</p>
+                    <p className="text-zinc-400 font-light tracking-wide uppercase text-sm">Đăng kí để truy cập hệ thống</p>
                 </div>
 
                 {/* Glassmorphism Register Card */}
@@ -122,7 +122,7 @@ export default function RegisterPage() {
                             Tạo Hồ Sơ Mới
                         </h2>
                         <p className="text-zinc-400 mt-2 text-sm font-light">
-                            Gia nhập lực lượng phản ứng nhanh
+                            Điền thông tin để đăng kí tài khoản
                         </p>
                     </div>
 
@@ -208,30 +208,31 @@ export default function RegisterPage() {
                         </p>
 
                         {/* Terms and Conditions */}
-                        <div className="flex items-start gap-3 p-4 bg-[#071520]/40 border border-white/5 rounded-sm mt-2">
+                        <div className="p-4 bg-[#071520]/40 border border-white/5 rounded-sm mt-2">
                             <Checkbox
                                 id="terms"
                                 checked={agreedToTerms}
                                 onChange={(e) => setAgreedToTerms(e.target.checked)}
-                                className="mt-1"
-                            />
-                            <label htmlFor="terms" className="text-sm text-zinc-400 leading-relaxed cursor-pointer select-none">
-                                Tôi đã đọc và cam kết tuân thủ đầy đủ{" "}
-                                <Link
-                                    href="/terms"
-                                    className="text-white hover:text-[#FF7700] font-medium underline underline-offset-4 decoration-white/30"
-                                >
-                                    Quy định an toàn
-                                </Link>{" "}
-                                và{" "}
-                                <Link
-                                    href="/privacy"
-                                    className="text-white hover:text-[#FF7700] font-medium underline underline-offset-4 decoration-white/30"
-                                >
-                                    Chính sách bảo mật
-                                </Link>
-                                {" "}của nền tảng.
-                            </label>
+                                className="w-full"
+                            >
+                                <span className="text-sm text-zinc-400 leading-relaxed cursor-pointer select-none">
+                                    Tôi đã đọc và cam kết tuân thủ đầy đủ{" "}
+                                    <Link
+                                        href="/terms"
+                                        className="text-white hover:text-[#FF7700] font-medium underline underline-offset-4 decoration-white/30"
+                                    >
+                                        Quy định an toàn
+                                    </Link>{" "}
+                                    và{" "}
+                                    <Link
+                                        href="/privacy"
+                                        className="text-white hover:text-[#FF7700] font-medium underline underline-offset-4 decoration-white/30"
+                                    >
+                                        Chính sách bảo mật
+                                    </Link>
+                                    {" "}của nền tảng.
+                                </span>
+                            </Checkbox>
                         </div>
 
                         {error && (
@@ -247,14 +248,14 @@ export default function RegisterPage() {
                             size="lg"
                             isLoading={loading}
                             disabled={loading}
-                            className="bg-[#FF7700] text-white hover:bg-orange-500 rounded-sm font-bold uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(255,119,0,0.3)] transition-all mt-4"
+                            className="bg-[#FF7700] text-white border border-white/40 hover:bg-white hover:text-[#0a1f2e] hover:rounded-full active:bg-[#FF7700] active:text-white rounded-sm font-bold uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(255,119,0,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] transition-all duration-300 active:scale-[0.98] mt-4"
                         >
-                            {loading ? "Đang xử lý hồ sơ..." : "Ghi Danh Lực Lượng"}
+                            {loading ? "Đang xử lý hồ sơ..." : "Đăng kí"}
                         </Button>
                     </form>
 
                     <div className="mt-6 mb-6">
-                        <FormDivider text="HOẶC ĐĂNG KÝ VỚI" />
+                        <FormDivider text="HOẶC" />
                     </div>
                     
                     <div className="hover:scale-[1.01] transition-transform">
@@ -263,12 +264,12 @@ export default function RegisterPage() {
 
                     {/* Login Link */}
                     <div className="text-center mt-8 pt-6 border-t border-white/10">
-                        <span className="text-zinc-500 text-sm">Đã nằm trong biên chế? </span>
+                        <span className="text-zinc-500 text-sm">Đã có tài khoản? </span>
                         <Link
                             href="/login"
                             className="text-white hover:text-[#FF7700] font-bold transition-colors text-sm uppercase tracking-wide"
                         >
-                            Truy cập trung tâm
+                            Đăng nhâp ngay
                         </Link>
                     </div>
                 </div>

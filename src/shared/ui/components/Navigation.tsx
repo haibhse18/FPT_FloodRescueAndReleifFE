@@ -33,30 +33,30 @@ export function Navigation({
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
-          <a
+          {/* <a
             href="/"
             className={`${textColor} hover:opacity-80 transition-opacity`}
           >
             Home
-          </a>
-          <a
+          </a> */}
+          {/* <a
             href="#"
             className={`${textColor} hover:opacity-80 transition-opacity`}
           >
             About
-          </a>
-          <a
+          </a> */}
+          {/* <a
             href="#"
             className={`${textColor} hover:opacity-80 transition-opacity`}
           >
             Services
-          </a>
-          <a
+          </a> */}
+          {/* <a
             href="#"
             className={`${textColor} hover:opacity-80 transition-opacity`}
           >
             Contact
-          </a>
+          </a> */}
           {actions && (
             <div className="flex items-center gap-4 ml-4 border-l pl-4 border-gray-200/20">
               {actions}

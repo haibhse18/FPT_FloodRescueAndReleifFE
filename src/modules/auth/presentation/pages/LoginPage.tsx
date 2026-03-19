@@ -150,14 +150,14 @@ export default function LoginPage() {
               size="lg"
               isLoading={loading}
               disabled={loading}
-              className="bg-[#FF7700] text-white hover:bg-orange-500 rounded-sm font-bold uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(255,119,0,0.3)] transition-all"
+              className="bg-[#FF7700] text-white border border-white/40 hover:bg-white hover:text-[#0a1f2e] hover:rounded-full active:bg-[#FF7700] active:text-white rounded-sm font-bold uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(255,119,0,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] transition-all duration-300 active:scale-[0.98]"
             >
-              {loading ? "Đang xử lý..." : "Truy Cập Hệ Thống"}
+              {loading ? "Đang xử lý..." : "Đăng nhập"}
             </Button>
           </form>
 
           <div className="mt-6 mb-6">
-            <FormDivider text="HOẶC ĐĂNG NHẬP VỚI" />
+            <FormDivider text="HOẶC TIẾP TỤC VỚI" />
           </div>
           
           <div className="hover:scale-[1.02] transition-transform">
@@ -166,13 +166,13 @@ export default function LoginPage() {
 
           <div className="text-center mt-8 pt-6 border-t border-white/10">
             <span className="text-zinc-500 text-sm">
-              Lực lượng mới?{" "}
+              Công dân mới?{" "}
             </span>
             <Link
               href="/register"
               className="text-white hover:text-[#FF7700] font-bold transition-colors text-sm uppercase tracking-wide"
             >
-              Ghi danh ngay
+              Đăng kí ngay 
             </Link>
           </div>
         </div>

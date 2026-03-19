@@ -5,26 +5,34 @@ export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputE
   label?: string;
 }
 
-export function Checkbox({ label, className = '', ...props }: CheckboxProps) {
+export function Checkbox({ label, children, className = '', ...props }: CheckboxProps & { children?: React.ReactNode }) {
   return (
-    <label className="inline-flex items-center gap-2 cursor-pointer group">
-      <div className="relative">
+    <label className={`inline-flex items-start gap-3 cursor-pointer group ${className}`}>
+      <div className="relative mt-0.5">
         <input
           type="checkbox"
           className="sr-only peer"
           {...props}
         />
-        <div className="w-5 h-5 border-2 border-[var(--color-border)] rounded transition-all
-          peer-checked:bg-[var(--color-accent)] peer-checked:border-[var(--color-accent)]
-          peer-focus:ring-2 peer-focus:ring-[var(--color-teal-pale)]
-          group-hover:border-[var(--color-primary)]">
+        <div className="w-5 h-5 border-2 border-white/20 rounded transition-all
+          peer-checked:bg-[#FF7700] peer-checked:border-[#FF7700]
+          peer-focus:ring-2 peer-focus:ring-[#FF7700]/30
+          group-hover:border-[#FF7700]/50 bg-black/20 relative flex items-center justify-center
+          peer-checked:[&_svg]:opacity-100">
           <Check 
-            size={16} 
-            className="absolute inset-0 text-[var(--color-text-primary)] opacity-0 peer-checked:opacity-100 transition-opacity"
+            size={14} 
+            strokeWidth={3}
+            color="white"
+            className="opacity-0 transition-opacity"
           />
         </div>
       </div>
-      {label && <span className="text-sm select-none">{label}</span>}
+      {(label || children) && (
+        <div className="text-sm select-none">
+          {label}
+          {children}
+        </div>
+      )}
     </label>
   );
 }
@@ -33,23 +41,27 @@ interface RadioProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, '
   label?: string;
 }
 
-export function Radio({ label, className = '', ...props }: RadioProps) {
+export function Radio({ label, children, className = '', ...props }: RadioProps & { children?: React.ReactNode }) {
   return (
-    <label className="inline-flex items-center gap-2 cursor-pointer group">
+    <label className={`inline-flex items-center gap-2 cursor-pointer group ${className}`}>
       <div className="relative">
         <input
           type="radio"
           className="sr-only peer"
           {...props}
         />
-        <div className="w-5 h-5 border-2 border-[var(--color-border)] rounded-full transition-all
-          peer-checked:border-[var(--color-accent)]
-          peer-focus:ring-2 peer-focus:ring-[var(--color-teal-pale)]
-          group-hover:border-[var(--color-primary)]">
-          <div className="absolute inset-1 bg-[var(--color-accent)] rounded-full opacity-0 peer-checked:opacity-100 transition-opacity" />
+        <div className="w-5 h-5 border-2 border-white/20 rounded-full transition-all
+          peer-checked:border-[#FF7700] peer-focus:ring-2 peer-focus:ring-[#FF7700]/30
+          group-hover:border-[#FF7700]/50 bg-black/20">
+          <div className="absolute inset-1 bg-[#FF7700] rounded-full opacity-0 peer-checked:opacity-100 transition-opacity" />
         </div>
       </div>
-      {label && <span className="text-sm select-none">{label}</span>}
+      {(label || children) && (
+        <span className="text-sm select-none">
+          {label}
+          {children}
+        </span>
+      )}
     </label>
   );
 }

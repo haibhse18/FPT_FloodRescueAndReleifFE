@@ -6,12 +6,16 @@ import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import { CreateRescueRequestUseCase } from "@/modules/requests/application/createRescueRequest.usecase";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
+import { GetSuppliesUseCase } from "@/modules/supplies/application/getSupplies.usecase";
+import { supplyRepository } from "@/modules/supplies/infrastructure/supply.repository.impl";
+import type { Supply } from "@/modules/supplies/domain/supply.entity";
 import { useToast } from "@/hooks/use-toast";
 
 // Initialize use case with repository
 const createRescueRequestUseCase = new CreateRescueRequestUseCase(
   requestRepository,
 );
+const getSuppliesUseCase = new GetSuppliesUseCase(supplyRepository);
 
 // Dynamic import cho OpenMap để tránh SSR issues
 const OpenMap = dynamic(
@@ -30,7 +34,6 @@ const MAX_PEOPLE = 100;
 const MIN_DESCRIPTION = 10;
 const MAX_DESCRIPTION = 500;
 
-const RELIEF_NEEDS = ["Nước uống", "Thực phẩm", "Thuốc", "Áo phao", "Chăn / quần áo"];
 const CONTEXT_OPTIONS = ["Trẻ em", "Người già", "Người bị thương"];
 const MEDICINE_NEED = "Thuốc";
 const MEDICINE_NOTE_PREFIX = "Thuốc yêu cầu:";
@@ -86,6 +89,101 @@ const RELIEF_INCIDENT_TYPE_BY_CONDITION: Record<string, "Flood" | "Landslide" | 
   "storm-wind": "Other",
 };
 
+type ReliefComboTemplate = {
+  id: string;
+  label: string;
+  peopleCount: 2 | 4 | 6;
+  description: string;
+  items: Array<{
+    label: string;
+    qty: number;
+    categoryHint?: Supply["category"];
+    keywords: string[];
+  }>;
+};
+
+const RELIEF_COMBO_TEMPLATES: ReliefComboTemplate[] = [
+  {
+    id: "combo-2",
+    label: "Combo 2 người",
+    peopleCount: 2,
+    description: "Hộ nhỏ, đủ dùng trong 2-3 ngày",
+    items: [
+      { label: "Nước uống", qty: 12, categoryHint: "WATER", keywords: ["nuoc", "water"] },
+      { label: "Thực phẩm", qty: 6, categoryHint: "FOOD", keywords: ["thuc pham", "food", "mi", "gao"] },
+      { label: "Bộ y tế cơ bản", qty: 1, categoryHint: "MEDICAL", keywords: ["y te", "medical", "thuoc", "so cuu"] },
+      { label: "Chăn / áo ấm", qty: 2, categoryHint: "CLOTHING", keywords: ["chan", "ao", "quan", "clothing"] },
+    ],
+  },
+  {
+    id: "combo-4",
+    label: "Combo 4 người",
+    peopleCount: 4,
+    description: "Gia đình trung bình, ưu tiên nước và thực phẩm",
+    items: [
+      { label: "Nước uống", qty: 24, categoryHint: "WATER", keywords: ["nuoc", "water"] },
+      { label: "Thực phẩm", qty: 12, categoryHint: "FOOD", keywords: ["thuc pham", "food", "mi", "gao"] },
+      { label: "Bộ y tế cơ bản", qty: 2, categoryHint: "MEDICAL", keywords: ["y te", "medical", "thuoc", "so cuu"] },
+      { label: "Chăn / áo ấm", qty: 4, categoryHint: "CLOTHING", keywords: ["chan", "ao", "quan", "clothing"] },
+    ],
+  },
+  {
+    id: "combo-6",
+    label: "Combo 6 người",
+    peopleCount: 6,
+    description: "Hộ đông người hoặc cụm dân cư nhỏ",
+    items: [
+      { label: "Nước uống", qty: 36, categoryHint: "WATER", keywords: ["nuoc", "water"] },
+      { label: "Thực phẩm", qty: 18, categoryHint: "FOOD", keywords: ["thuc pham", "food", "mi", "gao"] },
+      { label: "Bộ y tế cơ bản", qty: 3, categoryHint: "MEDICAL", keywords: ["y te", "medical", "thuoc", "so cuu"] },
+      { label: "Chăn / áo ấm", qty: 6, categoryHint: "CLOTHING", keywords: ["chan", "ao", "quan", "clothing"] },
+    ],
+  },
+];
+
+const normalizeText = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+const mapComboToRequestSupplies = (
+  combo: ReliefComboTemplate,
+  supplies: Supply[],
+): {
+  matched: Array<{ supplyId: string; requestedQty: number }>;
+  missing: string[];
+} => {
+  const matched: Array<{ supplyId: string; requestedQty: number }> = [];
+  const missing: string[] = [];
+
+  combo.items.forEach((comboItem) => {
+    const found = supplies.find((supply) => {
+      const normalizedName = normalizeText(supply.name);
+      const categoryOk = comboItem.categoryHint
+        ? supply.category === comboItem.categoryHint
+        : true;
+      const keywordOk = comboItem.keywords.some((keyword) =>
+        normalizedName.includes(normalizeText(keyword)),
+      );
+      return categoryOk && keywordOk;
+    });
+
+    if (!found) {
+      missing.push(comboItem.label);
+      return;
+    }
+
+    matched.push({
+      supplyId: found.id,
+      requestedQty: comboItem.qty,
+    });
+  });
+
+  return { matched, missing };
+};
+
 const getCreatedRequestId = (request: unknown): string | null => {
   if (!request || typeof request !== "object") {
     return null;
@@ -124,11 +222,16 @@ export default function CitizenRequestPage() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadImageError, setUploadImageError] = useState<string | null>(null);
-  const [reliefNeeds, setReliefNeeds] = useState<string[]>([]);
+  const [reliefNeedMedicine, setReliefNeedMedicine] = useState(false);
   const [reliefContexts, setReliefContexts] = useState<string[]>([]);
   const [reliefExtraNeeds, setReliefExtraNeeds] = useState<string[]>([]);
   const [reliefMedicineDetails, setReliefMedicineDetails] = useState("");
   const [reliefNote, setReliefNote] = useState("");
+  const [selectedReliefComboId, setSelectedReliefComboId] = useState<string | null>(
+    null,
+  );
+  const [availableSupplies, setAvailableSupplies] = useState<Supply[]>([]);
+  const [isLoadingSupplies, setIsLoadingSupplies] = useState(false);
   const [selectedReliefQuickAction, setSelectedReliefQuickAction] = useState<
     string | null
   >(null);
@@ -207,6 +310,22 @@ export default function CitizenRequestPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const loadSupplies = async () => {
+      setIsLoadingSupplies(true);
+      try {
+        const result = await getSuppliesUseCase.execute();
+        setAvailableSupplies(result.data.filter((supply) => supply.isActive));
+      } catch (error) {
+        console.error("Cannot load supplies for relief combo:", error);
+      } finally {
+        setIsLoadingSupplies(false);
+      }
+    };
+
+    loadSupplies();
+  }, []);
+
   const stripMedicineNoteLine = (note: string) =>
     note
       .split("\n")
@@ -214,9 +333,9 @@ export default function CitizenRequestPage() {
       .join("\n")
       .trim();
 
-  // Đồng bộ ô nhập thuốc (Step 3) vào ghi chú (Step 4).
+  // Đồng bộ ô nhập thuốc vào ghi chú để coordinator nắm đúng loại thuốc cần hỗ trợ.
   useEffect(() => {
-    const hasMedicineNeed = reliefNeeds.includes(MEDICINE_NEED);
+    const hasMedicineNeed = reliefNeedMedicine;
     if (!hasMedicineNeed && reliefMedicineDetails) {
       setReliefMedicineDetails("");
     }
@@ -228,7 +347,7 @@ export default function CitizenRequestPage() {
         .filter(Boolean)
         .join("\n");
     });
-  }, [reliefNeeds, reliefMedicineDetails]);
+  }, [reliefNeedMedicine, reliefMedicineDetails]);
 
   // Hàm lấy vị trí hiện tại
   const getCurrentLocation = () => {
@@ -324,11 +443,12 @@ export default function CitizenRequestPage() {
   const handleRequestTypeChange = (type: "Rescue" | "Relief") => {
     setRequestType(type);
     if (type === "Rescue") {
-      setReliefNeeds([]);
+      setReliefNeedMedicine(false);
       setReliefContexts([]);
       setReliefExtraNeeds([]);
       setReliefMedicineDetails("");
       setReliefNote("");
+      setSelectedReliefComboId(null);
       setSelectedReliefQuickAction(null);
     }
   };
@@ -338,13 +458,9 @@ export default function CitizenRequestPage() {
     if (!action) return;
 
     setSelectedReliefQuickAction(action.id);
-    setReliefNeeds([...action.needs]);
+    setReliefNeedMedicine(action.needs.includes(MEDICINE_NEED));
     setReliefContexts([...action.contexts]);
     setReliefExtraNeeds([]);
-
-    if (!action.needs.includes(MEDICINE_NEED)) {
-      setReliefMedicineDetails("");
-    }
 
     setReliefNote(action.note);
   };
@@ -513,15 +629,24 @@ export default function CitizenRequestPage() {
       return;
     }
 
-    const selectedSupplies = Array.from(new Set([...reliefNeeds, ...reliefExtraNeeds]));
-    if (selectedSupplies.length === 0) {
+    const selectedCombo = RELIEF_COMBO_TEMPLATES.find(
+      (combo) => combo.id === selectedReliefComboId,
+    );
+    if (!selectedCombo) {
       toast({
         variant: "destructive",
-        title: "Thiếu vật phẩm",
-        description: "Vui lòng chọn ít nhất 1 vật phẩm cứu trợ.",
+        title: "Thiếu combo cứu trợ",
+        description: "Vui lòng chọn combo 2, 4 hoặc 6 người trước khi gửi.",
       });
       return;
     }
+
+    const selectedSupplies = Array.from(
+      new Set([
+        ...reliefExtraNeeds,
+        ...(reliefNeedMedicine ? [MEDICINE_NEED] : []),
+      ]),
+    );
 
     if (!reliefNote.trim()) {
       toast({
@@ -547,12 +672,21 @@ export default function CitizenRequestPage() {
     const reliefIncidentType = selectedCondition
       ? RELIEF_INCIDENT_TYPE_BY_CONDITION[selectedCondition.id]
       : "Other";
+    const comboLines = selectedCombo.items.map(
+      (item) => `${item.label}: ${item.qty}`,
+    );
+    const comboMapping = mapComboToRequestSupplies(selectedCombo, availableSupplies);
 
     const reliefDescription = [
       selectedCondition ? `Tình trạng khu vực: ${selectedCondition.label}` : "",
+      `Combo đã chọn: ${selectedCombo.label} (${selectedCombo.peopleCount} người)`,
+      `Danh mục combo: ${comboLines.join(", ")}`,
       `Ghi chú: ${reliefNote.trim()}`,
-      `Nhu cầu cứu trợ: ${selectedSupplies.join(", ")}`,
+      selectedSupplies.length > 0 ? `Nhu cầu bổ sung: ${selectedSupplies.join(", ")}` : "",
       reliefContexts.length > 0 ? `Gia đình có: ${reliefContexts.join(", ")}` : "",
+      comboMapping.missing.length > 0
+        ? `Vật phẩm chưa map kho: ${comboMapping.missing.join(", ")}`
+        : "",
     ]
       .filter(Boolean)
       .join("\n");
@@ -572,12 +706,16 @@ export default function CitizenRequestPage() {
         type: "Relief",
         incidentType: reliefIncidentType,
         description: reliefDescription,
-        peopleCount: 1,
+        peopleCount: selectedCombo.peopleCount,
         location: {
           type: "Point",
           coordinates: [coordinates.lon, coordinates.lat] as [number, number],
         },
       };
+
+      if (comboMapping.matched.length > 0) {
+        payload.requestSupplies = comboMapping.matched;
+      }
 
       const createdRequest = await createRescueRequestUseCase.execute(payload as any);
       const createdRequestId = getCreatedRequestId(createdRequest);
@@ -592,11 +730,12 @@ export default function CitizenRequestPage() {
         return;
       }
 
-      setReliefNeeds([]);
+      setReliefNeedMedicine(false);
       setReliefContexts([]);
       setReliefExtraNeeds([]);
       setReliefMedicineDetails("");
       setReliefNote("");
+      setSelectedReliefComboId(null);
     } catch (error: unknown) {
       const err = error as {
         response?: {
@@ -962,25 +1101,61 @@ export default function CitizenRequestPage() {
               <div className="bg-white/5 border border-white/10 rounded-2xl p-7 space-y-5">
                 <h2 className="text-white font-bold text-xl flex items-center gap-3">
                   <span className="bg-white/20 w-9 h-9 rounded-full flex items-center justify-center text-base">3</span>
-                  Chọn nhanh vật phẩm
+                  Chọn combo hàng hóa
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {RELIEF_NEEDS.map((item) => (
-                    <label key={item} className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-4 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={reliefNeeds.includes(item)}
-                        onChange={() => {
-                          toggleValue(item, reliefNeeds, setReliefNeeds);
-                          if (item === MEDICINE_NEED && reliefNeeds.includes(item)) {
-                            setReliefMedicineDetails("");
-                          }
-                        }}
-                        className="w-5 h-5 accent-[#FF7700]"
-                      />
-                      <span className="text-white text-base font-semibold">{item}</span>
-                    </label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {RELIEF_COMBO_TEMPLATES.map((combo) => (
+                    <button
+                      key={combo.id}
+                      type="button"
+                      onClick={() => setSelectedReliefComboId(combo.id)}
+                      className={`text-left rounded-xl p-5 border-2 transition-all ${selectedReliefComboId === combo.id
+                        ? "bg-[#FF7700]/10 border-[#FF7700]"
+                        : "bg-white/5 border-white/10 hover:bg-white/10"
+                        }`}
+                    >
+                      <div className="text-white font-bold text-lg">{combo.label}</div>
+                      <p className="text-[#FFB066] text-sm font-semibold mt-1">{combo.description}</p>
+                      <ul className="text-gray-300 text-sm mt-3 space-y-1">
+                        {combo.items.map((item) => (
+                          <li key={item.label}>• {item.label}: {item.qty}</li>
+                        ))}
+                      </ul>
+                    </button>
                   ))}
+                </div>
+                {(isLoadingSupplies || availableSupplies.length > 0) && (
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-gray-300">
+                    {isLoadingSupplies
+                      ? "Đang đồng bộ vật tư trong kho để map requestSupplies..."
+                      : `Đã tải ${availableSupplies.length} vật tư trong kho. Hệ thống sẽ tự map combo theo tên danh mục.`}
+                  </div>
+                )}
+                <div className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={reliefNeedMedicine}
+                      onChange={(e) => setReliefNeedMedicine(e.target.checked)}
+                      className="w-5 h-5 accent-[#FF7700]"
+                    />
+                    <span className="text-white text-base font-semibold">Có nhu cầu thuốc</span>
+                  </label>
+
+                  {reliefNeedMedicine && (
+                    <div className="space-y-2">
+                      <label className="text-gray-300 text-sm font-semibold block">
+                        Tên thuốc muốn yêu cầu
+                      </label>
+                      <input
+                        type="text"
+                        value={reliefMedicineDetails}
+                        onChange={(e) => setReliefMedicineDetails(e.target.value)}
+                        placeholder="VD: Thuốc tim, thuốc hạ sốt, insulin..."
+                        className="w-full h-12 bg-black/20 border border-white/10 rounded-xl px-4 text-white text-base placeholder-gray-500 focus:outline-none focus:border-[#FF7700]"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1020,21 +1195,6 @@ export default function CitizenRequestPage() {
                         </label>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {reliefNeeds.includes(MEDICINE_NEED) && (
-                  <div className="space-y-2 pt-2">
-                    <label className="text-gray-300 text-base font-semibold block">
-                      Tên thuốc muốn yêu cầu
-                    </label>
-                    <input
-                      type="text"
-                      value={reliefMedicineDetails}
-                      onChange={(e) => setReliefMedicineDetails(e.target.value)}
-                      placeholder="VD: Thuốc tim, thuốc hạ sốt, insulin..."
-                      className="w-full h-12 bg-black/20 border border-white/10 rounded-xl px-4 text-white text-base placeholder-gray-500 focus:outline-none focus:border-[#FF7700]"
-                    />
                   </div>
                 )}
               </div>

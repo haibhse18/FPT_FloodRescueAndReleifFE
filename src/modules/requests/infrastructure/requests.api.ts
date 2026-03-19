@@ -33,6 +33,7 @@ export interface CreateRescueRequestDTO {
   priority?: string;
   peopleCount?: number;
   requestSupply?: unknown[];
+  requestSupplies?: { supplyId: string; requestedQty: number }[];
   location?: string | { type?: string; coordinates: [number, number] };
   dangerType?: string;
   numberOfPeople?: number;

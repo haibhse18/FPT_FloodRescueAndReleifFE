@@ -27,19 +27,19 @@ export default function SupplyManagementPage() {
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0]);
         }
-    };
+        import { Supply } from "@/modules/supplies/domain/supply.entity";
 
     // Handle upload
-    const handleUpload = async () => {
+        import { requestsApi } from "@/modules/requests/infrastructure/requests.api";
+        import type { CoordinatorRequest } from "@/modules/requests/domain/request.entity";
         if (!file) {
             toast({
                 title: "Chưa chọn file",
                 description: "Vui lòng chọn file Excel để import",
-                variant: "destructive",
             });
             return;
         }
-        setUploading(true);
+            const [requests, setRequests] = useState<CoordinatorRequest[]>([]);
         try {
             await supplyRepository.importExcel(file);
             toast({
@@ -47,10 +47,19 @@ export default function SupplyManagementPage() {
                 description: "Dữ liệu đã được cập nhật vào kho vật tư",
                 variant: "default",
             });
-            setFile(null);
-            fetchSupplies(); // Cập nhật bảng
+                    const response = await requestsApi.getAllRequests({
+                        type: "Relief",
+                        page: 1,
+                        limit: 50,
+                    });
+
+                    const result = response as {
+                        data?: unknown;
+                    };
+
+                    setRequests(Array.isArray(result.data) ? (result.data as CoordinatorRequest[]) : []);
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Lỗi khi import file Excel";
+                    const message = error instanceof Error ? error.message : "Lỗi khi tải yêu cầu cứu trợ";
             toast({
                 title: "Lỗi",
                 description: message,
@@ -73,7 +82,7 @@ export default function SupplyManagementPage() {
                 title: "Lỗi",
                 description: message,
                 variant: "destructive",
-            });
+                        <p className="text-gray-400">Quản lý kho vật tư và yêu cầu cứu trợ</p>
             console.error(error);
         } finally {
             setLoading(false);
@@ -95,7 +104,7 @@ export default function SupplyManagementPage() {
             console.error(error);
         } finally {
             setLoading(false);
-        }
+                            📋 Yêu cầu cứu trợ ({requests.length})
     };
 
     useEffect(() => {
@@ -107,29 +116,29 @@ export default function SupplyManagementPage() {
     }, [activeTab]);
 
     return (
-        <div className="p-4 lg:p-6 space-y-6">
+                                    <p>Chưa có yêu cầu cứu trợ nào</p>
             {/* Upload Excel UI */}
             <div className="mb-4 flex items-center gap-3">
                 <input
                     type="file"
                     accept=".xlsx,.xls"
-                    onChange={handleFileChange}
+                                            key={request._id}
                     className="block text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 file:font-semibold"
                 />
                 <button
                     onClick={handleUpload}
                     disabled={uploading || !file}
-                    className={`px-4 py-2 rounded bg-blue-500 text-white font-medium transition-colors ${uploading || !file ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-600"}`}
+                                                        {request.requestId || request._id}
                 >
                     {uploading ? "Đang import..." : "Import Excel"}
-                </button>
+                                                        {request.requestSupplies?.length ?? 0} mục vật tư
             </div>
             <div>
                 <h1 className="text-3xl font-bold text-white mb-2">Quản lý vật tư</h1>
                 <p className="text-gray-400">Quản lý kho vật tư và yêu cầu cung cấp</p>
-            </div>
+                                                        request.priority === "Critical"
 
-            <div className="flex gap-3 border-b border-gray-700">
+                                                            : request.priority === "High"
                 <button
                     onClick={() => setActiveTab("supplies")}
                     className={`px-4 py-3 font-medium transition-colors border-b-2 ${
@@ -138,11 +147,15 @@ export default function SupplyManagementPage() {
                             : "text-gray-400 border-transparent hover:text-gray-300"
                     }`}
                 >
-                    📦 Vật tư ({supplies.length})
-                </button>
-                <button
-                    onClick={() => setActiveTab("requests")}
-                    className={`px-4 py-3 font-medium transition-colors border-b-2 ${
+                                                {(request.requestSupplies ?? []).length > 0 ? (
+                                                    request.requestSupplies?.map((item, i) => (
+                                                        <p key={`${request._id}-${i}`} className="text-gray-300 text-sm">
+                                                            • {item.supplyName || item.supplyId}: {item.requestedQty}
+                                                        </p>
+                                                    ))
+                                                ) : (
+                                                    <p className="text-gray-400 text-sm">Không có danh sách vật tư chi tiết</p>
+                                                )}
                         activeTab === "requests"
                             ? "text-blue-400 border-blue-400"
                             : "text-gray-400 border-transparent hover:text-gray-300"

@@ -8,7 +8,7 @@
 
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 
-const MAP_API_BASE_URL = process.env.NEXT_PUBLIC_MAP_API_URL;
+const MAP_API_BASE_URL = "/api/openmap"; // Dùng Proxy NextJS để vượt tường lửa CORS từ trình duyệt
 
 export const mapAxiosInstance = axios.create({
     baseURL: MAP_API_BASE_URL,

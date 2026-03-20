@@ -106,6 +106,27 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
         createdAt: dateObj.toISOString(),
       };
 
+      // ─── Deduplication: Check for duplicate notifications ────
+      // Skip if same type + mission/request + message within last 3 seconds
+      const isDuplicate = get().notifications.some((existing) => {
+        const existingTime = new Date(existing.createdAt).getTime();
+        const newTime = dateObj.getTime();
+        const timeDiff = Math.abs(newTime - existingTime);
+
+        return (
+          existing.type === safeData.type &&
+          existing.missionId === safeData.missionId &&
+          existing.requestId === safeData.requestId &&
+          existing.message === safeData.message &&
+          timeDiff <= 3000 // Within 3 seconds
+        );
+      });
+
+      if (isDuplicate) {
+        console.log("🔄 Thông báo trùng lặp bị bỏ qua:", safeData.message);
+        return;
+      }
+
       set((state) => ({
         notifications: [safeData, ...state.notifications],
         unreadCount: state.unreadCount + 1,

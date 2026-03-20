@@ -74,7 +74,12 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
     });
 
     socket.on("connect_error", (err) => {
-      console.error("❌ Socket connection error:", err.message);
+      const message = err.message?.toLowerCase() || "";
+      if (message.includes("timeout")) {
+        console.warn("⚠️ Socket tạm thời timeout, đang tự kết nối lại...");
+      } else {
+        console.error("❌ Socket connection error:", err.message);
+      }
       set({ isConnected: false });
     });
 
@@ -105,6 +110,27 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
         isRead: false,
         createdAt: dateObj.toISOString(),
       };
+
+      // ─── Deduplication: Check for duplicate notifications ────
+      // Skip if same type + mission/request + message within last 3 seconds
+      const isDuplicate = get().notifications.some((existing) => {
+        const existingTime = new Date(existing.createdAt).getTime();
+        const newTime = dateObj.getTime();
+        const timeDiff = Math.abs(newTime - existingTime);
+
+        return (
+          existing.type === safeData.type &&
+          existing.missionId === safeData.missionId &&
+          existing.requestId === safeData.requestId &&
+          existing.message === safeData.message &&
+          timeDiff <= 3000 // Within 3 seconds
+        );
+      });
+
+      if (isDuplicate) {
+        console.log("🔄 Thông báo trùng lặp bị bỏ qua:", safeData.message);
+        return;
+      }
 
       set((state) => ({
         notifications: [safeData, ...state.notifications],
@@ -201,7 +227,7 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
       unreadCount:
         target && !target.isRead ?
           Math.max(0, state.unreadCount - 1)
-        : state.unreadCount,
+          : state.unreadCount,
     }));
 
     try {

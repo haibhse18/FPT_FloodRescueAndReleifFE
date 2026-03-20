@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import { CreateRescueRequestUseCase } from "@/modules/requests/application/createRescueRequest.usecase";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
+import type { Supply } from "@/modules/supplies/domain/supply.entity";
 import { useToast } from "@/hooks/use-toast";
 
 // Initialize use case with repository
@@ -30,7 +31,6 @@ const MAX_PEOPLE = 100;
 const MIN_DESCRIPTION = 10;
 const MAX_DESCRIPTION = 500;
 
-const RELIEF_NEEDS = ["Nước uống", "Thực phẩm", "Thuốc", "Áo phao", "Chăn / quần áo"];
 const CONTEXT_OPTIONS = ["Trẻ em", "Người già", "Người bị thương"];
 const MEDICINE_NEED = "Thuốc";
 const MEDICINE_NOTE_PREFIX = "Thuốc yêu cầu:";
@@ -38,6 +38,147 @@ const CONTEXT_EXTRA_SUPPLIES: Record<string, string[]> = {
   "Trẻ em": ["Sữa trẻ em", "Tã em bé"],
   "Người già": ["Thực phẩm mềm", "Đồ giữ ấm"],
   "Người bị thương": ["Băng gạc", "Thuốc sát trùng"],
+};
+
+const quickReliefActions = [
+  {
+    id: "heavy-rain",
+    icon: "🌧️",
+    label: "Mưa lớn kéo dài",
+    description: "Mưa to liên tục, nguy cơ cô lập và thiếu nhu yếu phẩm",
+    needs: ["Nước uống", "Thực phẩm", "Áo phao"],
+    contexts: [],
+    note: "Khu vực đang mưa lớn kéo dài, cần hỗ trợ nhu yếu phẩm sớm.",
+  },
+  {
+    id: "flooded-area",
+    icon: "🌊",
+    label: "Ngập lụt",
+    description: "Nước dâng cao, đi lại khó khăn, thiếu nguồn cung cơ bản",
+    needs: ["Nước uống", "Thực phẩm", "Chăn / quần áo", "Áo phao"],
+    contexts: [],
+    note: "Khu vực đang ngập lụt, gia đình cần hỗ trợ nhu yếu phẩm khẩn cấp.",
+  },
+  {
+    id: "landslide-risk",
+    icon: "⛰️",
+    label: "Sạt lở",
+    description: "Khu vực có nguy cơ hoặc đã xảy ra sạt lở đất đá",
+    needs: ["Nước uống", "Thực phẩm", "Thuốc"],
+    contexts: ["Người bị thương"],
+    note: "Khu vực có sạt lở đất đá, cần hỗ trợ vật phẩm cứu trợ an toàn.",
+  },
+  {
+    id: "storm-wind",
+    icon: "💨",
+    label: "Gió mạnh / bão",
+    description: "Thời tiết xấu gây mất điện, thiếu nước và vật dụng thiết yếu",
+    needs: ["Nước uống", "Thực phẩm", "Chăn / quần áo"],
+    contexts: [],
+    note: "Khu vực có gió mạnh/bão, sinh hoạt bị gián đoạn cần hỗ trợ khẩn.",
+  },
+] as const;
+
+const RELIEF_INCIDENT_TYPE_BY_CONDITION: Record<string, "Flood" | "Landslide" | "Other"> = {
+  "heavy-rain": "Other",
+  "flooded-area": "Flood",
+  "landslide-risk": "Landslide",
+  "storm-wind": "Other",
+};
+
+type ReliefComboTemplate = {
+  id: string;
+  label: string;
+  peopleCount: 2 | 4 | 6;
+  description: string;
+  items: Array<{
+    label: string;
+    qty: number;
+    categoryHint?: Supply["category"];
+    keywords: string[];
+  }>;
+};
+
+const RELIEF_COMBO_TEMPLATES: ReliefComboTemplate[] = [
+  {
+    id: "combo-2",
+    label: "Combo 2 người",
+    peopleCount: 2,
+    description: "Hộ nhỏ, đủ dùng trong 2-3 ngày",
+    items: [
+      { label: "Nước uống", qty: 12, categoryHint: "WATER", keywords: ["nuoc", "water"] },
+      { label: "Thực phẩm", qty: 6, categoryHint: "FOOD", keywords: ["thuc pham", "food", "mi", "gao"] },
+      { label: "Bộ y tế cơ bản", qty: 1, categoryHint: "MEDICAL", keywords: ["y te", "medical", "thuoc", "so cuu"] },
+      { label: "Chăn / áo ấm", qty: 2, categoryHint: "CLOTHING", keywords: ["chan", "ao", "quan", "clothing"] },
+    ],
+  },
+  {
+    id: "combo-4",
+    label: "Combo 4 người",
+    peopleCount: 4,
+    description: "Gia đình trung bình, ưu tiên nước và thực phẩm",
+    items: [
+      { label: "Nước uống", qty: 24, categoryHint: "WATER", keywords: ["nuoc", "water"] },
+      { label: "Thực phẩm", qty: 12, categoryHint: "FOOD", keywords: ["thuc pham", "food", "mi", "gao"] },
+      { label: "Bộ y tế cơ bản", qty: 2, categoryHint: "MEDICAL", keywords: ["y te", "medical", "thuoc", "so cuu"] },
+      { label: "Chăn / áo ấm", qty: 4, categoryHint: "CLOTHING", keywords: ["chan", "ao", "quan", "clothing"] },
+    ],
+  },
+  {
+    id: "combo-6",
+    label: "Combo 6 người",
+    peopleCount: 6,
+    description: "Hộ đông người hoặc cụm dân cư nhỏ",
+    items: [
+      { label: "Nước uống", qty: 36, categoryHint: "WATER", keywords: ["nuoc", "water"] },
+      { label: "Thực phẩm", qty: 18, categoryHint: "FOOD", keywords: ["thuc pham", "food", "mi", "gao"] },
+      { label: "Bộ y tế cơ bản", qty: 3, categoryHint: "MEDICAL", keywords: ["y te", "medical", "thuoc", "so cuu"] },
+      { label: "Chăn / áo ấm", qty: 6, categoryHint: "CLOTHING", keywords: ["chan", "ao", "quan", "clothing"] },
+    ],
+  },
+];
+
+const normalizeText = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+const mapComboToRequestSupplies = (
+  combo: ReliefComboTemplate,
+  supplies: Supply[],
+): {
+  matched: Array<{ supplyId: string; requestedQty: number }>;
+  missing: string[];
+} => {
+  const matched: Array<{ supplyId: string; requestedQty: number }> = [];
+  const missing: string[] = [];
+
+  combo.items.forEach((comboItem) => {
+    const found = supplies.find((supply) => {
+      const normalizedName = normalizeText(supply.name);
+      const categoryOk = comboItem.categoryHint
+        ? supply.category === comboItem.categoryHint
+        : true;
+      const keywordOk = comboItem.keywords.some((keyword) =>
+        normalizedName.includes(normalizeText(keyword)),
+      );
+      return categoryOk && keywordOk;
+    });
+
+    if (!found) {
+      missing.push(comboItem.label);
+      return;
+    }
+
+    matched.push({
+      supplyId: found.id,
+      requestedQty: comboItem.qty,
+    });
+  });
+
+  return { matched, missing };
 };
 
 const getCreatedRequestId = (request: unknown): string | null => {
@@ -53,6 +194,21 @@ const getCreatedRequestId = (request: unknown): string | null => {
 
   return candidate.requestId || candidate._id || candidate.id || null;
 };
+
+const ACTIVE_REQUEST_STATUSES = new Set([
+  "SUBMITTED",
+  "VERIFIED",
+  "IN_PROGRESS",
+  "FULFILLED",
+  "PARTIALLY_FULFILLED",
+  "ACCEPTED",
+]);
+
+const normalizeStatus = (status: unknown): string =>
+  String(status ?? "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .toUpperCase();
 
 export default function CitizenRequestPage() {
   const router = useRouter();
@@ -78,11 +234,37 @@ export default function CitizenRequestPage() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadImageError, setUploadImageError] = useState<string | null>(null);
-  const [reliefNeeds, setReliefNeeds] = useState<string[]>([]);
+  const [reliefNeedMedicine, setReliefNeedMedicine] = useState(false);
   const [reliefContexts, setReliefContexts] = useState<string[]>([]);
   const [reliefExtraNeeds, setReliefExtraNeeds] = useState<string[]>([]);
   const [reliefMedicineDetails, setReliefMedicineDetails] = useState("");
   const [reliefNote, setReliefNote] = useState("");
+  const [selectedReliefComboId, setSelectedReliefComboId] = useState<string | null>(
+    null,
+  );
+  const [selectedReliefQuickAction, setSelectedReliefQuickAction] = useState<
+    string | null
+  >(null);
+
+  const findActiveRequestId = async (): Promise<string | null> => {
+    try {
+      const requests = await requestRepository.getMyRequests({ page: 1, limit: 20 });
+      const sorted = [...(requests || [])].sort((a: any, b: any) => {
+        const aTime = new Date(a?.createdAt || 0).getTime();
+        const bTime = new Date(b?.createdAt || 0).getTime();
+        return bTime - aTime;
+      });
+
+      const active = sorted.find((req: any) =>
+        ACTIVE_REQUEST_STATUSES.has(normalizeStatus(req?.status)),
+      ) as { requestId?: string; _id?: string; id?: string } | undefined;
+
+      return active?.requestId || active?._id || active?.id || null;
+    } catch (lookupError) {
+      console.error("Cannot resolve active request:", lookupError);
+      return null;
+    }
+  };
 
   // Quick action templates
   const quickRescueActions = [
@@ -165,9 +347,9 @@ export default function CitizenRequestPage() {
       .join("\n")
       .trim();
 
-  // Đồng bộ ô nhập thuốc (Step 3) vào ghi chú (Step 4).
+  // Đồng bộ ô nhập thuốc vào ghi chú để coordinator nắm đúng loại thuốc cần hỗ trợ.
   useEffect(() => {
-    const hasMedicineNeed = reliefNeeds.includes(MEDICINE_NEED);
+    const hasMedicineNeed = reliefNeedMedicine;
     if (!hasMedicineNeed && reliefMedicineDetails) {
       setReliefMedicineDetails("");
     }
@@ -179,7 +361,7 @@ export default function CitizenRequestPage() {
         .filter(Boolean)
         .join("\n");
     });
-  }, [reliefNeeds, reliefMedicineDetails]);
+  }, [reliefNeedMedicine, reliefMedicineDetails]);
 
   // Hàm lấy vị trí hiện tại
   const getCurrentLocation = () => {
@@ -231,29 +413,59 @@ export default function CitizenRequestPage() {
     );
   };
 
-  // Hàm gọi API OpenMap.vn để lấy địa chỉ từ tọa độ (proxy qua Next.js để tránh CORS)
+  // Hàm gọi API Nominatim để lấy địa chỉ cụ thể từ tọa độ (proxy qua Next.js để tránh CORS)
   const getAddressFromOpenMap = async (lat: number, lon: number) => {
     try {
-      const response = await fetch(
-        `/api/reverse-geocode?lat=${lat}&lon=${lon}`,
-      );
+      const url = `/api/reverse-geocode?lat=${lat}&lon=${lon}`;
+      console.log('🗺️ Fetching address from:', url);
+      
+      const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      const location =
-        data.address?.road ||
-        data.address?.suburb ||
-        data.address?.city_district ||
-        data.address?.city ||
-        data.address?.county ||
-        data.address?.state ||
-        data.display_name ||
-        `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-      setCurrentLocation(location);
+      
+      console.log('🗺️ API Response:', data);
+
+      const isPostalCodeSegment = (segment: string) => /^\d{5,6}$/.test(segment.trim());
+      
+      // Xây dựng địa chỉ đầy đủ từ các thành phần
+      const addressParts: string[] = [];
+      
+      // Ưu tiên: display_name hoặc kết hợp các thành phần
+      if (data.display_name) {
+        // display_name từ Nominatim thường đã đầy đủ
+        // Cắt bỏ phần quốc gia ở cuối (nếu cần)
+        const parts = (data.display_name as string)
+          .split(',')
+          .map((p: string) => p.trim())
+          .slice(0, -1) // Bỏ country
+          .filter((p: string) => !isPostalCodeSegment(p));
+        const address = parts.join(', ') || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+        console.log('✅ Address from display_name:', address);
+        setCurrentLocation(address);
+      } else {
+        // Fallback: kết hợp các phần địa chỉ
+        const addr = data.address || {};
+        
+        if (addr.road) addressParts.push(addr.road);
+        if (addr.suburb) addressParts.push(addr.suburb);
+        if (addr.city_district) addressParts.push(addr.city_district);
+        if (addr.district) addressParts.push(addr.district);
+        if (addr.city) addressParts.push(addr.city);
+        if (addr.county) addressParts.push(addr.county);
+        if (addr.state) addressParts.push(addr.state);
+        if (addr.postcode) addressParts.push(addr.postcode);
+        
+        const cleanedAddressParts = addressParts.filter((part) => !isPostalCodeSegment(part));
+
+        const location = cleanedAddressParts.length > 0 
+          ? cleanedAddressParts.join(', ')
+          : `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+        
+        console.log('✅ Address from parts:', location, 'Parts:', cleanedAddressParts);
+        setCurrentLocation(location);
+      }
     } catch (error) {
-      console.warn(
-        "Address lookup failed, falling back to coordinates:",
-        error,
-      );
+      console.error('❌ Address lookup failed:', error);
       setCurrentLocation(`${lat.toFixed(4)}, ${lon.toFixed(4)}`);
     }
   };
@@ -275,12 +487,26 @@ export default function CitizenRequestPage() {
   const handleRequestTypeChange = (type: "Rescue" | "Relief") => {
     setRequestType(type);
     if (type === "Rescue") {
-      setReliefNeeds([]);
+      setReliefNeedMedicine(false);
       setReliefContexts([]);
       setReliefExtraNeeds([]);
       setReliefMedicineDetails("");
       setReliefNote("");
+      setSelectedReliefComboId(null);
+      setSelectedReliefQuickAction(null);
     }
+  };
+
+  const applyReliefQuickAction = (actionId: string) => {
+    const action = quickReliefActions.find((item) => item.id === actionId);
+    if (!action) return;
+
+    setSelectedReliefQuickAction(action.id);
+    setReliefNeedMedicine(action.needs.some((need) => need === MEDICINE_NEED));
+    setReliefContexts([...action.contexts]);
+    setReliefExtraNeeds([]);
+
+    setReliefNote(action.note);
   };
 
   // Xử lý submit form cứu hộ
@@ -418,8 +644,14 @@ export default function CitizenRequestPage() {
         /already has an? active request/i.test(rawMsg) ||
         /active.*request/i.test(rawMsg)
       ) {
-        displayMsg =
-          "Bạn đang có một yêu cầu cứu hộ đang xử lý. Vui lòng chờ yêu cầu hiện tại hoàn thành.";
+        const activeRequestId = await findActiveRequestId();
+        displayMsg = activeRequestId
+          ? "Bạn đang có một yêu cầu đang xử lý. Hệ thống sẽ chuyển đến yêu cầu hiện tại của bạn."
+          : "Bạn đang có một yêu cầu đang xử lý. Vui lòng chờ yêu cầu hiện tại hoàn thành.";
+
+        if (activeRequestId) {
+          router.push(`/history/${activeRequestId}`);
+        }
       } else if (/validation failed/i.test(rawMsg) || /valid/i.test(rawMsg)) {
         displayMsg = `Dữ liệu không hợp lệ: ${rawMsg}. Vui lòng kiểm tra thông tin và thử lại.`;
       } else if (/unauthorized/i.test(rawMsg) || /401/.test(rawMsg)) {
@@ -447,15 +679,24 @@ export default function CitizenRequestPage() {
       return;
     }
 
-    const selectedSupplies = Array.from(new Set([...reliefNeeds, ...reliefExtraNeeds]));
-    if (selectedSupplies.length === 0) {
+    const selectedCombo = RELIEF_COMBO_TEMPLATES.find(
+      (combo) => combo.id === selectedReliefComboId,
+    );
+    if (!selectedCombo) {
       toast({
         variant: "destructive",
-        title: "Thiếu vật phẩm",
-        description: "Vui lòng chọn ít nhất 1 vật phẩm cứu trợ.",
+        title: "Thiếu combo cứu trợ",
+        description: "Vui lòng chọn combo 2, 4 hoặc 6 người trước khi gửi.",
       });
       return;
     }
+
+    const selectedSupplies = Array.from(
+      new Set([
+        ...reliefExtraNeeds,
+        ...(reliefNeedMedicine ? [MEDICINE_NEED] : []),
+      ]),
+    );
 
     if (!reliefNote.trim()) {
       toast({
@@ -475,9 +716,22 @@ export default function CitizenRequestPage() {
       return;
     }
 
+    const selectedCondition = quickReliefActions.find(
+      (action) => action.id === selectedReliefQuickAction,
+    );
+    const reliefIncidentType = selectedCondition
+      ? RELIEF_INCIDENT_TYPE_BY_CONDITION[selectedCondition.id]
+      : "Other";
+    const comboLines = selectedCombo.items.map(
+      (item) => `${item.label}: ${item.qty}`,
+    );
+
     const reliefDescription = [
+      selectedCondition ? `Tình trạng khu vực: ${selectedCondition.label}` : "",
+      `Combo đã chọn: ${selectedCombo.label} (${selectedCombo.peopleCount} người)`,
+      `Danh mục combo: ${comboLines.join(", ")}`,
       `Ghi chú: ${reliefNote.trim()}`,
-      `Nhu cầu cứu trợ: ${selectedSupplies.join(", ")}`,
+      selectedSupplies.length > 0 ? `Nhu cầu bổ sung: ${selectedSupplies.join(", ")}` : "",
       reliefContexts.length > 0 ? `Gia đình có: ${reliefContexts.join(", ")}` : "",
     ]
       .filter(Boolean)
@@ -496,9 +750,9 @@ export default function CitizenRequestPage() {
     try {
       const payload: Record<string, unknown> = {
         type: "Relief",
-        incidentType: "Other",
+        incidentType: reliefIncidentType,
         description: reliefDescription,
-        peopleCount: 1,
+        peopleCount: selectedCombo.peopleCount,
         location: {
           type: "Point",
           coordinates: [coordinates.lon, coordinates.lat] as [number, number],
@@ -518,11 +772,12 @@ export default function CitizenRequestPage() {
         return;
       }
 
-      setReliefNeeds([]);
+      setReliefNeedMedicine(false);
       setReliefContexts([]);
       setReliefExtraNeeds([]);
       setReliefMedicineDetails("");
       setReliefNote("");
+      setSelectedReliefComboId(null);
     } catch (error: unknown) {
       const err = error as {
         response?: {
@@ -538,10 +793,29 @@ export default function CitizenRequestPage() {
         err?.message ||
         "Lỗi khi gửi yêu cầu cứu trợ";
 
+      let displayMsg = rawMsg;
+      if (
+        /already has an? active request/i.test(rawMsg) ||
+        /active.*request/i.test(rawMsg)
+      ) {
+        const activeRequestId = await findActiveRequestId();
+        displayMsg = activeRequestId
+          ? "Bạn đang có một yêu cầu đang xử lý. Hệ thống sẽ chuyển đến yêu cầu hiện tại của bạn."
+          : "Bạn đang có một yêu cầu đang xử lý. Vui lòng chờ yêu cầu hiện tại hoàn thành.";
+
+        if (activeRequestId) {
+          router.push(`/history/${activeRequestId}`);
+        }
+      } else if (/validation failed/i.test(rawMsg) || /valid/i.test(rawMsg)) {
+        displayMsg = `Dữ liệu không hợp lệ: ${rawMsg}. Vui lòng kiểm tra thông tin và thử lại.`;
+      } else if (/unauthorized/i.test(rawMsg) || /401/.test(rawMsg)) {
+        displayMsg = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+      }
+
       toast({
         variant: "destructive",
         title: "Gửi yêu cầu thất bại",
-        description: rawMsg,
+        description: displayMsg,
       });
     } finally {
       setIsSubmitting(false);
@@ -865,24 +1139,22 @@ export default function CitizenRequestPage() {
               <div className="bg-white/5 border border-white/10 rounded-2xl p-7 space-y-5">
                 <h2 className="text-white font-bold text-xl flex items-center gap-3">
                   <span className="bg-white/20 w-9 h-9 rounded-full flex items-center justify-center text-base">2</span>
-                  Chọn nhanh (checkbox)
+                  Chọn nhanh tình huống cứu trợ
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {RELIEF_NEEDS.map((item) => (
-                    <label key={item} className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-4 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={reliefNeeds.includes(item)}
-                        onChange={() => {
-                          toggleValue(item, reliefNeeds, setReliefNeeds);
-                          if (item === MEDICINE_NEED && reliefNeeds.includes(item)) {
-                            setReliefMedicineDetails("");
-                          }
-                        }}
-                        className="w-5 h-5 accent-[#FF7700]"
-                      />
-                      <span className="text-white text-base font-semibold">{item}</span>
-                    </label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {quickReliefActions.map((action) => (
+                    <div
+                      key={action.id}
+                      onClick={() => applyReliefQuickAction(action.id)}
+                      className={`cursor-pointer rounded-xl p-5 border-2 transition-all ${selectedReliefQuickAction === action.id
+                        ? "bg-[#FF7700]/10 border-[#FF7700]"
+                        : "bg-white/5 border-white/10 hover:bg-white/10"
+                        }`}
+                    >
+                      <div className="text-4xl mb-3">{action.icon}</div>
+                      <div className="font-bold text-white text-base mb-1">{action.label}</div>
+                      <div className="text-sm text-gray-300">{action.description}</div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -890,6 +1162,60 @@ export default function CitizenRequestPage() {
               <div className="bg-white/5 border border-white/10 rounded-2xl p-7 space-y-5">
                 <h2 className="text-white font-bold text-xl flex items-center gap-3">
                   <span className="bg-white/20 w-9 h-9 rounded-full flex items-center justify-center text-base">3</span>
+                  Chọn combo hàng hóa
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {RELIEF_COMBO_TEMPLATES.map((combo) => (
+                    <button
+                      key={combo.id}
+                      type="button"
+                      onClick={() => setSelectedReliefComboId(combo.id)}
+                      className={`text-left rounded-xl p-5 border-2 transition-all ${selectedReliefComboId === combo.id
+                        ? "bg-[#FF7700]/10 border-[#FF7700]"
+                        : "bg-white/5 border-white/10 hover:bg-white/10"
+                        }`}
+                    >
+                      <div className="text-white font-bold text-lg">{combo.label}</div>
+                      <p className="text-[#FFB066] text-sm font-semibold mt-1">{combo.description}</p>
+                      <ul className="text-gray-300 text-sm mt-3 space-y-1">
+                        {combo.items.map((item) => (
+                          <li key={item.label}>• {item.label}: {item.qty}</li>
+                        ))}
+                      </ul>
+                    </button>
+                  ))}
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={reliefNeedMedicine}
+                      onChange={(e) => setReliefNeedMedicine(e.target.checked)}
+                      className="w-5 h-5 accent-[#FF7700]"
+                    />
+                    <span className="text-white text-base font-semibold">Có nhu cầu thuốc</span>
+                  </label>
+
+                  {reliefNeedMedicine && (
+                    <div className="space-y-2">
+                      <label className="text-gray-300 text-sm font-semibold block">
+                        Tên thuốc muốn yêu cầu
+                      </label>
+                      <input
+                        type="text"
+                        value={reliefMedicineDetails}
+                        onChange={(e) => setReliefMedicineDetails(e.target.value)}
+                        placeholder="VD: Thuốc tim, thuốc hạ sốt, insulin..."
+                        className="w-full h-12 bg-black/20 border border-white/10 rounded-xl px-4 text-white text-base placeholder-gray-500 focus:outline-none focus:border-[#FF7700]"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-7 space-y-5">
+                <h2 className="text-white font-bold text-xl flex items-center gap-3">
+                  <span className="bg-white/20 w-9 h-9 rounded-full flex items-center justify-center text-base">4</span>
                   Tình trạng gia đình (linh hoạt)
                 </h2>
                 <p className="text-gray-300 text-base font-semibold">Gia đình bạn có:</p>
@@ -925,26 +1251,11 @@ export default function CitizenRequestPage() {
                     </div>
                   </div>
                 )}
-
-                {reliefNeeds.includes(MEDICINE_NEED) && (
-                  <div className="space-y-2 pt-2">
-                    <label className="text-gray-300 text-base font-semibold block">
-                      Tên thuốc muốn yêu cầu
-                    </label>
-                    <input
-                      type="text"
-                      value={reliefMedicineDetails}
-                      onChange={(e) => setReliefMedicineDetails(e.target.value)}
-                      placeholder="VD: Thuốc tim, thuốc hạ sốt, insulin..."
-                      className="w-full h-12 bg-black/20 border border-white/10 rounded-xl px-4 text-white text-base placeholder-gray-500 focus:outline-none focus:border-[#FF7700]"
-                    />
-                  </div>
-                )}
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-2xl p-7 space-y-4">
                 <h2 className="text-white font-bold text-xl flex items-center gap-3">
-                  <span className="bg-white/20 w-9 h-9 rounded-full flex items-center justify-center text-base">4</span>
+                  <span className="bg-white/20 w-9 h-9 rounded-full flex items-center justify-center text-base">5</span>
                   Ghi chú
                 </h2>
                 <div className="flex justify-between items-center">
@@ -969,7 +1280,7 @@ export default function CitizenRequestPage() {
           <div className="bg-white/5 border border-white/10 rounded-2xl p-7 space-y-5">
             <h2 className="text-white font-bold text-xl flex items-center gap-3">
               <span className="bg-white/20 w-9 h-9 rounded-full flex items-center justify-center text-base">
-                {requestType === "Rescue" ? "4" : "5"}
+                {requestType === "Rescue" ? "4" : "6"}
               </span>
               Vị trí hiện tại
             </h2>

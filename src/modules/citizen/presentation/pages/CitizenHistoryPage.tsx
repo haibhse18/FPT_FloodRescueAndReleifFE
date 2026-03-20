@@ -102,14 +102,14 @@ export default function CitizenHistoryPage() {
             filter: "in_progress",
           },
           FULFILLED: {
-            text: "Hoàn thành",
-            color: "bg-green-500/20 text-green-400 border-green-500/30",
-            filter: "completed",
+            text: "Đã xử lý xong (chờ đóng)",
+            color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+            filter: "in_progress",
           },
           PARTIALLY_FULFILLED: {
-            text: "Hoàn thành một phần",
-            color: "bg-green-500/20 text-green-400 border-green-500/30",
-            filter: "completed",
+            text: "Xử lý một phần (chờ đóng)",
+            color: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+            filter: "in_progress",
           },
           CLOSED: {
             text: "Hoàn thành",
@@ -484,6 +484,8 @@ export default function CitizenHistoryPage() {
                                     const done = !isCancelled && i < stepIndex;
                                     const active = !isCancelled && i === stepIndex;
                                     const cancelled = isCancelled;
+                                    const activeCompleted =
+                                      active && stepIndex === steps.length - 1;
                                     return (
                                       <div key={i} className="flex flex-col items-center flex-1">
                                         {/* Circle step */}
@@ -492,35 +494,37 @@ export default function CitizenHistoryPage() {
                                             ? "bg-red-500/30 text-red-300 border border-red-500/50"
                                             : done
                                               ? "bg-green-500 text-white border border-green-400"
-                                              : active
-                                                ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40 border border-[#FF7700]"
-                                                : "bg-white/10 text-gray-300 border border-white/20"
+                                              : activeCompleted
+                                                ? "bg-green-500 text-white border border-green-400"
+                                                : active
+                                                  ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40 border border-[#FF7700]"
+                                                  : "bg-white/10 text-gray-300 border border-white/20"
                                             }`}
                                         >
-                                          {cancelled ? "✕" : done ? "✓" : i + 1}
+                                          {cancelled ? "✕" : (done || activeCompleted) ? "✓" : i + 1}
                                         </div>
                                         {/* Connector line */}
-                                        {i < steps.length - 1 && (
-                                          <div
-                                            className={`w-full h-0.5 mt-1 transition-all ${cancelled
-                                              ? "bg-red-500/30"
-                                              : i < stepIndex
-                                                ? "bg-green-500"
-                                                : i === stepIndex
-                                                  ? "bg-[#FF7700]"
-                                                  : "bg-white/10"
-                                              }`}
-                                          />
-                                        )}
+                                        <div
+                                          className={`w-full h-0.5 mt-1 transition-all ${cancelled
+                                            ? "bg-red-500/30"
+                                            : i < stepIndex || activeCompleted
+                                              ? "bg-green-500"
+                                              : i === stepIndex
+                                                ? "bg-[#FF7700]"
+                                                : "bg-white/10"
+                                            }`}
+                                        />
                                         {/* Step label */}
                                         <span
                                           className={`text-xs font-semibold mt-2 text-center leading-tight ${isCancelled
                                             ? "text-red-400"
-                                            : i === stepIndex
-                                              ? "text-[#FF7700] font-bold"
-                                              : i < stepIndex
-                                                ? "text-green-400"
-                                                : "text-gray-500"
+                                            : activeCompleted
+                                              ? "text-green-400"
+                                              : i === stepIndex
+                                                ? "text-[#FF7700] font-bold"
+                                                : i < stepIndex
+                                                  ? "text-green-400"
+                                                  : "text-gray-500"
                                             }`}
                                         >
                                           {step.label}

@@ -75,31 +75,31 @@ const STATUS_META: Record<
         label: "Hoàn thành",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
         icon: "🎉",
-        step: 4,
+        step: 3,
     },
     PARTIALLY_FULFILLED: {
         label: "Hoàn thành một phần",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
         icon: "🎉",
-        step: 4,
+        step: 3,
     },
     CLOSED: {
         label: "Hoàn thành",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
         icon: "🎉",
-        step: 4,
+        step: 3,
     },
     COMPLETED: {
         label: "Hoàn thành",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
         icon: "🎉",
-        step: 4,
+        step: 3,
     },
     Completed: {
         label: "Hoàn thành",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
         icon: "🎉",
-        step: 4,
+        step: 3,
     },
     REJECTED: {
         label: "Bị từ chối",
@@ -173,7 +173,7 @@ const TYPE_LABELS: Record<string, string> = {
     relief: "📦 Cứu trợ",
 };
 
-const STEPS = ["Đã gửi", "Chấp nhận", "Trên đường", "Tại hiện trường", "Hoàn thành"];
+const STEPS = ["Đã gửi", "Chấp nhận", "Đang xử lý", "Hoàn thành"];
 
 function formatDate(dateStr: string | Date) {
     const d = new Date(dateStr);

@@ -222,7 +222,7 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
       unreadCount:
         target && !target.isRead ?
           Math.max(0, state.unreadCount - 1)
-        : state.unreadCount,
+          : state.unreadCount,
     }));
 
     try {

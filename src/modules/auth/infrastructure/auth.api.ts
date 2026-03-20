@@ -59,7 +59,9 @@ export const authApi = {
    * GET /auth/me
    */
   getCurrentUser: async (): Promise<User> => {
-    const response = await axiosInstance.get<ApiResponse<User>>("/auth/me");
+    const response = await axiosInstance.get<ApiResponse<User>>("/auth/me", {
+      timeout: 15000,
+    });
     if (!response.data.data) {
       throw new Error("No data received from getCurrentUser");
     }

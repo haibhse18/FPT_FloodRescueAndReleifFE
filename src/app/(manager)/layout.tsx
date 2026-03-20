@@ -18,7 +18,7 @@ export default function ManagerLayout({
     <AuthGuard allowedRoles={["Manager"]}>
       <div className="min-h-screen bg-[#133249] flex flex-col lg:flex-row">
         <ManagerSidebar />
-        <div className="flex-1 flex flex-col lg:ml-64 relative">
+        <div className="flex-1 flex flex-col lg:ml-[var(--sidebar-width)] transition-[margin-left] duration-300 relative">
           {/* Background Pattern */}
           <div
             className="absolute inset-0 opacity-10 pointer-events-none"

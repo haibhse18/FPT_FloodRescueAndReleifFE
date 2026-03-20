@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import Sidebar, { NavItem } from "@/shared/components/layout/Sidebar";
 import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
+import {
+  PiChartBarBold,
+  PiHouseLineBold,
+  PiPackageBold,
+  PiTruckBold,
+} from "react-icons/pi";
 
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 
@@ -37,10 +43,10 @@ export default function ManagerSidebar() {
   }, []);
 
   const navItems: NavItem[] = [
-    { icon: "🏠", label: "Dashboard", href: "/manager-dashboard" },
-    { icon: "📦", label: "Vật tư", href: "/manager-investory-control/equipments" },
-    { icon: "🚛", label: "Phương tiện", href: "/manager-investory-control/vehicles" },
-    { icon: "📊", label: "Tồn kho", href: "/manager-investory-control/stock" },
+    { icon: <PiHouseLineBold />, label: "Dashboard", href: "/manager-dashboard" },
+    { icon: <PiPackageBold />, label: "Vật tư", href: "/manager-investory-control/equipments" },
+    { icon: <PiTruckBold />, label: "Phương tiện", href: "/manager-investory-control/vehicles" },
+    { icon: <PiChartBarBold />, label: "Tồn kho", href: "/manager-investory-control/stock" },
   ];
 
   return (

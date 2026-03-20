@@ -60,4 +60,21 @@ export const inventoryApi = {
         return response.data;
     },
 
+    //use supply
+    useSupply: async (
+        supplyID: string,
+        warehouseId: string,
+        quantity: number
+    ) => {
+        const response = await axiosInstance.post(
+            `/inventory/use`,
+            {
+                supplyID,
+                warehouseId,
+                quantity
+            }
+        );
+        return response.data;
+    },
+
 };

@@ -97,6 +97,39 @@ export default function StockPage() {
     } catch (err) { console.error(err); }
     finally { setSupplyLoading(false); }
   };
+  
+
+  const handleUseSupply = async (item: any) => {
+  const quantity = Number(prompt("Nhập số lượng cần dùng:"));
+
+  if (!quantity || quantity <= 0) return;
+
+  if (quantity > item.quantity) {
+    alert("Số lượng xuất vượt quá số lượng trong kho");
+    return;
+  }
+
+  const supplyID = typeof item.supplyID === 'string' ? item.supplyID : item.supplyID?._id;
+  const warehouseId = typeof item.warehouse === 'string' ? item.warehouse : item.warehouse?._id;
+
+  console.log("SEND:", { supplyID, warehouseId, quantity });
+
+  try {
+    await inventoryApi.useSupply(
+      supplyID,
+      warehouseId,
+      quantity
+    );
+
+    alert("Dùng vật tư thành công");
+
+    fetchSupplyItems(supplyKeyword, supplyPage);
+    fetchSupplyStats();
+
+  } catch (err: any) {
+    alert(err?.response?.data?.message || "Lỗi khi dùng vật tư");
+  }
+};
 
   // ===============================
   // FETCH VEHICLE
@@ -186,7 +219,7 @@ export default function StockPage() {
     { key: "quantity",         header: "Số lượng"   },
     { key: "reservedQuantity", header: "Đã đặt"     },
     { key: "unit",             header: "Đơn vị"     },
-    { key: "warehouse",        header: "Kho"        },
+    { key: "warehouseName",    header: "Kho"        },
     {
       key: "status", header: "Trạng thái",
       render: (row: any) => {
@@ -196,18 +229,30 @@ export default function StockPage() {
           : row.status;
       }
     },
+    {
+      key: "action",
+      header: "Hành động",
+      render: (row: any) => (
+        <button
+          onClick={() => handleUseSupply(row)}
+          className="px-3 py-1 bg-red-500 text-white rounded-lg text-xs"
+        >
+          Dùng
+        </button>
+      )
+    }
   ];
 
   const supplyTableData = supplyItems.map((item) => ({
     ...item,
-    name:      typeof item.supplyID === "string" ? item.supplyID : item.supplyID?.name ?? "",
-    unit:      typeof item.supplyID === "string" ? "" : item.supplyID?.unit ?? "",
-    warehouse: typeof item.warehouse === "string" ? item.warehouse : item.warehouse?.name ?? "",
+    name:          typeof item.supplyID === "string" ? item.supplyID : item.supplyID?.name ?? "",
+    unit:          typeof item.supplyID === "string" ? "" : item.supplyID?.unit ?? "",
+    warehouseName: typeof item.warehouse === "string" ? item.warehouse : item.warehouse?.name ?? "",
   }));
 
   const vehicleColumns = [
     { key: "licensePlate", header: "Biển số"    },
-    { key: "warehouse",    header: "Kho"        },
+    { key: "warehouseName",header: "Kho"        },
     { key: "description",  header: "Mô tả"      },
     {
       key: "status", header: "Trạng thái",
@@ -224,7 +269,7 @@ export default function StockPage() {
     ...item,
     licensePlate: item.vehicleID?.licensePlate ?? "—",
     description:  item.description ?? item.vehicleID?.description ?? "—",
-    warehouse:    typeof item.warehouse === "string"
+    warehouseName:typeof item.warehouse === "string"
                     ? item.warehouse
                     : item.warehouse?.name ?? "—",
   }));

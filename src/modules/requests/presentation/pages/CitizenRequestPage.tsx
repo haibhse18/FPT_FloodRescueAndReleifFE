@@ -413,29 +413,59 @@ export default function CitizenRequestPage() {
     );
   };
 
-  // Hàm gọi API OpenMap.vn để lấy địa chỉ từ tọa độ (proxy qua Next.js để tránh CORS)
+  // Hàm gọi API Nominatim để lấy địa chỉ cụ thể từ tọa độ (proxy qua Next.js để tránh CORS)
   const getAddressFromOpenMap = async (lat: number, lon: number) => {
     try {
-      const response = await fetch(
-        `/api/reverse-geocode?lat=${lat}&lon=${lon}`,
-      );
+      const url = `/api/reverse-geocode?lat=${lat}&lon=${lon}`;
+      console.log('🗺️ Fetching address from:', url);
+      
+      const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      const location =
-        data.address?.road ||
-        data.address?.suburb ||
-        data.address?.city_district ||
-        data.address?.city ||
-        data.address?.county ||
-        data.address?.state ||
-        data.display_name ||
-        `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-      setCurrentLocation(location);
+      
+      console.log('🗺️ API Response:', data);
+
+      const isPostalCodeSegment = (segment: string) => /^\d{5,6}$/.test(segment.trim());
+      
+      // Xây dựng địa chỉ đầy đủ từ các thành phần
+      const addressParts: string[] = [];
+      
+      // Ưu tiên: display_name hoặc kết hợp các thành phần
+      if (data.display_name) {
+        // display_name từ Nominatim thường đã đầy đủ
+        // Cắt bỏ phần quốc gia ở cuối (nếu cần)
+        const parts = (data.display_name as string)
+          .split(',')
+          .map((p: string) => p.trim())
+          .slice(0, -1) // Bỏ country
+          .filter((p: string) => !isPostalCodeSegment(p));
+        const address = parts.join(', ') || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+        console.log('✅ Address from display_name:', address);
+        setCurrentLocation(address);
+      } else {
+        // Fallback: kết hợp các phần địa chỉ
+        const addr = data.address || {};
+        
+        if (addr.road) addressParts.push(addr.road);
+        if (addr.suburb) addressParts.push(addr.suburb);
+        if (addr.city_district) addressParts.push(addr.city_district);
+        if (addr.district) addressParts.push(addr.district);
+        if (addr.city) addressParts.push(addr.city);
+        if (addr.county) addressParts.push(addr.county);
+        if (addr.state) addressParts.push(addr.state);
+        if (addr.postcode) addressParts.push(addr.postcode);
+        
+        const cleanedAddressParts = addressParts.filter((part) => !isPostalCodeSegment(part));
+
+        const location = cleanedAddressParts.length > 0 
+          ? cleanedAddressParts.join(', ')
+          : `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+        
+        console.log('✅ Address from parts:', location, 'Parts:', cleanedAddressParts);
+        setCurrentLocation(location);
+      }
     } catch (error) {
-      console.warn(
-        "Address lookup failed, falling back to coordinates:",
-        error,
-      );
+      console.error('❌ Address lookup failed:', error);
       setCurrentLocation(`${lat.toFixed(4)}, ${lon.toFixed(4)}`);
     }
   };

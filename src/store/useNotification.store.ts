@@ -74,7 +74,12 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
     });
 
     socket.on("connect_error", (err) => {
-      console.error("❌ Socket connection error:", err.message);
+      const message = err.message?.toLowerCase() || "";
+      if (message.includes("timeout")) {
+        console.warn("⚠️ Socket tạm thời timeout, đang tự kết nối lại...");
+      } else {
+        console.error("❌ Socket connection error:", err.message);
+      }
       set({ isConnected: false });
     });
 

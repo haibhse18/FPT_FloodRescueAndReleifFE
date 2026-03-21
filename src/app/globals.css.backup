@@ -1,5 +1,3 @@
-@import url('https://unpkg.com/@openmapvn/openmapvn-gl@1.0.1/dist/openmapvn-gl.css');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -76,31 +74,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
     padding: 4px 8px;
 }
 
-/* OpenMapVN custom styles */
-.openmapvn-map {
-    font-family: Arial, Helvetica, sans-serif;
-}
 
-.mission-request-marker {
-    transition: all 0.2s ease;
-}
-
-.mission-request-marker:hover {
-    transform: scale(1.2);
-}
-
-.team-location-marker {
-    animation: pulse-marker 2s infinite;
-}
-
-@keyframes pulse-marker {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.7;
-    }
-}
 
 @layer base {
   :root {
@@ -159,11 +133,40 @@ input[type="password"]::-webkit-textfield-decoration-container {
     }
 }
 
+
+
 @layer base {
   * {
     @apply border-border;
     }
   body {
     @apply bg-background text-foreground;
+    }
+}
+/* OpenMapVN GL styles */
+@import url('https://unpkg.com/@openmapvn/openmapvn-gl@1.0.1/dist/openmapvn-gl.css');
+
+.openmapvn-map {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.mission-request-marker {
+    transition: all 0.2s ease;
+}
+
+.mission-request-marker:hover {
+    transform: scale(1.2);
+}
+
+.team-location-marker {
+    animation: pulse-marker 2s infinite;
+}
+
+@keyframes pulse-marker {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
     }
 }

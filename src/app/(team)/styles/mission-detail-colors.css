@@ -1,0 +1,45 @@
+/* Mission Detail Color System */
+/* Scoped color variables for Mission Detail page */
+
+.mission-detail-scope {
+  /* Background Colors (RGB format for opacity support) */
+  --mission-bg-primary: 15 23 42;        /* #0F172A - Navy dark */
+  --mission-bg-secondary: 30 41 59;      /* #1E293B - Slate dark */
+  --mission-bg-tertiary: 255 255 255;    /* White base for opacity overlays */
+  
+  /* Border Colors */
+  --mission-border-default: 255 255 255;
+  --mission-border-subtle: 255 255 255;
+  --mission-border-focus: 255 255 255;
+  
+  /* Text Colors */
+  --mission-text-primary: 255 255 255;
+  --mission-text-secondary: 255 255 255;
+  --mission-text-muted: 255 255 255;
+  --mission-text-subtle: 255 255 255;
+  
+  /* Status Colors */
+  --mission-status-assigned: 59 130 246;    /* #3B82F6 - Blue (current step) */
+  --mission-status-completed: 16 185 129;   /* #10B981 - Green (completed) */
+  --mission-status-pending: 107 114 128;    /* #6B7280 - Gray (future steps) */
+  --mission-status-critical: 239 68 68;     /* #EF4444 - Red (high priority) */
+  --mission-status-warning: 245 158 11;     /* #F59E0B - Yellow (warnings) */
+  
+  /* Action Colors */
+  --mission-action-accept: 16 185 129;         /* Green - accept button */
+  --mission-action-accept-hover: 5 150 105;    /* Darker green */
+  --mission-action-reject: 239 68 68;          /* Red - reject button */
+  --mission-action-reject-hover: 220 38 38;    /* Darker red */
+  --mission-action-primary: 59 130 246;        /* Blue - primary actions */
+  --mission-action-primary-hover: 37 99 235;   /* Darker blue */
+  
+  /* Icon Colors */
+  --mission-icon-people: 59 130 246;      /* Blue - rescue/people icon */
+  --mission-icon-supplies: 245 158 11;    /* Yellow - supplies icon */
+  --mission-icon-location: 239 68 68;     /* Red - location icon */
+  --mission-icon-default: 255 255 255;    /* White - default icons */
+  
+  /* Effect Colors */
+  --mission-glow-blue: 59 130 246;        /* Blue glow for current step */
+  --mission-shadow-card: 0 0 0;           /* Black for shadows */
+}

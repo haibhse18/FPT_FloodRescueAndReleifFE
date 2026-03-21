@@ -18,11 +18,11 @@ const STATUS_TABS: { label: string; value: RequestStatus | "ALL" }[] = [
   { label: "✅ Đã xác minh", value: "VERIFIED" },
   { label: "🔄 Đang xử lý", value: "IN_PROGRESS" },
   { label: "⚠️ Một phần", value: "PARTIALLY_FULFILLED" },
-  { label: "✔️ Hoàn thành", value: "FULFILLED" },
   { label: "📁 Đã đóng", value: "CLOSED" },
   { label: "🚫 Đã hủy", value: "CANCELLED" },
   { label: "❌ Từ chối", value: "REJECTED" },
 ];
+// Note: FULFILLED status removed - backend auto-converts to CLOSED
 
 const STATUS_COLORS: Record<string, string> = {
   SUBMITTED: "bg-gray-500/20 text-gray-300 border-gray-500/30",
@@ -30,7 +30,6 @@ const STATUS_COLORS: Record<string, string> = {
   REJECTED: "bg-red-600/20 text-red-300 border-red-600/30",
   IN_PROGRESS: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
   PARTIALLY_FULFILLED: "bg-purple-500/20 text-purple-300 border-purple-500/30",
-  FULFILLED: "bg-green-500/20 text-green-300 border-green-500/30",
   CLOSED: "bg-gray-600/20 text-gray-400 border-gray-600/30",
   CANCELLED: "bg-gray-500/20 text-gray-400 border-gray-500/30",
 };

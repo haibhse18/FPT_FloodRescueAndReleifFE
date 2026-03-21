@@ -11,9 +11,9 @@ export type RequestStatus =
   | "REJECTED"
   | "IN_PROGRESS"
   | "PARTIALLY_FULFILLED"
-  | "FULFILLED"
   | "CLOSED"
   | "CANCELLED";
+  // Note: FULFILLED status has been removed - backend auto-converts to CLOSED
 
 export type PriorityLevel = "Critical" | "High" | "Normal";
 

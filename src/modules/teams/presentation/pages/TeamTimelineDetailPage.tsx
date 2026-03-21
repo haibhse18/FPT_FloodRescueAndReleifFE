@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import confetti from "canvas-confetti";
+import { FaCheckCircle, FaExclamationTriangle, FaArrowLeft } from "react-icons/fa";
 import ErrorBoundary from "@/shared/components/ErrorBoundary";
 import { timelineRepository } from "@/modules/timelines/infrastructure/timeline.repository.impl";
 import { missionRepository } from "@/modules/missions/infrastructure/mission.repository.impl";
@@ -50,15 +52,40 @@ function InternalTeamTimelineDetailPage({
   const [completionData, setCompletionData] = useState<
     Record<string, { rescuedCount: string; supplies: Record<string, string> }>
   >({});
-  const [completeMode, setCompleteMode] = useState<"COMPLETED" | "PARTIAL">(
-    "COMPLETED",
-  );
   const [completeNote, setCompleteNote] = useState("");
   const [failReason, setFailReason] = useState("");
   const [failNote, setFailNote] = useState("");
-  const [validationErrors, setValidationErrors] = useState<Record<string, string | undefined>>({});
   const [isOnline, setIsOnline] = useState(true);
   const lastProcessedNotificationRef = useRef<string | null>(null);
+
+  // Confetti animation for COMPLETED status
+  const showConfetti = () => {
+    const duration = 3000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const interval = window.setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+      });
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+      });
+    }, 250);
+  };
 
   // Monitor online/offline status
   useEffect(() => {
@@ -126,6 +153,7 @@ function InternalTeamTimelineDetailPage({
     }
   }, [notifications, timeline, loadData]);
 
+  // Initialize completion data for each mission request
   useEffect(() => {
     if (missionRequests.length === 0) return;
     setCompletionData((prev) => {
@@ -193,6 +221,37 @@ function InternalTeamTimelineDetailPage({
     }
   };
 
+  // Poll timeline status to detect auto-complete
+  const pollTimelineStatus = async (maxAttempts = 5) => {
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      
+      try {
+        const updated = await timelineRepository.getTimelineDetail(timelineId);
+        
+        if (['COMPLETED', 'PARTIAL', 'WITHDRAWN'].includes(updated.status)) {
+          // Auto-complete detected!
+          setTimeline(updated);
+          
+          if (updated.status === 'COMPLETED') {
+            showConfetti();
+            toast.success('🎉 Timeline đã tự động hoàn tất với kết quả: COMPLETED!');
+          } else if (updated.status === 'PARTIAL') {
+            toast.info('⚠️ Timeline đã tự động hoàn tất với kết quả: PARTIAL');
+          } else if (updated.status === 'WITHDRAWN') {
+            toast.info('🔙 Timeline đã tự động hoàn tất với kết quả: WITHDRAWN');
+          }
+          
+          await loadData(); // Refresh all data
+          break;
+        }
+      } catch (error) {
+        console.error('Error polling timeline status:', error);
+        break;
+      }
+    }
+  };
+
   const handleUpdateProgress = async (missionRequestId: string) => {
     const form = completionData[missionRequestId];
     if (!form) return;
@@ -246,6 +305,9 @@ function InternalTeamTimelineDetailPage({
 
       toast.success("Đã cập nhật tiến độ.");
       await loadData();
+      
+      // Poll timeline status to detect auto-complete
+      pollTimelineStatus();
     } catch (error: any) {
       if (error?.message?.includes('SUPPLY_OVER_DELIVERY')) {
         toast.error("Vượt quá số lượng vật tư yêu cầu. Vui lòng kiểm tra lại số lượng.");
@@ -257,91 +319,63 @@ function InternalTeamTimelineDetailPage({
     }
   };
 
-  const buildCompletionPayload = (): TimelineCompleteInput | null => {
-    const completions: TimelineCompletionItemInput[] = [];
-    const errors: Record<string, string> = {};
-    
-    for (const mr of missionRequests) {
-      const form = completionData[mr._id];
-      if (!form) continue;
-
-      const rescuedCount = parseInt(form.rescuedCount || "0", 10);
-      const suppliesDelivered: { supplyId: string; quantityDelivered: number }[] =
-        [];
-      
-      // Validate and process supplies
-      if ((mr as any).requestSuppliesSnapshot) {
-        Object.entries(form.supplies).forEach(([supplyId, value]) => {
-          const qty = parseFloat(value || "0");
-          if (!Number.isNaN(qty) && qty > 0) {
-            const requestedSupply = (mr as any).requestSuppliesSnapshot.find(
-              (item: any) => (item.supplyId?._id ?? item.supplyId) === supplyId
-            );
-            
-            if (requestedSupply && qty > requestedSupply.requestedQty) {
-              errors[mr._id] = `Vượt quá số lượng cho ${requestedSupply.supplyId?.name || requestedSupply.name}`;
-            } else {
-              suppliesDelivered.push({ supplyId, quantityDelivered: qty });
-            }
-          }
-        });
-      }
-
-      if (rescuedCount > 0 || suppliesDelivered.length > 0) {
-        completions.push({
-          missionRequestId: mr._id,
-          rescuedCount: Number.isFinite(rescuedCount) ? rescuedCount : 0,
-          suppliesDelivered: suppliesDelivered.length ? suppliesDelivered : undefined,
-        });
-      }
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors);
-      toast.error("Vui lòng kiểm tra lại các lỗi validation.");
-      return null;
-    }
-
-    if (completions.length === 0) {
-      toast.error("Vui lòng nhập ít nhất một dòng cứu hộ hoặc vật tư đã phát.");
-      return null;
-    }
-
-    return {
-      outcome: completeMode,
-      note: completeNote || undefined,
-      completions,
-    };
+  // Count incomplete TeamRequests (for confirmation dialog)
+  const getIncompleteTeamRequestsCount = () => {
+    // Note: We need to check TeamRequest data, not MissionRequest
+    // For now, we'll show a warning if there are any MissionRequests
+    // In a real implementation, we'd fetch TeamRequest data from API
+    return 0; // Placeholder - will be updated when we have TeamRequest API
   };
 
   const handleComplete = async () => {
     if (!timeline || !canOperateOnSite) return;
     
-    // Show confirmation dialog
-    const confirmMessage = completeMode === "COMPLETED" 
-      ? "Bạn có chắc chắn muốn báo cáo hoàn thành đầy đủ nhiệm vụ?"
-      : "Bạn có chắc chắn muốn báo cáo hoàn thành một phần nhiệm vụ?";
+    const incompleteCount = getIncompleteTeamRequestsCount();
+    
+    // Show confirmation dialog with warning if there are incomplete TeamRequests
+    let confirmMessage = "Bạn có chắc chắn muốn hoàn tất nhiệm vụ?\n\n";
+    confirmMessage += "Hệ thống sẽ tự động tính toán kết quả dựa trên các TeamRequest đã hoàn thành.";
+    
+    if (incompleteCount > 0) {
+      confirmMessage += `\n\n⚠️ Cảnh báo: Còn ${incompleteCount} TeamRequest chưa hoàn thành. Bạn có chắc muốn tiếp tục?`;
+    }
     
     if (!confirm(confirmMessage)) {
       return;
     }
-    
-    const payload = buildCompletionPayload();
-    if (!payload) return;
 
     setActionLoading("complete");
     try {
+      const payload: TimelineCompleteInput = {
+        note: completeNote || undefined,
+      };
+      
       const updated = await completeTimelineUseCase.execute(timeline._id, payload);
       setTimeline(updated);
-      toast.success(
-        completeMode === "COMPLETED" 
-          ? "🎉 Đã hoàn thành đầy đủ nhiệm vụ!"
-          : "⚠️ Đã lưu báo cáo hoàn thành một phần."
-      );
+      
+      // Check if this was a new completion or already completed (idempotent)
+      const isAlreadyCompleted = timeline.status !== "ON_SITE";
+      
+      if (isAlreadyCompleted) {
+        toast.info("Timeline đã được hoàn tất trước đó");
+      } else {
+        // Show success message based on outcome
+        if (updated.status === "COMPLETED") {
+          showConfetti();
+          toast.success("🎉 Timeline đã hoàn tất với kết quả: COMPLETED");
+        } else if (updated.status === "PARTIAL") {
+          toast.success("⚠️ Timeline đã hoàn tất với kết quả: PARTIAL");
+        } else if (updated.status === "WITHDRAWN") {
+          toast.info("🔙 Timeline đã hoàn tất với kết quả: WITHDRAWN");
+        }
+      }
+      
       await loadData();
     } catch (error: any) {
-      if (error?.message?.includes('SUPPLY_OVER_DELIVERY')) {
-        toast.error("Vượt quá số lượng vật tư yêu cầu. Vui lòng kiểm tra lại.");
+      if (error?.message?.includes('NO_TEAM_REQUESTS_FOUND')) {
+        toast.error("Không thể hoàn tất timeline khi mission chưa start (chưa có TeamRequest)");
+      } else if (error?.message?.includes('TIMELINE_NOT_ON_SITE')) {
+        toast.error("Timeline phải ở trạng thái ON_SITE mới có thể hoàn tất");
       } else {
         toast.error(error?.message || "Không thể hoàn thành nhiệm vụ");
       }
@@ -493,7 +527,7 @@ function InternalTeamTimelineDetailPage({
           </p>
           <p>
             Trạng thái timeline:{" "}
-            <span className={`font-semibold px-2 py-0.5 rounded-full text-[10px] ${
+            <span className={`font-semibold px-2 py-0.5 rounded-full text-[10px] inline-flex items-center gap-1 ${
               timeline.status === 'ASSIGNED' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40' :
               timeline.status === 'EN_ROUTE' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40' :
               timeline.status === 'ON_SITE' ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40' :
@@ -503,6 +537,9 @@ function InternalTeamTimelineDetailPage({
               timeline.status === 'WITHDRAWN' ? 'bg-gray-500/20 text-gray-300 border border-gray-500/40' :
               'bg-white/10 text-white/80 border border-white/20'
             }`}>
+              {timeline.status === 'COMPLETED' && <FaCheckCircle className="text-[10px]" />}
+              {timeline.status === 'PARTIAL' && <FaExclamationTriangle className="text-[10px]" />}
+              {timeline.status === 'WITHDRAWN' && <FaArrowLeft className="text-[10px]" />}
               {timeline.status}
             </span>
           </p>
@@ -582,178 +619,205 @@ function InternalTeamTimelineDetailPage({
 
       {canOperateOnSite && (
         <section className="bg-white/10 border border-white/20 rounded-2xl p-5 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-white">
-              Báo cáo hoàn thành nhiệm vụ
-            </h2>
-            <div className="flex gap-2 text-xs">
-              <button
-                onClick={() => setCompleteMode("COMPLETED")}
-                className={`px-3 py-1 rounded-full border ${
-                  completeMode === "COMPLETED"
-                    ? "bg-green-500 text-white border-green-400"
-                    : "bg-white/5 text-white/80 border-white/20"
-                }`}
-              >
-                ✅ Hoàn thành đầy đủ
-              </button>
-              <button
-                onClick={() => setCompleteMode("PARTIAL")}
-                className={`px-3 py-1 rounded-full border ${
-                  completeMode === "PARTIAL"
-                    ? "bg-yellow-500 text-black border-yellow-400"
-                    : "bg-white/5 text-white/80 border-white/20"
-                }`}
-              >
-                ⚠️ Hoàn thành một phần
-              </button>
-            </div>
-          </div>
+          <h2 className="text-sm font-semibold text-white">
+            Cập nhật tiến độ từng yêu cầu
+          </h2>
+          <p className="text-xs text-white/70">
+            Nhập số người đã cứu và vật tư đã phát cho từng yêu cầu. Sau khi cập nhật xong tất cả, bạn có thể hoàn tất nhiệm vụ ở phần bên dưới.
+          </p>
 
-          <div className="space-y-3 max-h-[360px] overflow-auto pr-1">
+          <div className="space-y-3 max-h-[400px] overflow-auto pr-1">
             {loading ? (
-              // Skeleton loaders for mission requests
-              Array.from({ length: 3 }).map((_, index) => (
+              Array.from({ length: 2 }).map((_, index) => (
                 <div
                   key={`skeleton-${index}`}
                   className="border border-white/15 rounded-xl p-3 space-y-2 bg-white/5"
                 >
+                  <div className="h-3 bg-white/10 rounded w-3/4 animate-pulse"></div>
+                  <div className="h-2 bg-white/5 rounded w-1/2 animate-pulse"></div>
+                </div>
+              ))
+            ) : missionRequests.length === 0 ? (
+              <p className="text-xs text-white/60 italic text-center py-4">
+                Chưa có yêu cầu nào trong nhiệm vụ này.
+              </p>
+            ) : (
+              missionRequests.map((mr) => (
+                <div
+                  key={mr._id}
+                  className="border border-white/15 rounded-xl p-3 space-y-3 bg-white/5"
+                >
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex-1 space-y-2">
-                      <div className="h-3 bg-white/10 rounded w-3/4 animate-pulse"></div>
-                      <div className="h-2 bg-white/5 rounded w-1/2 animate-pulse"></div>
+                    <div className="text-xs text-white/80">
+                      <p className="font-semibold">
+                        Request #{(mr as any).requestId?._id?.slice(-6) ?? mr.requestId.slice(-6)}
+                      </p>
+                      <p className="text-[11px]">
+                        Người cần cứu: {(mr as any).peopleNeeded ?? (mr as any).requestPeopleSnapshot ?? 0} | 
+                        Đã cứu: {mr.peopleRescued ?? 0}
+                      </p>
                     </div>
-                    <div className="h-6 bg-white/10 rounded w-16 animate-pulse"></div>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                      mr.status === 'CLOSED' ? 'bg-green-500/20 text-green-300 border border-green-500/40' :
+                      mr.status === 'PARTIAL' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40' :
+                      mr.status === 'IN_PROGRESS' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40' :
+                      'bg-white/10 text-white/70 border border-white/20'
+                    }`}>
+                      {mr.status}
+                    </span>
                   </div>
-                  <div className="space-y-2">
-                    <div className="h-2 bg-white/5 rounded w-full animate-pulse"></div>
-                    <div className="h-2 bg-white/5 rounded w-2/3 animate-pulse"></div>
+
+                  <div className="flex flex-wrap gap-2 items-center text-xs">
+                    <label className="text-white/80">
+                      Số người mới cứu được:{" "}
+                      <input
+                        type="number"
+                        min={0}
+                        value={completionData[mr._id]?.rescuedCount ?? ""}
+                        onChange={(e) =>
+                          setCompletionData((prev) => ({
+                            ...prev,
+                            [mr._id]: {
+                              rescuedCount: e.target.value,
+                              supplies: prev[mr._id]?.supplies ?? {},
+                            },
+                          }))
+                        }
+                        className="ml-1 w-20 px-2 py-1 rounded bg-white/5 border border-white/20 text-xs text-white"
+                        placeholder="0"
+                      />
+                    </label>
                   </div>
-                  <div className="flex justify-end">
-                    <div className="h-7 bg-white/10 rounded w-24 animate-pulse"></div>
+
+                  {Array.isArray((mr as any).requestSuppliesSnapshot) &&
+                    (mr as any).requestSuppliesSnapshot.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-[11px] text-white/70 mb-1">
+                          Vật tư mới phát:
+                        </p>
+                        <div className="space-y-1">
+                          {(mr as any).requestSuppliesSnapshot.map((item: any) => {
+                            const supplyId = item.supplyId?._id ?? item.supplyId;
+                            const key = String(supplyId);
+                            const current = completionData[mr._id]?.supplies?.[key] ?? "";
+                            return (
+                              <div
+                                key={key}
+                                className="flex items-center justify-between gap-2 text-[11px]"
+                              >
+                                <span className="text-white/80">
+                                  {item.supplyId?.name ?? item.name ?? "Vật tư"}{" "}
+                                  <span className="text-white/60">
+                                    ({item.unit ?? "đơn vị"})
+                                  </span>
+                                </span>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  step="0.1"
+                                  value={current}
+                                  onChange={(e) => {
+                                    setCompletionData((prev) => ({
+                                      ...prev,
+                                      [mr._id]: {
+                                        rescuedCount: prev[mr._id]?.rescuedCount ?? "",
+                                        supplies: {
+                                          ...(prev[mr._id]?.supplies ?? {}),
+                                          [key]: e.target.value,
+                                        },
+                                      },
+                                    }));
+                                  }}
+                                  className="w-24 px-2 py-1 rounded bg-white/5 border border-white/20 text-[11px] text-white text-right"
+                                  placeholder="0"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                  <div className="flex justify-end mt-3 border-t border-white/10 pt-3">
+                    <button
+                      onClick={() => handleUpdateProgress(mr._id)}
+                      disabled={actionLoading === `progress_${mr._id}` || !isOnline}
+                      className="px-3 py-1.5 rounded bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 border border-blue-500/40 text-[11px] font-semibold disabled:opacity-50 transition-all transform hover:scale-105 disabled:transform-none flex items-center gap-1"
+                    >
+                      {actionLoading === `progress_${mr._id}` ? (
+                        <>
+                          <div className="h-3 w-3 rounded-full border-2 border-t-transparent border-blue-300 animate-spin" />
+                          Đang cập nhật...
+                        </>
+                      ) : (
+                        <>
+                          ⬆️ Cập nhật tiến độ
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               ))
-            ) : (
-              missionRequests.map((mr) => (
-              <div
-                key={mr._id}
-                className="border border-white/15 rounded-xl p-3 space-y-2 bg-white/5"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="text-xs text-white/80">
-                    <p className="font-semibold">
-                      Request: {(mr as any).requestId?._id ?? mr.requestId}
-                    </p>
-                    <p className="text-[11px]">
-                      Người cần cứu: {(mr as any).peopleNeeded ?? (mr as any).requestPeopleSnapshot ?? 0}{" "}
-                      | Đã cứu: {mr.peopleRescued ?? 0}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2 items-center text-xs">
-                  <label className="text-white/80">
-                    Đã cứu (timeline này):{" "}
-                    <input
-                      type="number"
-                      min={0}
-                      value={completionData[mr._id]?.rescuedCount ?? ""}
-                      onChange={(e) =>
-                        setCompletionData((prev) => ({
-                          ...prev,
-                          [mr._id]: {
-                            rescuedCount: e.target.value,
-                            supplies: prev[mr._id]?.supplies ?? {},
-                          },
-                        }))
-                      }
-                      className="ml-1 w-20 px-2 py-1 rounded bg-white/5 border border-white/20 text-xs text-white"
-                    />
-                  </label>
-                </div>
-
-                {Array.isArray((mr as any).requestSuppliesSnapshot) &&
-                  (mr as any).requestSuppliesSnapshot.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-[11px] text-white/70 mb-1">
-                        Vật tư đã phát (timeline này):
-                      </p>
-                      <div className="space-y-1">
-                        {(mr as any).requestSuppliesSnapshot.map((item: any) => {
-                          const supplyId = item.supplyId?._id ?? item.supplyId;
-                          const key = String(supplyId);
-                          const current =
-                            completionData[mr._id]?.supplies?.[key] ?? "";
-                          return (
-                            <div
-                              key={key}
-                              className="flex items-center justify-between gap-2 text-[11px]"
-                            >
-                              <span className="text-white/80">
-                                {item.supplyId?.name ?? item.name ?? "Vật tư"}{" "}
-                                <span className="text-white/60">
-                                  ({item.unit ?? "đơn vị"})
-                                </span>
-                              </span>
-                              <input
-                                type="number"
-                                min={0}
-                                value={current}
-                                onChange={(e) => {
-                                  setValidationErrors(prev => ({ ...prev, [mr._id]: undefined }));
-                                  setCompletionData((prev) => ({
-                                    ...prev,
-                                    [mr._id]: {
-                                      rescuedCount:
-                                        prev[mr._id]?.rescuedCount ?? "",
-                                      supplies: {
-                                        ...(prev[mr._id]?.supplies ?? {}),
-                                        [key]: e.target.value,
-                                      },
-                                    },
-                                  }));
-                                }}
-                                className={`w-24 px-2 py-1 rounded bg-white/5 border text-[11px] text-white text-right transition-colors ${
-                                  validationErrors[mr._id] 
-                                    ? 'border-red-400 focus:border-red-300' 
-                                    : 'border-white/20 focus:border-blue-400'
-                                }`}
-                                placeholder="0"
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                  
-                <div className="flex justify-end mt-3 border-t border-white/10 pt-3">
-                  <button
-                    onClick={() => handleUpdateProgress(mr._id)}
-                    disabled={actionLoading === `progress_${mr._id}` || !isOnline}
-                    className="px-3 py-1.5 rounded bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 border border-blue-500/40 text-[11px] font-semibold disabled:opacity-50 transition-all transform hover:scale-105 disabled:transform-none flex items-center gap-1"
-                  >
-                    {actionLoading === `progress_${mr._id}` ? (
-                      <>
-                        <div className="h-3 w-3 rounded-full border-2 border-t-transparent border-blue-300 animate-spin" />
-                        Đang cập nhật...
-                      </>
-                    ) : (
-                      <>
-                        ⬆️ Cập nhật tiến độ này
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ))
             )}
+          </div>
+        </section>
+      )}
+
+      {canOperateOnSite && (
+        <section className="bg-white/10 border border-white/20 rounded-2xl p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-white">
+            Hoàn tất nhiệm vụ
+          </h2>
+          
+          <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-3">
+            <p className="text-xs text-white/70">
+              Tổng quan tiến độ nhiệm vụ:
+            </p>
+            {missionRequests.length === 0 ? (
+              <p className="text-xs text-white/60 italic">Chưa có yêu cầu nào trong nhiệm vụ này.</p>
+            ) : (
+              <div className="space-y-2">
+                {missionRequests.map((mr) => (
+                  <div
+                    key={mr._id}
+                    className="border border-white/10 rounded-lg p-3 bg-white/5"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <p className="text-xs text-white/90 font-semibold">
+                        Request #{(mr as any).requestId?._id?.slice(-6) ?? mr.requestId.slice(-6)}
+                      </p>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                        mr.status === 'CLOSED' ? 'bg-green-500/20 text-green-300 border border-green-500/40' :
+                        mr.status === 'PARTIAL' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40' :
+                        mr.status === 'IN_PROGRESS' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40' :
+                        'bg-white/10 text-white/70 border border-white/20'
+                      }`}>
+                        {mr.status}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-white/70 space-y-1">
+                      <p>
+                        Người cần cứu: {(mr as any).peopleNeeded ?? (mr as any).requestPeopleSnapshot ?? 0} | 
+                        Đã cứu: <span className="text-white/90 font-semibold">{mr.peopleRescued ?? 0}</span>
+                      </p>
+                      <p>
+                        Tiến độ: <span className="text-white/90 font-semibold">{mr.fulfillmentPercent ?? 0}%</span>
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="pt-2 border-t border-white/10">
+              <p className="text-xs text-white/80">
+                <span className="font-semibold">{missionRequests.filter(mr => mr.status === 'CLOSED' || mr.status === 'PARTIAL').length}</span> / {missionRequests.length} yêu cầu đã hoàn thành
+              </p>
+            </div>
           </div>
 
           <div className="space-y-2">
             <label className="block text-xs text-white/80">
-              Ghi chú thêm (tuỳ chọn)
+              Ghi chú hoàn tất (tuỳ chọn)
             </label>
             <textarea
               rows={3}
@@ -764,25 +828,28 @@ function InternalTeamTimelineDetailPage({
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={handleComplete}
-              disabled={actionLoading === "complete" || !isOnline}
-              className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-semibold transition-all transform hover:scale-105 disabled:transform-none flex items-center gap-2"
-              aria-label={actionLoading === "complete" ? "Đang xử lý hoàn thành nhiệm vụ" : completeMode === "COMPLETED" ? "Xác nhận hoàn thành đầy đủ nhiệm vụ" : "Lưu báo cáo hoàn thành một phần"}
-            >
-              {actionLoading === "complete" ? (
-                <>
-                  <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin" />
-                  Đang xử lý...
-                </>
-              ) : (
-                <>
-                  {completeMode === "COMPLETED" ? "✅ Xác nhận hoàn thành" : "⚠️ Lưu báo cáo một phần"}
-                </>
-              )}
-            </button>
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+            <p className="text-xs text-blue-200">
+              ℹ️ Kết quả (COMPLETED/PARTIAL/WITHDRAWN) sẽ được hệ thống tự động tính toán dựa trên các TeamRequest đã hoàn thành.
+            </p>
           </div>
+
+          <button
+            onClick={handleComplete}
+            disabled={actionLoading === "complete" || !isOnline}
+            className="w-full px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-semibold transition-all transform hover:scale-105 disabled:transform-none flex items-center justify-center gap-2"
+          >
+            {actionLoading === "complete" ? (
+              <>
+                <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin" />
+                Đang xử lý...
+              </>
+            ) : (
+              <>
+                ✅ Hoàn tất nhiệm vụ
+              </>
+            )}
+          </button>
         </section>
       )}
 

@@ -101,11 +101,6 @@ export default function CitizenHistoryPage() {
             color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
             filter: "in_progress",
           },
-          FULFILLED: {
-            text: "Đã xử lý xong (chờ đóng)",
-            color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
-            filter: "in_progress",
-          },
           PARTIALLY_FULFILLED: {
             text: "Xử lý một phần (chờ đóng)",
             color: "bg-purple-500/20 text-purple-300 border-purple-500/30",
@@ -472,7 +467,7 @@ export default function CitizenHistoryPage() {
                               { label: "Xong" },
                             ];
                             const stepIndex =
-                              ["Completed", "COMPLETED", "FULFILLED", "PARTIALLY_FULFILLED", "CLOSED"].includes(request.originalStatus) ? 3
+                              ["Completed", "COMPLETED", "PARTIALLY_FULFILLED", "CLOSED"].includes(request.originalStatus) ? 3
                                 : ["In Progress", "IN_PROGRESS"].includes(request.originalStatus) ? 2
                                   : ["Accepted", "VERIFIED"].includes(request.originalStatus) ? 1
                                     : 0;
@@ -554,7 +549,7 @@ export default function CitizenHistoryPage() {
                         >
                           👁️ Xem chi tiết
                         </Link>
-                        {!(["Completed", "COMPLETED", "FULFILLED", "PARTIALLY_FULFILLED", "CLOSED", "Cancelled", "CANCELLED", "Rejected", "REJECTED"].includes(request.originalStatus)) && (
+                        {!(["Completed", "COMPLETED", "PARTIALLY_FULFILLED", "CLOSED", "Cancelled", "CANCELLED", "Rejected", "REJECTED"].includes(request.originalStatus)) && (
                           <button
                             onClick={() => setCancelConfirmId(request.id)}
                             className="flex-1 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-xl text-red-400 hover:text-red-300 text-sm font-bold transition-all"

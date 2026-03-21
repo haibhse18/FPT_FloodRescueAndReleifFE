@@ -2,7 +2,6 @@
 
 import { AuthGuard } from "@/shared/components/AuthGuard";
 import { useSocketInit } from "@/hooks/useSocketInit";
-import NotificationBell from "@/modules/notifications/presentation/components/NotificationBell";
 import TeamSidebar, { TEAM_MOBILE_NAV_ITEMS } from "./components/TeamSidebar";
 import { MobileBottomNav } from "@/shared/components/layout";
 import { Toaster } from "@/shared/ui/components";
@@ -32,11 +31,7 @@ export default function TeamLayout({
             }}
           ></div>
 
-          <div className="absolute top-4 right-4 z-50">
-            <NotificationBell />
-          </div>
-
-          <main className="relative z-10 pt-14 lg:pt-4">
+          <main className="relative z-10">
             {children}
           </main>
           <Toaster />

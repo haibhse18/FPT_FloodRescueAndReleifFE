@@ -3,6 +3,8 @@
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import NotificationBell from "@/modules/notifications/presentation/components/NotificationBell";
 
 export interface NavItem {
   icon: ReactNode;
@@ -110,10 +112,9 @@ function useSidebarState() {
  * Sub-component: SidebarHeader                                       *
  * ================================================================== */
 function SidebarHeader({
-  isExpanded, showTexts, isPinnedOpen, onTogglePin, title, subtitle,
+  isExpanded, showTexts, title, subtitle,
 }: {
-  isExpanded: boolean; showTexts: boolean; isPinnedOpen: boolean;
-  onTogglePin: () => void; title: string; subtitle: string;
+  isExpanded: boolean; showTexts: boolean; title: string; subtitle: string;
 }) {
   const visible = isExpanded && showTexts;
 
@@ -135,19 +136,45 @@ function SidebarHeader({
           </div>
         </div>
       </div>
-
-      <button
-        type="button"
-        onClick={onTogglePin}
-        aria-label={isPinnedOpen ? "Bỏ ghim sidebar" : "Ghim sidebar ở trạng thái mở"}
-        aria-pressed={isPinnedOpen}
-        className="mt-3 mx-auto flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#133249] transition-colors duration-200 h-8 w-8"
-      >
-        <span className={`text-base transition-transform duration-200 ${isPinnedOpen ? "rotate-180" : ""}`}>
-          ❮
-        </span>
-      </button>
     </div>
+  );
+}
+
+/* ================================================================== *
+ * Sub-component: SidebarNotificationSection                          *
+ * ================================================================== */
+function SidebarNotificationSection({
+  isExpanded,
+  isPinnedOpen,
+  onTogglePin,
+}: {
+  isExpanded: boolean;
+  isPinnedOpen: boolean;
+  onTogglePin: () => void;
+}) {
+  return (
+    <>
+      <div className="shrink-0 px-3 py-1.5 flex items-center justify-between gap-1.5">
+        <NotificationBell />
+        
+        {isExpanded && (
+          <button
+            type="button"
+            onClick={onTogglePin}
+            aria-label={isPinnedOpen ? "Bỏ ghim sidebar" : "Ghim sidebar ở trạng thái mở"}
+            aria-pressed={isPinnedOpen}
+            className="flex-shrink-0 rounded-lg border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#0f2a3f] h-10 w-10 flex items-center justify-center transition-colors duration-200"
+          >
+            {isPinnedOpen ? (
+              <ChevronLeft className="w-4 h-4" />
+            ) : (
+              <ChevronRight className="w-4 h-4" />
+            )}
+          </button>
+        )}
+      </div>
+      <div className="h-px w-full bg-white/10 shrink-0" aria-hidden="true" />
+    </>
   );
 }
 
@@ -288,23 +315,27 @@ export default function Sidebar({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleFocus}
-      className="hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 bg-gradient-to-b from-[#133249] to-[#0f2a3f] border-r border-white/10 z-40 shadow-xl overflow-hidden"
+      className="group hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 bg-gradient-to-b from-[#133249] to-[#0f2a3f] border-r border-white/10 z-40 shadow-xl overflow-hidden"
       style={{
         width: isExpanded ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH,
         transition: "width 200ms cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
-      <div className="flex h-full flex-col">
+      <div className="flex h-full flex-col relative">
         <SidebarHeader
           isExpanded={isExpanded}
           showTexts={showTexts}
-          isPinnedOpen={isPinnedOpen}
-          onTogglePin={() => setIsPinnedOpen((prev) => !prev)}
           title={title}
           subtitle={subtitle}
         />
 
         <div className="h-px w-full bg-white/10 shrink-0" aria-hidden="true" />
+
+        <SidebarNotificationSection
+          isExpanded={isExpanded}
+          isPinnedOpen={isPinnedOpen}
+          onTogglePin={() => setIsPinnedOpen((prev) => !prev)}
+        />
 
         <nav className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
           <div className="px-2 py-2">

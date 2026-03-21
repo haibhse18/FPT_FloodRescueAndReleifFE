@@ -7,6 +7,7 @@
  */
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Bell, Trash2, CheckCheck, X } from "lucide-react";
 import { useNotificationStore } from "@/store/useNotification.store";
 import { useAuthStore } from "@/store/useAuth.store";
@@ -47,14 +48,35 @@ export default function NotificationBell() {
   } = useNotificationStore();
   const user = useAuthStore((s) => s.user);
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+
+  // Client-side only mounting
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Update dropdown position when opened
+  useEffect(() => {
+    if (open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+      });
+    }
+  }, [open]);
 
   // Click outside to close
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
+        !dropdownRef.current.contains(e.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target as Node)
       ) {
         setOpen(false);
       }
@@ -64,24 +86,34 @@ export default function NotificationBell() {
   }, [open]);
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <>
       {/* Bell Icon */}
       <button
+        ref={buttonRef}
         onClick={() => setOpen(!open)}
-        className="relative p-2 rounded-xl hover:bg-white/10 transition-colors"
+        className="relative flex items-center rounded-lg bg-white/5 hover:bg-white/10 transition-all active:scale-95 border border-white/5 hover:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#0f2a3f] h-10 w-10"
         aria-label="Thông báo"
       >
-        <Bell className="h-5 w-5 text-white/80" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center ring-2 ring-[#133249]">
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
-        )}
+        <div className="w-10 flex items-center justify-center flex-shrink-0 relative">
+          <Bell className="h-5 w-5 text-white/80" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] flex items-center justify-center px-1 text-[9px] font-bold bg-red-500 text-white rounded-full shadow-lg">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </div>
       </button>
 
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-[#1a3a52] rounded-xl shadow-2xl border border-white/10 max-h-[28rem] overflow-hidden z-50 flex flex-col">
+      {/* Dropdown - Rendered via Portal */}
+      {mounted && open && createPortal(
+        <div 
+          ref={dropdownRef}
+          className="fixed w-80 bg-[#0c1f2f] rounded-xl shadow-2xl border border-white/10 max-h-[28rem] overflow-hidden z-[9999] flex flex-col"
+          style={{
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+          }}
+        >
           {/* Header */}
           <div className="p-3 border-b border-white/10 flex items-center justify-between shrink-0">
             <h3 className="text-white font-bold text-sm">
@@ -181,8 +213,9 @@ export default function NotificationBell() {
               ))
             }
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }

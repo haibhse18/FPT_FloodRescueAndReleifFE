@@ -65,8 +65,9 @@ export default function TeamMissionsPage() {
     async (opts?: { resetPage?: boolean }) => {
       setLoading(true);
       try {
+        const currentPage = opts?.resetPage ? 1 : page;
         const filters: { status?: TimelineStatus; page: number; limit: number } =
-          { page: opts?.resetPage ? 1 : page, limit: 10 };
+          { page: currentPage, limit: 10 };
 
         if (activeTab !== "ALL") {
           filters.status = activeTab;
@@ -90,36 +91,48 @@ export default function TeamMissionsPage() {
     if (timelines.length === 0) return;
 
     const fetchMissionDetails = async () => {
-      const missionDetailsMap: Record<string, Mission> = { ...missionDetails };
-      
       // Extract mission IDs - handle both string and object formats
       const newMissionIds = timelines
         .map((tl) => {
           const missionId = tl.missionId;
           return typeof missionId === "string" ? missionId : (missionId as any)?._id;
         })
-        .filter((id): id is string => !!id && !missionDetailsMap[id]);
+        .filter((id): id is string => !!id);
 
       if (newMissionIds.length === 0) return;
 
-      for (const missionId of newMissionIds) {
-        try {
-          const mission = await getMissionDetailUseCase.execute(missionId);
-          missionDetailsMap[missionId] = mission;
-        } catch (err) {
-          console.error(`Failed to fetch mission ${missionId}:`, err);
-        }
-      }
+      // Use functional update to avoid dependency on missionDetails
+      setMissionDetails((prevDetails) => {
+        const missionDetailsMap: Record<string, Mission> = { ...prevDetails };
+        const idsToFetch = newMissionIds.filter((id) => !missionDetailsMap[id]);
+        
+        if (idsToFetch.length === 0) return prevDetails;
 
-      setMissionDetails(missionDetailsMap);
+        // Fetch new missions
+        Promise.all(
+          idsToFetch.map(async (missionId) => {
+            try {
+              const mission = await getMissionDetailUseCase.execute(missionId);
+              missionDetailsMap[missionId] = mission;
+            } catch (err) {
+              console.error(`Failed to fetch mission ${missionId}:`, err);
+            }
+          })
+        ).then(() => {
+          setMissionDetails(missionDetailsMap);
+        });
+
+        return prevDetails;
+      });
     };
 
     fetchMissionDetails();
-  }, [timelines, missionDetails]);
+  }, [timelines]);
 
   useEffect(() => {
     fetchTimelines();
-  }, [fetchTimelines]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, page]);
 
   useEffect(() => {
     if (notifications.length === 0) return;
@@ -127,7 +140,8 @@ export default function TeamMissionsPage() {
     if (latest.missionId) {
       fetchTimelines();
     }
-  }, [notifications, fetchTimelines]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications]);
 
   const handleTabChange = (value: TimelineStatus | "ALL") => {
     setActiveTab(value);
@@ -140,7 +154,7 @@ export default function TeamMissionsPage() {
         <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white">
-              🚑 Nhiệm vụ của đội
+              Nhiệm vụ của đội
             </h1>
             <p className="text-sm text-white/70 mt-1">
               Xem thông tin chi tiết mission code, người phân công và thực thi các nhiệm vụ được phân công cho đội của bạn.

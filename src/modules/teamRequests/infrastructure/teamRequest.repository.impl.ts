@@ -18,27 +18,27 @@ export interface TeamRequestRepository {
 
 class TeamRequestRepositoryImpl implements TeamRequestRepository {
   async getTeamRequests(filters: GetTeamRequestsFilter): Promise<PaginatedTeamRequests> {
-    const response = await teamRequestApi.getTeamRequests(filters);
+    const response = await teamRequestApi.getTeamRequests(filters) as any;
     return {
-      data: response.data?.data || [],
-      total: response.data?.meta?.total || 0,
-      page: response.data?.meta?.page || 1,
-      limit: response.data?.meta?.limit || 10,
-      totalPages: response.data?.meta?.totalPages || 1,
+      data: response.data || [],
+      total: response.meta?.total || 0,
+      page: response.meta?.page || 1,
+      limit: response.meta?.limit || 10,
+      totalPages: response.meta?.totalPages || 1,
     };
   }
 
   async getTeamRequestDetail(teamRequestId: string): Promise<TeamRequest> {
-    const response = await teamRequestApi.getTeamRequestDetail(teamRequestId);
-    return response.data?.data;
+    const response = await teamRequestApi.getTeamRequestDetail(teamRequestId) as any;
+    return response.data;
   }
 
   async completeTeamRequest(
     teamRequestId: string,
     input: CompleteTeamRequestInput,
   ): Promise<TeamRequest> {
-    const response = await teamRequestApi.completeTeamRequest(teamRequestId, input);
-    return response.data?.data;
+    const response = await teamRequestApi.completeTeamRequest(teamRequestId, input) as any;
+    return response.data;
   }
 }
 

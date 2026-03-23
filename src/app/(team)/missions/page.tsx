@@ -1,5 +1,14 @@
-﻿import TeamMissionsPage from "@/modules/teams/presentation/pages/TeamMissionsPage";
+﻿"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Page() {
-    return <TeamMissionsPage />;
+    const router = useRouter();
+    
+    useEffect(() => {
+        router.replace("/missions-history");
+    }, [router]);
+    
+    return null;
 }

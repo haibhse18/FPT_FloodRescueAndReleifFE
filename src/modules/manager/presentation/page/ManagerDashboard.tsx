@@ -43,7 +43,7 @@ export default function ManagerDashboardPage() {
 
       setSuppliesTotal(suppliesRes.meta?.total ?? 0);
 
-      setRequestsProcessing(requestsRes.meta?.total ?? 0);
+      setRequestsProcessing(requestsRes.length?? 0);
 
       setVehiclesTotal(vehiclesRes?.total ?? 0);
 
@@ -69,9 +69,9 @@ export default function ManagerDashboardPage() {
         label: "Thống kê hệ thống",
         data: [suppliesTotal, vehiclesTotal, requestsProcessing],
         backgroundColor: [
-          "#059669", // emerald-600
-          "#047857", // emerald-700
-          "#10B981", // emerald-500
+          "#1A3263", // emerald-600
+          "#547792", // emerald-700
+          "#89A8D3", // emerald-500
         ],
         borderRadius: 12,
         barThickness: 60,
@@ -107,7 +107,7 @@ export default function ManagerDashboardPage() {
 
       <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 leading-tight">Dashboard Quản Lý</h1>
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">Tổng quan hệ thống</h1>
           <p className="text-sm text-gray-500 mt-1">Lên kế hoạch, ưu tiên và hoàn thành các nhiệm vụ dễ dàng.</p>
         </div>
       </div>
@@ -115,7 +115,7 @@ export default function ManagerDashboardPage() {
       {/* Quick stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-shrink-0">
 
-        <div className="bg-emerald-800 rounded-3xl p-6 shadow-md relative overflow-hidden">
+        <div className="bg-[#1A3263] rounded-3xl p-6 shadow-md relative overflow-hidden">
           <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
           <p className="text-emerald-100 text-sm font-medium mb-2 relative z-10 flex items-center justify-between">
             <span>Tổng vật tư</span>

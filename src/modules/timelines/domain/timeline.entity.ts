@@ -60,6 +60,7 @@ export interface TimelineCancelInput {
   note?: string;
 }
 
+// Legacy interfaces - kept for backward compatibility but not used in new API
 export interface TimelineCompletionSupplyInput {
   supplyId: string;
   quantityDelivered: number;
@@ -71,10 +72,9 @@ export interface TimelineCompletionItemInput {
   suppliesDelivered?: TimelineCompletionSupplyInput[];
 }
 
+// New unified API - outcome is auto-calculated by backend
 export interface TimelineCompleteInput {
-  outcome: "COMPLETED" | "PARTIAL";
   note?: string;
-  completions: TimelineCompletionItemInput[];
 }
 
 export interface TimelineFailInput {

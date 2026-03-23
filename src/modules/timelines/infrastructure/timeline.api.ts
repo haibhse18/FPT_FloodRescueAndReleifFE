@@ -75,12 +75,12 @@ export const timelineApi = {
     );
   },
 
-  /** PATCH /timelines/{id}/complete — team reports completion (COMPLETED/PARTIAL) */
+  /** POST /timelines/{id}/complete — team reports completion (unified API with auto-calculate outcome) */
   completeTimeline: async (
     timelineId: string,
-    body: TimelineCompleteInput,
+    body: { note?: string },
   ): Promise<ApiResponse> => {
-    return apiClient.patch(`/timelines/${timelineId}/complete`, body, {
+    return apiClient.post(`/timelines/${timelineId}/complete`, body, {
       headers: authSession.getAuthHeaders(),
     });
   },

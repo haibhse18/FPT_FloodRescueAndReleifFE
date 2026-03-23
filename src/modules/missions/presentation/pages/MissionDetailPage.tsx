@@ -136,7 +136,32 @@ export default function MissionDetailPage() {
   const [showAbortConfirm, setShowAbortConfirm] = useState(false);
 
   // Notifications for auto-refresh
-  
+  const notifications = useNotificationStore(state => state.notifications);
+
+  const fetchData = useCallback(async () => {
+    if (!missionId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      // Fetch mission detail first
+      const missionData = await getMissionDetailUseCase.execute(missionId);
+      setMission(missionData);
+      
+      // Then fetch timelines and requests in parallel
+      const [timelinesData, requestsData] = await Promise.all([
+        getTimelinesUseCase.execute({ missionId }),
+        getMissionRequestsUseCase.execute(missionId),
+      ]);
+      setTimelines(timelinesData.data || []);
+      setMissionRequests(requestsData || []);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error("Failed to fetch mission:", error);
+      setError(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, [missionId]);
 
   const fetchLocation = useCallback(async () => {
     setIsLoadingLocation(true);
@@ -760,7 +785,7 @@ export default function MissionDetailPage() {
         isOpen={showAddTeamsModal}
         onClose={() => setShowAddTeamsModal(false)}
         onAdd={handleAddTeams}
-        teams={teams}
+        teams={teams} 
       />
 
       {/* Abort Confirmation */}

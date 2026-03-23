@@ -16,7 +16,7 @@ export interface ISupplyRepository {
     /**
      * Lấy danh sách supply requests
      */
-    getSupplyRequests(): Promise<{ data: SupplyRequest[], meta: { page: number, totalPages: number, total: number } }>;
+    getSupplyRequests(): Promise<SupplyRequest[]>;
 
     /**
      * Tạo supply request mới

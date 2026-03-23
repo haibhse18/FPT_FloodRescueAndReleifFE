@@ -4,6 +4,13 @@ import { useEffect, useState } from "react";
 import Sidebar, { NavItem } from "@/shared/components/layout/Sidebar";
 import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
+import {
+  PiCrosshairSimpleBold,
+  PiHouseLineBold,
+  PiSirenBold,
+  PiUserCircleBold,
+  PiUsersThreeBold,
+} from "react-icons/pi";
 
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 
@@ -32,11 +39,11 @@ export default function CoordinatorSidebar() {
   }, []);
 
   const navItems: NavItem[] = [
-    { icon: "🏠", label: "Dashboard", href: "/dashboard" },
-    { icon: "🆘", label: "Yêu cầu", href: "/requests" },
-    { icon: "⚔️", label: "Nhiệm vụ", href: "/mission-control" },
-    { icon: "👥", label: "Quản lí team", href: "/team-control" },
-    { icon: "👤", label: "Cá nhân", href: "/profile" },
+    { icon: <PiHouseLineBold />, label: "Dashboard", href: "/dashboard" },
+    { icon: <PiSirenBold />, label: "Yêu cầu", href: "/requests" },
+    { icon: <PiCrosshairSimpleBold />, label: "Nhiệm vụ", href: "/mission-control" },
+    { icon: <PiUsersThreeBold />, label: "Quản lí team", href: "/team-control" },
+    { icon: <PiUserCircleBold />, label: "Cá nhân", href: "/profile" },
   ];
 
   return (

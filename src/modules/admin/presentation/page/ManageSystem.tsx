@@ -81,11 +81,11 @@ export default function AdminSystemPage() {
 
   // ================= FETCH =================
 
-  const fetchVehicles = async () => {
+  const fetchVehicles = async (page: number, keyword: string) => {
     setLoading(true);
     try {
       const res = await vehicleApi.getVehicles(
-        `?page=${vehiclePage}&limit=10&licensePlate=${vehicleKeyword}`
+        `?page=${page}&limit=10&licensePlate=${keyword}`
       );
       setVehicles(res.data || []);
       setVehiclePage(res.meta?.page || 1);
@@ -96,11 +96,11 @@ export default function AdminSystemPage() {
     }
   };
 
-  const fetchSupplies = async () => {
+  const fetchSupplies = async (page: number, keyword: string) => {
     setLoading(true);
     try {
       const res = await supplyApi.getSupplies(
-        `?page=${supplyPage}&limit=10&name=${supplyKeyword}`
+        `?page=${page}&limit=10&name=${keyword}`
       );
       setSupplies(res.data || []);
       setSupplyPage(res.meta?.page || 1);
@@ -111,11 +111,11 @@ export default function AdminSystemPage() {
     }
   };
 
-  const fetchWarehouses = async () => {
+  const fetchWarehouses = async (page: number, keyword: string) => {
     setLoading(true);
     try {
       const res = await warehouseApi.getWarehouses(
-        `?page=${warehousePage}&limit=10&address=${warehouseKeyword}`
+        `?page=${page}&limit=10&name=${keyword}`
       );
       setWarehouses(res.data || []);
       setWarehousePage(res.meta?.page || 1);
@@ -136,7 +136,7 @@ export default function AdminSystemPage() {
         longitude: lon,
       });
 
-      // ✅ format address đẹp
+      //  format address đẹp
       const addr = location.address;
 
       const formatted = [
@@ -160,34 +160,40 @@ export default function AdminSystemPage() {
     }
   };
 
-  // FIX: dùng warehouses thay vì locations
+  // FIX: dùng warehouses thay vì locations và gọi tuần tự để tránh Rate Limit (429) hoặc bị huỷ Request.
   useEffect(() => {
     if (!warehouses.length) return;
 
-    warehouses.forEach((warehouse) => {
-      const lat = warehouse.location?.coordinates?.[1];
-      const lon = warehouse.location?.coordinates?.[0];
+    const fetchAddresses = async () => {
+      for (const warehouse of warehouses) {
+        const lat = warehouse.location?.coordinates?.[1];
+        const lon = warehouse.location?.coordinates?.[0];
 
-      if (!lat || !lon) return;
+        if (!lat || !lon) continue;
 
-      // tránh gọi lại API nhiều lần
-      if (!warehouseAddresses[warehouse._id]) {
-        getAddressFromCoordinates(lat, lon, warehouse._id);
+        // tránh gọi lại API nhiều lần nếu đã có địa chỉ
+        if (!warehouseAddresses[warehouse._id]) {
+          await getAddressFromCoordinates(lat, lon, warehouse._id);
+          // Thêm một khoảng nghỉ nhỏ 300ms giữa các lần gọi để OpenMap.vn không chặn do quá tải 
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        }
       }
-    });
+    };
+
+    fetchAddresses();
   }, [warehouses]);
 
 
   useEffect(() => {
-    fetchVehicles();
+    fetchVehicles(vehiclePage, vehicleKeyword);
   }, [vehiclePage, vehicleKeyword]);
 
   useEffect(() => {
-    fetchSupplies();
+    fetchSupplies(supplyPage, supplyKeyword);
   }, [supplyPage, supplyKeyword]);
 
   useEffect(() => {
-    fetchWarehouses();
+    fetchWarehouses(warehousePage, warehouseKeyword);
   }, [warehousePage, warehouseKeyword]);
 
   

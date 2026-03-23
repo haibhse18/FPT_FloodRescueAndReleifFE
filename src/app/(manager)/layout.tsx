@@ -16,20 +16,39 @@ export default function ManagerLayout({
 }) {
   return (
     <AuthGuard allowedRoles={["Manager"]}>
-      <div className="min-h-screen bg-[#133249] flex flex-col lg:flex-row">
+      <div className="min-h-screen flex flex-col lg:flex-row bg-[#F3F4F4] text-black-800">
+        {/* Sidebar */}
         <ManagerSidebar />
-        <div className="flex-1 flex flex-col lg:ml-64 relative">
+        <div className="flex-1 flex flex-col lg:ml-[var(--sidebar-width)] transition-[margin-left] duration-300 relative">
           {/* Background Pattern */}
           <div
-            className="absolute inset-0 opacity-10 pointer-events-none"
+            className="absolute inset-0 opacity-5 pointer-events-none"
             style={{
-              backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)",
+              backgroundImage:
+                "radial-gradient(rgba(30,58,138,0.05) 1px, transparent 1px)",
               backgroundSize: "20px 20px",
             }}
           ></div>
-          {children}
-          <Toaster />
+
+          {/* Content */}
+          <div className="flex-1 p-6">
+            {children}
+          </div>
+
+          {/* Mobile Bottom Nav */}
           <MobileBottomNav />
+
+          {/* Toast Notifications */}
+          {/* <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: "#1E3A8A",
+                color: "white",
+                border: "1px solid #EF4444", // accent đỏ
+              },
+            }}
+          /> */}
         </div>
       </div>
     </AuthGuard>

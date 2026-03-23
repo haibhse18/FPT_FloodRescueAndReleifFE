@@ -13,8 +13,9 @@ export const mapApi = {
      * GET /reverse-geocode
      */
     reverseGeocode: async (lat: number, lng: number): Promise<ApiResponse> => {
+        const apikey = process.env.NEXT_PUBLIC_OPENMAP_API_KEY || "DAR5BIpQoDJ9hRBbPk3STpnGjM9fHAtG";
         return mapClient.get(
-            `/geocode/reverse?latlng=${lat},${lng}&apikey=${process.env.NEXT_PUBLIC_OPENMAP_API_KEY}`
+            `/geocode/reverse?latlng=${lat},${lng}&apikey=${apikey}`
         );
     },
 

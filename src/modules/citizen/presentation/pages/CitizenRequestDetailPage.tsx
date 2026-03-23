@@ -75,31 +75,31 @@ const STATUS_META: Record<
         label: "Hoàn thành",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
         icon: "🎉",
-        step: 4,
+        step: 3,
     },
     PARTIALLY_FULFILLED: {
         label: "Hoàn thành một phần",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
         icon: "🎉",
-        step: 4,
+        step: 3,
     },
     CLOSED: {
         label: "Hoàn thành",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
         icon: "🎉",
-        step: 4,
+        step: 3,
     },
     COMPLETED: {
         label: "Hoàn thành",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
         icon: "🎉",
-        step: 4,
+        step: 3,
     },
     Completed: {
         label: "Hoàn thành",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
         icon: "🎉",
-        step: 4,
+        step: 3,
     },
     REJECTED: {
         label: "Bị từ chối",
@@ -173,7 +173,7 @@ const TYPE_LABELS: Record<string, string> = {
     relief: "📦 Cứu trợ",
 };
 
-const STEPS = ["Đã gửi", "Chấp nhận", "Trên đường", "Tại hiện trường", "Hoàn thành"];
+const STEPS = ["Đã gửi", "Chấp nhận", "Đang xử lý", "Hoàn thành"];
 
 function formatDate(dateStr: string | Date) {
     const d = new Date(dateStr);
@@ -196,6 +196,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     const touchStartX = useRef<number | null>(null);
     const [actionLoading, setActionLoading] = useState<"cancel" | null>(null);
     const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+    const [detailedAddress, setDetailedAddress] = useState<string | null>(null);
 
     useEffect(() => {
         fetchDetail();
@@ -214,6 +215,30 @@ export default function CitizenRequestDetailPage({ id }: Props) {
             setIsLoading(false);
         }
     };
+
+    // Fetch detailed address when request is loaded
+    useEffect(() => {
+        if (!request) return;
+        
+        // Parse coordinates from location
+        let lat: number | null = null;
+        let lon: number | null = null;
+
+        if (request.location?.type === "Point" && Array.isArray(request.location.coordinates)) {
+            const [lng, latitude] = request.location.coordinates as [number, number];
+            lat = latitude;
+            lon = lng;
+        } else if (request.latitude && request.longitude) {
+            lat = request.latitude;
+            lon = request.longitude;
+        }
+
+        // Fetch detailed address if coordinates exist and address not already set
+        if (lat && lon && !detailedAddress && !request.address) {
+            fetchDetailedAddress(lat, lon);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [request]);
 
     /* ─── Lightbox helpers ─── */
     const openLightbox = useCallback((i: number) => {
@@ -251,6 +276,29 @@ export default function CitizenRequestDetailPage({ id }: Props) {
         }
         return () => { document.body.style.overflow = ""; };
     }, [lightboxIndex]);
+
+    // Fetch detailed address from coordinates using reverse geocoding
+    const fetchDetailedAddress = async (lat: number, lon: number) => {
+        try {
+            const response = await fetch(
+                `/api/reverse-geocode?lat=${lat}&lon=${lon}`
+            );
+            if (response.ok) {
+                const data = await response.json();
+                if (data.display_name) {
+                    // Format address from display_name
+                    const parts = (data.display_name as string)
+                        .split(',')
+                        .map((p: string) => p.trim())
+                        .slice(0, -1) // Remove country
+                        .filter((p: string) => p && !p.match(/^\d+$/)); // Remove postal codes
+                    setDetailedAddress(parts.slice(0, 5).join(', ')); // Keep first 5 parts
+                }
+            }
+        } catch (err) {
+            // Silently fail - will use default address
+        }
+    };
 
     const handleCancelRequest = async () => {
         if (!window.confirm("Bạn có chắc muốn hủy yêu cầu này? Hành động này không thể hoàn tác.")) return;
@@ -337,7 +385,8 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     })();
     const mapLat: number | null = parsedLoc?.lat ?? request.latitude ?? null;
     const mapLon: number | null = parsedLoc?.lon ?? request.longitude ?? null;
-    const locationText: string | null = parsedLoc?.text ?? (mapLat != null ? `${(mapLat as number).toFixed(5)}, ${(mapLon as number).toFixed(5)}` : null);
+    // Prioritize detailed address from reverse geocoding, then backend address
+    const locationText: string | null = detailedAddress ?? request.address ?? parsedLoc?.text ?? (mapLat != null ? `${(mapLat as number).toFixed(5)}, ${(mapLon as number).toFixed(5)}` : null);
 
     return (
         <div className="min-h-screen bg-[#133249] text-white">
@@ -514,16 +563,29 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                             📍 Vị trí
                         </p>
                         {locationText && (
-                            <p className="text-gray-100 text-base lg:text-lg">{locationText}</p>
+                            <div className="space-y-2">
+                                <p className="text-gray-100 text-base lg:text-lg leading-relaxed">
+                                    {locationText.split(',').map((part, idx) => (
+                                        <span key={idx} className="block">
+                                            {part.trim()}
+                                        </span>
+                                    ))}
+                                </p>
+                            </div>
                         )}
                         {mapLat !== null && mapLon !== null && (
-                            <div className="h-64 lg:h-[420px] rounded-xl overflow-hidden border border-white/10">
-                                <OpenMap
-                                    latitude={mapLat}
-                                    longitude={mapLon}
-                                    address={locationText || "Vị trí yêu cầu"}
-                                />
-                            </div>
+                            <>
+                                <p className="text-gray-400 text-xs font-mono">
+                                    Tọa độ: {mapLat.toFixed(6)}, {mapLon.toFixed(6)}
+                                </p>
+                                <div className="h-64 lg:h-[420px] rounded-xl overflow-hidden border border-white/10">
+                                    <OpenMap
+                                        latitude={mapLat}
+                                        longitude={mapLon}
+                                        address={locationText || "Vị trí yêu cầu"}
+                                    />
+                                </div>
+                            </>
                         )}
                     </div>
                 )}

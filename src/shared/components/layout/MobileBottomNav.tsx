@@ -1,10 +1,11 @@
 "use client";
 
+import { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 interface NavItem {
-  icon: string;
+  icon: ReactNode;
   label: string;
   href: string;
 }

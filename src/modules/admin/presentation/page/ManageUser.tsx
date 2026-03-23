@@ -84,10 +84,10 @@ export default function AdminUsersPage() {
       header: "User",
       render: (user: any) => (
         <div>
-          <div className="font-medium text-white">
+          <div className="font-bold text-gray-900">
             {user.displayName || user.userName}
           </div>
-          <div className="text-sm text-gray-400">{user.email}</div>
+          <div className="text-sm font-medium text-gray-500">{user.email}</div>
         </div>
       ),
     },
@@ -97,10 +97,10 @@ export default function AdminUsersPage() {
      render: (user: any) => {
   const color =
     roleColors[user.role] ||
-    "bg-gray-500/20 text-gray-300 border border-gray-500/40";
+    "bg-gray-100 text-gray-600 border border-gray-200";
 
   return (
-    <span className={`px-3 py-1 rounded-full text-xs ${color}`}>
+    <span className={`px-3 py-1 rounded-full text-xs font-bold ${color}`}>
       {user.role}
     </span>
   );
@@ -111,30 +111,30 @@ export default function AdminUsersPage() {
       header: "Status",
       render: (user: any) =>
         user.status === "khoa tai khoan"
-          ? "🔴 Locked"
-          : "🟢 Active",
+          ? <span className="text-red-600 font-bold bg-red-50 border border-red-100 px-3 py-1 rounded-full text-xs">Locked</span>
+          : <span className="text-emerald-700 font-bold bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full text-xs">Active</span>,
     },
     {
       key: "isAction",
       header: "Actions",
       render: (user: any) => (
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <button
             onClick={() => handleEditUser(user.role)}
-            className="text-blue-400"
+            className="text-blue-500 hover:text-blue-700 transition-colors"
           >
             ✏️
           </button>
           <button
             onClick={() => handleToggleStatus(user.id, user.status)}
-            className="text-yellow-400"
+            className="text-amber-500 hover:text-amber-700 transition-colors"
           >
             🔒
           </button>
 
           <button
             onClick={() => handleDeleteUser(user.id)}
-            className="text-red-400"
+            className="text-red-500 hover:text-red-700 transition-colors"
           >
             🗑️
           </button>
@@ -145,53 +145,59 @@ export default function AdminUsersPage() {
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Danh sách người dùng</h1>
-        <p className="text-gray-400">Có {usersTotal} người dùng</p>
+      <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">Danh sách người dùng</h1>
+          <p className="text-sm font-medium text-gray-500 mt-1">Có {usersTotal} người dùng trong hệ thống</p>
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="relative w-80">
-          <input
-            type="text"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="Tìm kiếm theo tên, ID hoặc loại..."
-            className="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20"
-          />
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full md:w-80">
+            <input
+              type="text"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="Tìm kiếm theo tên, ID..."
+              className="w-full px-6 py-3 rounded-full bg-gray-50 text-gray-900 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+            />
+          </div>
 
-        <button
-          onClick={handleSearch}
-          className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          Search
-        </button>
+          <button
+            onClick={handleSearch}
+            className="px-6 py-3 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-sm transition-colors"
+          >
+            Tìm kiếm
+          </button>
+        </div>
       </div>
 
       {/* TABLE */}
 
+      {/* TABLE */}
+
       {loading ? (
-        <div className="text-center py-20 text-white">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white mx-auto"></div>
+        <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-600 mx-auto"></div>
         </div>
       ) : users.length === 0 ? (
-        <div className="text-center py-20 text-white bg-white/5 rounded-lg">
-          <p>Không tìm thấy vật tư nào</p>
+        <div className="text-center py-20 text-gray-500 font-medium bg-white rounded-3xl shadow-sm border border-gray-100">
+          <p>Không tìm thấy người dùng nào</p>
         </div>
       ) : (
-        <div className="bg-white/5 rounded-lg overflow-hidden text-white">
-          <Table columns={columns} data={users} striped hoverable />
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden text-gray-900">
+          <Table columns={columns} data={users} striped={true} hoverable={true} />
         </div>
       )}
 
       {/* PAGINATION */}
-      <div className="flex justify-center items-center gap-2 mt-6">
+      <div className="flex justify-center items-center gap-3 mt-6">
 
       <button
         disabled={page === 1}
         onClick={() => setPage(page - 1)}
-        className="px-3 py-1 rounded bg-white/10 text-white disabled:opacity-40"
+        className="px-5 py-2 rounded-full bg-white border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 font-medium shadow-sm"
       >
         Prev
       </button>
@@ -200,10 +206,10 @@ export default function AdminUsersPage() {
         <button
           key={i}
           onClick={() => setPage(i + 1)}
-          className={`px-3 py-1 rounded ${
+          className={`w-10 h-10 rounded-full font-bold shadow-sm flex items-center justify-center transition-colors ${
             page === i + 1
-              ? "bg-blue-600 text-white"
-          : "bg-white/10 text-white"
+              ? "bg-emerald-700 text-white"
+              : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
           }`}
         >
           {i + 1}
@@ -213,7 +219,7 @@ export default function AdminUsersPage() {
       <button
         disabled={page === totalPages}
         onClick={() => setPage(page + 1)}
-        className="px-3 py-1 rounded bg-white/10 text-white disabled:opacity-40"
+        className="px-5 py-2 rounded-full bg-white border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 font-medium shadow-sm"
       >
         Next
       </button>

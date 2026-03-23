@@ -6,6 +6,7 @@ import MobileBottomNav from "@/shared/components/layout/MobileBottomNav";
 import { Toaster } from "@/shared/ui/components/toaster";
 import { useSocketInit } from "@/hooks/useSocketInit";
 import { useNotificationStore } from "@/store/useNotification.store";
+import { usePathname } from "next/navigation";
 
 /**
  * Layout cho Citizen routes
@@ -17,16 +18,18 @@ export default function CitizenLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   // Khởi tạo Socket.IO khi authenticated
   useSocketInit();
 
   const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const isRequestPage = pathname === "/request";
 
   return (
     <AuthGuard allowedRoles={["Citizen"]}>
       <div className="min-h-screen bg-[#133249] flex flex-col lg:flex-row">
         <CitizenSidebar />
-        <div className="flex-1 flex flex-col lg:ml-64 relative">
+        <div className="flex-1 flex flex-col lg:ml-[var(--sidebar-width)] transition-[margin-left] duration-300 relative">
           {/* Background Pattern - Global for Citizen pages */}
           <div
             className="absolute inset-0 opacity-10 pointer-events-none z-0"
@@ -39,9 +42,11 @@ export default function CitizenLayout({
           {children}
           <Toaster />
 
-          <MobileBottomNav
-            badges={unreadCount > 0 ? { "/notifications": unreadCount } : {}}
-          />
+          {!isRequestPage && (
+            <MobileBottomNav
+              badges={unreadCount > 0 ? { "/notifications": unreadCount } : {}}
+            />
+          )}
         </div>
       </div>
     </AuthGuard>

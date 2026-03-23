@@ -4,13 +4,18 @@ import { useEffect, useState } from "react";
 import Sidebar, { NavItem } from "@/shared/components/layout/Sidebar";
 import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
+import {
+  PiChartLineUpBold,
+  PiMapTrifoldBold,
+  PiUsersThreeBold,
+} from "react-icons/pi";
 
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 
 export const TEAM_NAV_ITEMS: NavItem[] = [
-  { icon: "🗺️", label: "Missions", href: "/missions" },
-  { icon: "👥", label: "Đội của tôi", href: "/my-team" },
-  { icon: "📈", label: "Reports", href: "/report" },
+  { icon: <PiMapTrifoldBold />, label: "Missions", href: "/missions" },
+  { icon: <PiUsersThreeBold />, label: "Đội của tôi", href: "/my-team" },
+  { icon: <PiChartLineUpBold />, label: "Reports", href: "/report" },
 ];
 
 export const TEAM_MOBILE_NAV_ITEMS = TEAM_NAV_ITEMS.map((item) => ({

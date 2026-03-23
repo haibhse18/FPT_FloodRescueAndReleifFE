@@ -33,6 +33,7 @@ export interface CreateRescueRequestDTO {
   priority?: string;
   peopleCount?: number;
   requestSupply?: unknown[];
+  requestSupplies?: { supplyId: string; requestedQty: number }[];
   location?: string | { type?: string; coordinates: [number, number] };
   dangerType?: string;
   numberOfPeople?: number;
@@ -117,7 +118,7 @@ export const requestsApi = {
     });
   },
 
-  /** GET /requests/{id} */
+  /** GET /requests/{requestId} */
   getRequestDetail: async (requestId: string): Promise<ApiResponse> => {
     return apiClient.get(`/requests/${requestId}`, {
       headers: authSession.getAuthHeaders(),

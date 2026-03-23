@@ -3,18 +3,18 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import dynamic from "next/dynamic";
-import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
-
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
+import { warehouseRepository } from "@/modules/warehouse/infrastructure/warehouse.repository.impl";
 import type { CoordinatorRequest } from "@/modules/requests/domain/request.entity";
+import type { Warehouse } from "@/modules/warehouse/domain/warehouse.entity";
 import { useToast } from "@/hooks/use-toast";
 
-const OpenMap = dynamic(
-  () => import("@/modules/map/presentation/components/OpenMap"),
+const GoongRequestMap = dynamic(
+  () => import("@/modules/map/presentation/components/GoongRequestMap"),
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full bg-slate-300 rounded-lg animate-pulse flex items-center justify-center text-slate-500">
+      <div className="w-full h-96 bg-slate-300 rounded-lg animate-pulse flex items-center justify-center text-slate-500">
         Đang tải bản đồ...
       </div>
     ),
@@ -55,6 +55,7 @@ export default function CoordinatorRequestDetailPage() {
   const { toast } = useToast();
 
   const [request, setRequest] = useState<CoordinatorRequest | null>(null);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -65,7 +66,10 @@ export default function CoordinatorRequestDetailPage() {
   const [selectedPriority, setSelectedPriority] = useState<string>("Normal");
 
   useEffect(() => {
-    if (requestId) fetchRequestDetail();
+    if (requestId) {
+      fetchRequestDetail();
+      fetchWarehouses();
+    }
   }, [requestId]);
 
   const fetchRequestDetail = async () => {
@@ -80,6 +84,15 @@ export default function CoordinatorRequestDetailPage() {
       console.error("Error fetching request detail:", err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchWarehouses = async () => {
+    try {
+      const data = await warehouseRepository.getWarehouses();
+      setWarehouses(data.warehouses || []);
+    } catch (err) {
+      console.error("Error fetching warehouses:", err);
     }
   };
 
@@ -417,26 +430,47 @@ export default function CoordinatorRequestDetailPage() {
           {/* Location & Map */}
           {hasLocation(request) && (
             <section className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h2 className="text-white font-bold text-xl mb-3">Vị trí</h2>
-              <p className="text-gray-300 mb-4">
-                📍 {request.address || "Chưa có địa chỉ"}
+              <h2 className="text-white font-bold text-xl mb-3">📍 Vị trí & Kho gần nhất</h2>
+              <p className="text-gray-300 mb-2">
+                {request.address || "Chưa có địa chỉ"}
                 {request.isLocationVerified && (
                   <span className="ml-2 text-green-400 text-sm">
                     ✓ Đã xác minh
                   </span>
                 )}
               </p>
-              <p className="text-gray-400 text-sm mb-4 font-mono">
+              <p className="text-gray-400 text-xs mb-4 font-mono">
                 Lat: {getLat(request).toFixed(6)} • Long:{" "}
                 {getLng(request).toFixed(6)}
               </p>
-              <div className="h-96 rounded-lg overflow-hidden border-2 border-white/20">
-                <OpenMap
-                  latitude={getLat(request)}
-                  longitude={getLng(request)}
-                  address={request.address || "Vị trí yêu cầu"}
-                />
-              </div>
+              <GoongRequestMap
+                request={request}
+                warehouses={warehouses}
+                onLocationUpdate={async (lat, lng, address) => {
+                  try {
+                    const updated = await requestRepository.updateLocation(request._id, {
+                      location: {
+                        type: "Point",
+                        coordinates: [lng, lat],
+                      },
+                      isLocationVerified: true,
+                    });
+                    setRequest(updated);
+                    toast({
+                      title: "✅ Đã cập nhật vị trí",
+                      description: address,
+                    });
+                  } catch (err: any) {
+                    toast({
+                      title: "❌ Lỗi cập nhật vị trí",
+                      description: err.message,
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                allowLocationUpdate={request.status === "VERIFIED" || request.status === "SUBMITTED"}
+                height="500px"
+              />
             </section>
           )}
 

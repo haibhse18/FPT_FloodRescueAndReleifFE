@@ -101,15 +101,10 @@ export default function CitizenHistoryPage() {
             color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
             filter: "in_progress",
           },
-          FULFILLED: {
-            text: "Hoàn thành",
-            color: "bg-green-500/20 text-green-400 border-green-500/30",
-            filter: "completed",
-          },
           PARTIALLY_FULFILLED: {
-            text: "Hoàn thành một phần",
-            color: "bg-green-500/20 text-green-400 border-green-500/30",
-            filter: "completed",
+            text: "Xử lý một phần (chờ đóng)",
+            color: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+            filter: "in_progress",
           },
           CLOSED: {
             text: "Hoàn thành",
@@ -472,7 +467,7 @@ export default function CitizenHistoryPage() {
                               { label: "Xong" },
                             ];
                             const stepIndex =
-                              ["Completed", "COMPLETED", "FULFILLED", "PARTIALLY_FULFILLED", "CLOSED"].includes(request.originalStatus) ? 3
+                              ["Completed", "COMPLETED", "PARTIALLY_FULFILLED", "CLOSED"].includes(request.originalStatus) ? 3
                                 : ["In Progress", "IN_PROGRESS"].includes(request.originalStatus) ? 2
                                   : ["Accepted", "VERIFIED"].includes(request.originalStatus) ? 1
                                     : 0;
@@ -484,6 +479,8 @@ export default function CitizenHistoryPage() {
                                     const done = !isCancelled && i < stepIndex;
                                     const active = !isCancelled && i === stepIndex;
                                     const cancelled = isCancelled;
+                                    const activeCompleted =
+                                      active && stepIndex === steps.length - 1;
                                     return (
                                       <div key={i} className="flex flex-col items-center flex-1">
                                         {/* Circle step */}
@@ -492,35 +489,37 @@ export default function CitizenHistoryPage() {
                                             ? "bg-red-500/30 text-red-300 border border-red-500/50"
                                             : done
                                               ? "bg-green-500 text-white border border-green-400"
-                                              : active
-                                                ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40 border border-[#FF7700]"
-                                                : "bg-white/10 text-gray-300 border border-white/20"
+                                              : activeCompleted
+                                                ? "bg-green-500 text-white border border-green-400"
+                                                : active
+                                                  ? "bg-[#FF7700] text-white ring-2 ring-[#FF7700]/40 border border-[#FF7700]"
+                                                  : "bg-white/10 text-gray-300 border border-white/20"
                                             }`}
                                         >
-                                          {cancelled ? "✕" : done ? "✓" : i + 1}
+                                          {cancelled ? "✕" : (done || activeCompleted) ? "✓" : i + 1}
                                         </div>
                                         {/* Connector line */}
-                                        {i < steps.length - 1 && (
-                                          <div
-                                            className={`w-full h-0.5 mt-1 transition-all ${cancelled
-                                              ? "bg-red-500/30"
-                                              : i < stepIndex
-                                                ? "bg-green-500"
-                                                : i === stepIndex
-                                                  ? "bg-[#FF7700]"
-                                                  : "bg-white/10"
-                                              }`}
-                                          />
-                                        )}
+                                        <div
+                                          className={`w-full h-0.5 mt-1 transition-all ${cancelled
+                                            ? "bg-red-500/30"
+                                            : i < stepIndex || activeCompleted
+                                              ? "bg-green-500"
+                                              : i === stepIndex
+                                                ? "bg-[#FF7700]"
+                                                : "bg-white/10"
+                                            }`}
+                                        />
                                         {/* Step label */}
                                         <span
                                           className={`text-xs font-semibold mt-2 text-center leading-tight ${isCancelled
                                             ? "text-red-400"
-                                            : i === stepIndex
-                                              ? "text-[#FF7700] font-bold"
-                                              : i < stepIndex
-                                                ? "text-green-400"
-                                                : "text-gray-500"
+                                            : activeCompleted
+                                              ? "text-green-400"
+                                              : i === stepIndex
+                                                ? "text-[#FF7700] font-bold"
+                                                : i < stepIndex
+                                                  ? "text-green-400"
+                                                  : "text-gray-500"
                                             }`}
                                         >
                                           {step.label}
@@ -550,7 +549,7 @@ export default function CitizenHistoryPage() {
                         >
                           👁️ Xem chi tiết
                         </Link>
-                        {!(["Completed", "COMPLETED", "FULFILLED", "PARTIALLY_FULFILLED", "CLOSED", "Cancelled", "CANCELLED", "Rejected", "REJECTED"].includes(request.originalStatus)) && (
+                        {!(["Completed", "COMPLETED", "PARTIALLY_FULFILLED", "CLOSED", "Cancelled", "CANCELLED", "Rejected", "REJECTED"].includes(request.originalStatus)) && (
                           <button
                             onClick={() => setCancelConfirmId(request.id)}
                             className="flex-1 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-xl text-red-400 hover:text-red-300 text-sm font-bold transition-all"

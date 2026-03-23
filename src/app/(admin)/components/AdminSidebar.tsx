@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import Sidebar, { NavItem } from "@/shared/components/layout/Sidebar";
 import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
+import {
+  PiChartLineUpBold,
+  PiGearSixBold,
+  PiHouseLineBold,
+  PiUsersThreeBold,
+} from "react-icons/pi";
 
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 
@@ -37,10 +43,10 @@ export default function AdminSidebar() {
   }, []);
 
   const navItems: NavItem[] = [
-    { icon: "🏠", label: "Dashboard", href: "/admin-dashboard" },
-    { icon: "👥", label: "Người dùng", href: "/admin-users" },
-    { icon: "⚙️", label: "Hệ thống", href: "/admin-system" },
-    { icon: "📈", label: "Theo dõi", href: "/admin-monitoring" },
+    { icon: <PiHouseLineBold />, label: "Dashboard", href: "/admin-dashboard" },
+    { icon: <PiUsersThreeBold />, label: "Người dùng", href: "/admin-users" },
+    { icon: <PiGearSixBold />, label: "Hệ thống", href: "/admin-system" },
+    { icon: <PiChartLineUpBold />, label: "Theo dõi", href: "/admin-monitoring" },
   ];
 
   return (

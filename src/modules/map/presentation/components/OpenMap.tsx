@@ -16,6 +16,10 @@ interface OpenMapProps {
   longitude?: number;
   address?: string;
   warehouses?: WarehouseLocation[];
+  selectable?: boolean;
+  isSelectionMode?: boolean;
+  onLocationSelect?: (latitude: number, longitude: number) => void;
+  height?: number;
 }
 
 export default function OpenMap({
@@ -23,10 +27,15 @@ export default function OpenMap({
   longitude,
   address,
   warehouses = [],
+  selectable = false,
+  isSelectionMode = false,
+  onLocationSelect,
+  height = 420,
 }: OpenMapProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
+  const userMarkerRef = useRef<maplibregl.Marker | null>(null);
 
   const apiKey = process.env.NEXT_PUBLIC_OPENMAP_API_KEY;
 
@@ -98,6 +107,7 @@ export default function OpenMap({
     const addUserMarker = (lng: number, lat: number, label?: string) => {
       const marker = new maplibregl.Marker({
         color: "#2563eb",
+        draggable: isSelectionMode,
       })
         .setLngLat([lng, lat])
         .setPopup(
@@ -111,7 +121,15 @@ export default function OpenMap({
         )
         .addTo(map);
 
+      if (isSelectionMode && onLocationSelect) {
+        marker.on("dragend", () => {
+          const lngLat = marker.getLngLat();
+          onLocationSelect(lngLat.lat, lngLat.lng);
+        });
+      }
+
       markersRef.current.push(marker);
+      userMarkerRef.current = marker;
       bounds.extend([lng, lat]);
     };
 
@@ -133,14 +151,33 @@ export default function OpenMap({
         maxZoom: 16,
       });
     }
-  }, [latitude, longitude, warehouses]);
+  }, [latitude, longitude, warehouses, address, isSelectionMode, onLocationSelect]);
+
+  useEffect(() => {
+    if (!mapRef.current || !isSelectionMode || !onLocationSelect) return;
+
+    const map = mapRef.current;
+
+    // Set cursor style when in manual selection mode
+    map.getCanvas().style.cursor = "crosshair";
+
+    const handleMapClick = (event: maplibregl.MapMouseEvent) => {
+      onLocationSelect(event.lngLat.lat, event.lngLat.lng);
+    };
+
+    map.on("click", handleMapClick);
+    return () => {
+      map.off("click", handleMapClick);
+      map.getCanvas().style.cursor = "grab";
+    };
+  }, [isSelectionMode, onLocationSelect]);
 
   return (
     <div
       ref={mapContainer}
       style={{
         width: "100%",
-        height: "420px",
+        height: `${height}px`,
         borderRadius: "12px",
         overflow: "hidden",
       }}

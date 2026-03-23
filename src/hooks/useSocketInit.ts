@@ -32,5 +32,6 @@ export function useSocketInit() {
     return () => {
       cleanup();
     };
-  }, [isAuthenticated, user, initSocket, cleanup]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, user]);
 }

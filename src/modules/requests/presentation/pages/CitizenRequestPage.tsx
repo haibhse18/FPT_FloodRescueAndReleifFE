@@ -607,6 +607,13 @@ export default function CitizenRequestPage() {
   };
 
   const handleReliefContextCountChange = (context: string, rawValue: string) => {
+    if (rawValue.trim() === "") {
+      if (context === "Trẻ em") setReliefChildCount(0);
+      if (context === "Người già") setReliefElderlyCount(0);
+      if (context === "Người bị thương") setReliefInjuredCount(0);
+      return;
+    }
+
     const parsed = Number.parseInt(rawValue || "0", 10);
     const next = Number.isFinite(parsed) ? parsed : 0;
     const clamped = Math.max(0, Math.min(getMaxAssignableForContext(context), next));
@@ -831,6 +838,15 @@ export default function CitizenRequestPage() {
   };
 
   const handleReliefSubmit = async () => {
+    if (!selectedReliefQuickAction) {
+      toast({
+        variant: "destructive",
+        title: "Thiếu tình huống khu vực",
+        description: "Vui lòng chọn tình huống khu vực trước khi nhập và gửi yêu cầu cứu trợ.",
+      });
+      return;
+    }
+
     if (!coordinates) {
       toast({
         variant: "destructive",
@@ -855,6 +871,25 @@ export default function CitizenRequestPage() {
         variant: "destructive",
         title: "Phân bổ thành viên chưa hợp lệ",
         description: "Tổng trẻ em, người già và người bị thương không được vượt quá tổng số thành viên gia đình.",
+      });
+      return;
+    }
+
+    const reliefGroupChecks = [
+      { selected: isChildSelected, label: "Trẻ em", count: selectedChildCount },
+      { selected: isElderlySelected, label: "Người già", count: selectedElderlyCount },
+      { selected: isInjuredSelected, label: "Người bị thương", count: selectedInjuredCount },
+    ];
+
+    const invalidReliefGroup = reliefGroupChecks.find(
+      (group) => group.selected && (group.count <= 0 || group.count > reliefFamilySize),
+    );
+
+    if (invalidReliefGroup) {
+      toast({
+        variant: "destructive",
+        title: "Số lượng nhóm ưu tiên chưa hợp lệ",
+        description: `${invalidReliefGroup.label} phải lớn hơn 0 và nhỏ hơn hoặc bằng số thành viên gia đình (${reliefFamilySize}).`,
       });
       return;
     }
@@ -1183,13 +1218,13 @@ export default function CitizenRequestPage() {
               {requestType === "Relief" && (
                 <div className={`${sectionCardClass} p-4 space-y-3.5 bg-white/[0.04] border border-white/10 rounded-xl`}>
                   <div className="space-y-2.5">
-                    <label className="text-sm text-white font-semibold block">Tình huống khu vực</label>
+                    <label className="text-sm text-white font-semibold block">Tình huống khu vực *</label>
                     <select
                       value={selectedReliefQuickAction || ""}
                       onChange={(e) => applyReliefQuickAction(e.target.value)}
                       className="w-full h-10 rounded-lg border border-[#89b8d4]/45 bg-[#0f2f44]/95 px-3 text-[#f3f9ff] text-sm focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-[#9ec8e0]/70"
                     >
-                      <option value="">Chọn tình huống</option>
+                      <option value="">Chọn tình huống (bắt buộc)</option>
                       {quickReliefActions.map((action) => (
                         <option key={action.id} value={action.id}>
                           {action.label}
@@ -1206,21 +1241,40 @@ export default function CitizenRequestPage() {
                         onClick={() => setIsReliefComboModalOpen(true)}
                         className="rounded-lg border border-[#FF7700]/45 bg-[#FF7700]/15 px-2.5 py-1.5 text-xs font-semibold text-[#FFD1A0] hover:bg-[#FF7700]/25 transition-colors"
                       >
-                        Xem combo 3 ngày
+                        Xem combo
                       </button>
                     </div>
                     <input
                       type="number"
                       min={RELIEF_MIN_FAMILY_MEMBERS}
                       max={RELIEF_MAX_FAMILY_MEMBERS}
-                      value={familyMemberCount}
+                      value={familyMemberCount === 0 ? "" : familyMemberCount}
                       onChange={(e) => {
-                        const parsed = Number.parseInt(e.target.value || "0", 10);
+                        const rawValue = e.target.value;
+                        if (rawValue.trim() === "") {
+                          setFamilyMemberCount(0);
+                          return;
+                        }
+
+                        const parsed = Number.parseInt(rawValue, 10);
                         const safeValue = Number.isFinite(parsed) ? parsed : RELIEF_MIN_FAMILY_MEMBERS;
                         setFamilyMemberCount(
                           Math.max(
                             RELIEF_MIN_FAMILY_MEMBERS,
                             Math.min(RELIEF_MAX_FAMILY_MEMBERS, safeValue),
+                          ),
+                        );
+                      }}
+                      onBlur={() => {
+                        if (familyMemberCount === 0) {
+                          setFamilyMemberCount(RELIEF_MIN_FAMILY_MEMBERS);
+                          return;
+                        }
+
+                        setFamilyMemberCount(
+                          Math.max(
+                            RELIEF_MIN_FAMILY_MEMBERS,
+                            Math.min(RELIEF_MAX_FAMILY_MEMBERS, familyMemberCount),
                           ),
                         );
                       }}
@@ -1268,7 +1322,7 @@ export default function CitizenRequestPage() {
                                   type="number"
                                   min={0}
                                   max={getMaxAssignableForContext(context)}
-                                  value={currentCount}
+                                  value={currentCount === 0 ? "" : currentCount}
                                   onChange={(e) => handleReliefContextCountChange(context, e.target.value)}
                                   className="h-8 w-20 rounded-md border border-white/20 bg-[#0f2f44]/80 px-2 text-xs text-white focus:outline-none focus:border-[#FF7700]"
                                 />
@@ -1310,7 +1364,7 @@ export default function CitizenRequestPage() {
                   )}
 
                   <div className="rounded-lg border border-white/15 bg-white/[0.03] p-3 space-y-2">
-                    <p className="text-xs text-white font-semibold">Tổng nhu cầu thiết yếu theo combo 3 ngày</p>
+                    <p className="text-xs text-white font-semibold">Tổng nhu cầu thiết yếu.</p>
                     <p className="text-[11px] text-white/70 leading-relaxed">
                       {reliefSupplyPlan.totalLines.length > 0
                         ? reliefSupplyPlan.totalLines.join(", ")
@@ -1412,8 +1466,7 @@ export default function CitizenRequestPage() {
           <div className="w-full max-w-3xl max-h-[88vh] overflow-hidden rounded-2xl border border-white/20 bg-[#133249] shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
               <div>
-                <h3 className="text-white text-lg font-bold">Combo nhu yếu phẩm theo 3 ngày</h3>
-                <p className="text-white/70 text-xs">Định mức cho 1 người, hệ thống sẽ tự nhân theo số thành viên từng nhóm</p>
+                <h3 className="text-white text-lg font-bold">Combo nhu yếu phẩm.</h3>
               </div>
               <button
                 type="button"

@@ -22,7 +22,7 @@ const OpenMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-64 bg-[#0f2a40] rounded-lg animate-pulse flex items-center justify-center text-gray-400">
+      <div className="w-full h-64 bg-gray-50 rounded-3xl animate-pulse flex items-center justify-center text-gray-400 border border-gray-100">
         Đang tải bản đồ...
       </div>
     ),
@@ -209,7 +209,7 @@ export default function AdminSystemPage() {
       <button
         disabled={page === 1}
         onClick={() => setPage(page - 1)}
-        className="px-3 py-1 bg-white/10 rounded text-white disabled:opacity-40"
+        className="px-4 py-2 bg-white border border-gray-100 rounded-full text-gray-600 disabled:opacity-40 hover:bg-gray-50 shadow-sm font-medium"
       >
         Prev
       </button>
@@ -218,10 +218,10 @@ export default function AdminSystemPage() {
         <button
           key={i}
           onClick={() => setPage(i + 1)}
-          className={`px-3 py-1 rounded ${
+          className={`w-10 h-10 rounded-full shadow-sm font-bold flex items-center justify-center ${
             page === i + 1
-              ? "bg-blue-600 text-white"
-              : "bg-white/10 text-white"
+              ? "bg-emerald-700 text-white"
+              : "bg-white border border-gray-100 text-gray-600 hover:bg-gray-50"
           }`}
         >
           {i + 1}
@@ -231,7 +231,7 @@ export default function AdminSystemPage() {
       <button
         disabled={page === totalPages}
         onClick={() => setPage(page + 1)}
-        className="px-3 py-1 bg-white/10 rounded text-white disabled:opacity-40"
+        className="px-4 py-2 bg-white border border-gray-100 rounded-full text-gray-600 disabled:opacity-40 hover:bg-gray-50 shadow-sm font-medium"
       >
         Next
       </button>
@@ -239,15 +239,15 @@ export default function AdminSystemPage() {
   );
 
   const Table = ({ columns, data }: any) => (
-    <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+    <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
       {loading ? (
-        <div className="p-10 text-center text-slate-400">Loading...</div>
+        <div className="p-10 text-center text-gray-500 font-medium">Loading...</div>
       ) : (
-        <table className="w-full text-sm text-white">
-          <thead className="bg-white/5 text-slate-400">
+        <table className="w-full text-sm text-gray-700">
+          <thead className="bg-gray-50/50 text-gray-500 font-bold border-b border-gray-100">
             <tr>
               {columns.map((c: any) => (
-                <th key={c.key} className="px-4 py-3 text-left">
+                <th key={c.key} className="px-6 py-4 text-left uppercase tracking-wider text-xs">
                   {c.label}
                 </th>
               ))}
@@ -256,9 +256,9 @@ export default function AdminSystemPage() {
 
           <tbody>
             {data.map((row: any, i: number) => (
-              <tr key={i} className="border-t border-white/10 hover:bg-white/5">
+              <tr key={i} className="border-b border-gray-50 hover:bg-emerald-50/30 transition-colors">
                 {columns.map((c: any) => (
-                  <td key={c.key} className="px-4 py-3">
+                  <td key={c.key} className="px-6 py-4 font-medium">
                     {c.render ? c.render(row) : row[c.key]}
                   </td>
                 ))}
@@ -273,21 +273,24 @@ export default function AdminSystemPage() {
   // ================= RENDER =================
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-white">
-        Quản lý hệ thống
-      </h1>
+    <div className="p-2 space-y-8">
+      <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">Quản lý hệ thống</h1>
+          <p className="text-sm text-gray-500 mt-1">Quản lý tổng quan kho, phương tiện và vật tư.</p>
+        </div>
+      </div>
 
       {/* TABS */}
-      <div className="flex gap-2 border-b border-white/10">
+      <div className="flex gap-4 border-b border-gray-200">
         {["Phương Tiện", "Vật Tư", "Kho"].map((t) => (
           <button
             key={t}
             onClick={() => setActiveTab(t as any)}
-            className={`px-4 py-2 border-b-2 ${
+            className={`px-4 py-3 font-bold text-sm transition-colors border-b-2 -mb-[1px] ${
               activeTab === t
-                ? "border-blue-500 text-blue-400"
-                : "border-transparent text-slate-400"
+                ? "border-emerald-700 text-emerald-800"
+                : "border-transparent text-gray-500 hover:text-gray-800"
             }`}
           >
             {t}
@@ -299,17 +302,20 @@ export default function AdminSystemPage() {
       {activeTab === "Phương Tiện" && (
         <>
           <div className="grid grid-cols-4 gap-4">
-            <div className="bg-white/5 p-4 rounded-xl">
-              <p className="text-xs text-slate-400">Tổng</p>
-              <p className="text-xl text-white">{vehicleTotal}</p>
+            <div className="bg-emerald-800 rounded-3xl p-6 shadow-md relative overflow-hidden">
+              <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+              <p className="text-emerald-100 text-sm font-medium mb-2 relative z-10 flex items-center justify-between">
+                <span>Tổng Phương Tiện</span>
+              </p>
+              <p className="text-4xl font-bold text-white relative z-10">{vehicleTotal}</p>
             </div>
           </div>
 
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
             <input
               value={vehicleKeyword}
               onChange={(e) => setVehicleKeyword(e.target.value)}
-              className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded"
+              className="px-6 py-3 w-80 bg-gray-50 border border-gray-200 text-gray-900 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
               placeholder="Tìm biển số..."
             />
             <Pagination
@@ -340,17 +346,21 @@ export default function AdminSystemPage() {
       {activeTab === "Vật Tư" && (
         <>
           <div className="grid grid-cols-4 gap-4">
-            <div className="bg-white/5 p-4 rounded-xl">
-              <p className="text-xs text-slate-400">Tổng</p>
-              <p className="text-xl text-white">{supplyTotal}</p>
+            <div className="bg-emerald-800 rounded-3xl p-6 shadow-md relative overflow-hidden">
+              <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+              <p className="text-emerald-100 text-sm font-medium mb-2 relative z-10 flex items-center justify-between">
+                <span>Tổng Vật Tư</span>
+              </p>
+              <p className="text-4xl font-bold text-white relative z-10">{supplyTotal}</p>
             </div>
           </div>
 
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
             <input
               value={supplyKeyword}
               onChange={(e) => setSupplyKeyword(e.target.value)}
-              className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded"
+              className="px-6 py-3 w-80 bg-gray-50 border border-gray-200 text-gray-900 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              placeholder="Tìm vật tư..."
             />
             <Pagination
               page={supplyPage}
@@ -382,17 +392,21 @@ export default function AdminSystemPage() {
       {activeTab === "Kho" && (
         <>
           <div className="grid grid-cols-4 gap-4">
-            <div className="bg-white/5 p-4 rounded-xl">
-              <p className="text-xs text-slate-400">Kho</p>
-              <p className="text-xl text-white">{warehouseTotal}</p>
+            <div className="bg-emerald-800 rounded-3xl p-6 shadow-md relative overflow-hidden">
+              <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+              <p className="text-emerald-100 text-sm font-medium mb-2 relative z-10 flex items-center justify-between">
+                <span>Tổng Kho</span>
+              </p>
+              <p className="text-4xl font-bold text-white relative z-10">{warehouseTotal}</p>
             </div>
           </div>
 
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
             <input
               value={warehouseKeyword}
               onChange={(e) => setWarehouseKeyword(e.target.value)}
-              className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded"
+              className="px-6 py-3 w-80 bg-gray-50 border border-gray-200 text-gray-900 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              placeholder="Tìm kho..."
             />
             <Pagination
               page={warehousePage}
@@ -421,7 +435,7 @@ export default function AdminSystemPage() {
               data={warehouses}
             />
 
-            <div className="bg-white/5 rounded-xl overflow-hidden">
+            <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 flex flex-col">
               <div className="h-[450px]">
                 <OpenMap
                   warehouses={warehouses.map((w) => ({
@@ -432,17 +446,17 @@ export default function AdminSystemPage() {
                   }))}
                 />
               </div>
-              <div className="border-t border-white/10 p-4">
-                <div className="space-y-2 max-h-44 overflow-y-auto">
+              <div className="border-t border-gray-100 p-6">
+                <div className="space-y-3 max-h-44 overflow-y-auto custom-scrollbar">
                   {warehouses.length === 0 ? (
-                    <p className="text-xs text-slate-500">Không có dữ liệu</p>
+                    <p className="text-sm text-gray-400 font-medium">Không có dữ liệu bản đồ</p>
                   ) : (
                     warehouses.map((wh) => (
                       <div
                         key={wh._id}
-                        className="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-2 rounded-lg">
-                        <div className="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0" />
-                        <span className="text-sm text-slate-200">
+                        className="flex items-center gap-3 bg-gray-50 hover:bg-emerald-50 border border-gray-100 px-4 py-3 rounded-2xl transition-colors">
+                        <div className="w-3 h-3 bg-emerald-500 rounded-full flex-shrink-0" />
+                        <span className="text-sm font-bold text-gray-900">
                           {wh.name}
                         </span>
                       </div>

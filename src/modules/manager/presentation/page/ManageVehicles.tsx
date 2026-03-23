@@ -145,88 +145,88 @@ const handleImportExcel = async () => {
 };
   return (
     <div className="p-4 lg:p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-white mb-2">
-          Danh sách phương tiện
-        </h1>
-        <p className="text-gray-400">Có {vehiclesTotal} phương tiện</p>
+      <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">Danh sách phương tiện</h1>
+          <p className="text-sm text-gray-500 mt-1">Có {vehiclesTotal} phương tiện trong hệ thống</p>
+        </div>
       </div>
 
       {/* Search */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
 
-  {/* LEFT - Search */}
-  <div className="flex items-center gap-3">
-    <div className="relative w-80">
-      <input
-        type="text"
-        value={keyword}
-        onChange={(e) => setKeyword(e.target.value)}
-        placeholder="Tìm kiếm theo tên, ID hoặc loại..."
-        className="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20"
-      />
-    </div>
+        {/* LEFT - Search */}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full md:w-80">
+            <input
+              type="text"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="Tìm kiếm theo tên, ID hoặc loại..."
+              className="w-full px-6 py-3 rounded-full bg-gray-50 text-gray-900 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+            />
+          </div>
 
-    <button
-      onClick={handleSearch}
-      className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-    >
-      Search
-    </button>
-  </div>
+          <button
+            onClick={handleSearch}
+            className="px-6 py-3 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-sm transition-colors"
+          >
+            Tìm kiếm
+          </button>
+        </div>
 
-  {/* RIGHT - Import Excel */}
-  <div className="flex items-center gap-3">
+        {/* RIGHT - Import Excel */}
+        <div className="flex items-center gap-3 w-full md:w-auto">
 
-    <label className="cursor-pointer px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 transition">
-      📁 Chọn file
-      <input
-        type="file"
-        accept=".xlsx,.xls"
-        onChange={handleFileChange}
-        className="hidden"
-      />
-    </label>
+          <label className="cursor-pointer px-5 py-3 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-bold transition-colors">
+            📁 Chọn file
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </label>
 
-    {file && (
-      <span className="text-green-400 text-sm bg-green-400/10 px-3 py-1 rounded">
-        {file.name}
-      </span>
-    )}
+          {file && (
+            <span className="text-emerald-700 font-medium text-sm bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100">
+              {file.name}
+            </span>
+          )}
 
-    <button
-      onClick={handleImportExcel}
-      disabled={!file}
-      className="px-5 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
-    >
-      ⬆ Import
-    </button>
+          <button
+            onClick={handleImportExcel}
+            disabled={!file}
+            className="px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-sm disabled:opacity-50 transition-colors"
+          >
+            ⬆ Import
+          </button>
 
-  </div>
+        </div>
 
 </div>
 
       {/* Table */}
       {loading ? (
-        <div className="text-center py-20 text-white">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white mx-auto"></div>
+        <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-600 mx-auto"></div>
         </div>
       ) : items.length === 0 ? (
-        <div className="text-center py-20 text-white bg-white/5 rounded-lg">
+        <div className="text-center py-20 text-gray-500 font-medium bg-white rounded-3xl shadow-sm border border-gray-100">
           Không tìm thấy phương tiện nào
         </div>
       ) : (
-        <div className="bg-white/5 rounded-lg overflow-hidden text-white">
-          <Table columns={columns} data={items} striped hoverable />
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden text-gray-900">
+          <Table columns={columns} data={items} striped={true} hoverable={true} />
         </div>
       )}
 
-      <div className="flex justify-center items-center gap-2 mt-6">
+      <div className="flex justify-center items-center gap-3 mt-6">
 
   <button
     disabled={page === 1}
     onClick={() => setPage(page - 1)}
-    className="px-3 py-1 rounded bg-white/10 text-white disabled:opacity-40"
+    className="px-5 py-2 rounded-full bg-white border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 font-medium shadow-sm"
   >
     Prev
   </button>
@@ -235,10 +235,10 @@ const handleImportExcel = async () => {
     <button
       key={i}
       onClick={() => setPage(i + 1)}
-      className={`px-3 py-1 rounded ${
+      className={`w-10 h-10 rounded-full font-bold shadow-sm flex items-center justify-center transition-colors ${
         page === i + 1
-          ? "bg-blue-600 text-white"
-          : "bg-white/10 text-white"
+          ? "bg-emerald-700 text-white"
+          : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
       }`}
     >
       {i + 1}
@@ -248,7 +248,7 @@ const handleImportExcel = async () => {
   <button
     disabled={page === totalPages}
     onClick={() => setPage(page + 1)}
-    className="px-3 py-1 rounded bg-white/10 text-white disabled:opacity-40"
+    className="px-5 py-2 rounded-full bg-white border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 font-medium shadow-sm"
   >
     Next
   </button>

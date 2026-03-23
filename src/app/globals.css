@@ -97,12 +97,8 @@ input[type="password"]::-webkit-textfield-decoration-container {
 }
 
 @layer base {
-<<<<<<< HEAD
   :root {
     --sidebar-width: 5rem;
-=======
-    :root {
->>>>>>> ee959ef043edcce473029bb01051e0d15b834017
         --background: 0 0% 100%;
         --foreground: 0 0% 3.9%;
         --card: 0 0% 100%;

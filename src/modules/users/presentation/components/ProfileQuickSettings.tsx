@@ -47,25 +47,25 @@ export default function ProfileQuickSettings({
   const displaySettings = settings.length > 0 ? settings : defaultSettings;
 
   return (
-    <Card className="mb-6 bg-white/5 border-white/10 p-6">
-      <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-        <span>⚙️</span>
+    <Card className="mb-6 bg-white border border-gray-100 rounded-3xl p-6 lg:p-8 shadow-sm">
+      <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+        <span className="text-2xl bg-gray-50 text-gray-700 p-2 rounded-xl">⚙️</span>
         Cài đặt nhanh
       </h3>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {displaySettings.map((setting, index) => (
           <Link
             key={index}
             href={setting.href}
-            className="flex items-center gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all duration-200"
+            className="flex items-center gap-5 p-5 rounded-2xl bg-white hover:bg-gray-50 border border-gray-100 hover:border-emerald-500 transition-all duration-200 shadow-sm group"
           >
-            <div className="text-3xl">{setting.icon}</div>
+            <div className="text-3xl group-hover:scale-110 transition-transform">{setting.icon}</div>
             <div className="flex-1">
-              <p className="text-white font-bold">{setting.label}</p>
-              <p className="text-sm text-gray-400">{setting.description}</p>
+              <p className="text-gray-900 font-bold mb-1">{setting.label}</p>
+              <p className="text-sm font-medium text-gray-500">{setting.description}</p>
             </div>
-            <span className="text-2xl text-gray-500">›</span>
+            <span className="text-2xl text-gray-400 group-hover:text-emerald-500 font-bold transition-colors">›</span>
           </Link>
         ))}
       </div>

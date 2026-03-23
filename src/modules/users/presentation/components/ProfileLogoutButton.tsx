@@ -13,7 +13,7 @@ export default function ProfileLogoutButton({
     <button
       onClick={onLogout}
       disabled={isLoading}
-      className="w-full flex items-center justify-center gap-3 py-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 font-bold rounded-xl transition-all disabled:opacity-60"
+      className="w-full flex items-center justify-center gap-3 py-4 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold rounded-full transition-all disabled:opacity-60 shadow-sm"
     >
       {isLoading ? (
         <>

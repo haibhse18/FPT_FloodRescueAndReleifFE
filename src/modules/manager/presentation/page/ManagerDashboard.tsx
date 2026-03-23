@@ -69,12 +69,12 @@ export default function ManagerDashboardPage() {
         label: "Thống kê hệ thống",
         data: [suppliesTotal, vehiclesTotal, requestsProcessing],
         backgroundColor: [
-          "rgba(59,130,246,0.8)",
-          "rgba(251,146,60,0.9)",
-          "rgba(16,185,129,0.8)",
+          "#059669", // emerald-600
+          "#047857", // emerald-700
+          "#10B981", // emerald-500
         ],
-        borderRadius: 10,
-        barThickness: 80,
+        borderRadius: 12,
+        barThickness: 60,
       },
     ],
   };
@@ -84,61 +84,80 @@ export default function ManagerDashboardPage() {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        labels: { color: "#e5e7eb" },
+        display: false, // Hide legend to match clean UI
       },
     },
     scales: {
       x: {
-        ticks: { color: "#9ca3af" },
+        ticks: { color: "#6B7280", font: { weight: 'bold' } }, // gray-500
         grid: { display: false },
+        border: { display: false },
       },
       y: {
         beginAtZero: true,
-        ticks: { color: "#9ca3af" },
-        grid: { color: "rgba(255,255,255,0.05)" },
+        ticks: { color: "#9CA3AF" }, // gray-400
+        grid: { color: "#F3F4F6", borderDash: [5, 5] }, // gray-100 dashed
+        border: { display: false },
       },
     },
   };
 
   return (
-    <div className="flex flex-col h-screen p-4 lg:p-6 gap-4 overflow-hidden">
+    <div className="flex flex-col h-full gap-6">
+
+      <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">Dashboard Quản Lý</h1>
+          <p className="text-sm text-gray-500 mt-1">Lên kế hoạch, ưu tiên và hoàn thành các nhiệm vụ dễ dàng.</p>
+        </div>
+      </div>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-shrink-0">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-shrink-0">
 
-        <div className="bg-white/5 rounded-lg p-5 border border-gray-700">
-          <p className="text-gray-400 text-sm mb-1">📦 Tổng vật tư</p>
-          <p className="text-3xl font-bold text-white">
+        <div className="bg-emerald-800 rounded-3xl p-6 shadow-md relative overflow-hidden">
+          <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+          <p className="text-emerald-100 text-sm font-medium mb-2 relative z-10 flex items-center justify-between">
+            <span>Tổng vật tư</span>
+            <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white">↗</span>
+          </p>
+          <p className="text-4xl font-bold text-white relative z-10">
             {loading ? "-" : suppliesTotal}
           </p>
         </div>
 
-        <div className="bg-white/5 rounded-lg p-5 border border-gray-700">
-          <p className="text-gray-400 text-sm mb-1">🚑 Tổng phương tiện</p>
-          <p className="text-3xl font-bold text-white">
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+          <p className="text-gray-500 text-sm font-medium mb-2 flex items-center justify-between">
+            <span>Tổng phương tiện</span>
+            <span className="w-8 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">↗</span>
+          </p>
+          <p className="text-4xl font-bold text-gray-900">
             {loading ? "-" : vehiclesTotal}
           </p>
         </div>
 
-        <div className="bg-white/5 rounded-lg p-5 border border-gray-700">
-          <p className="text-gray-400 text-sm mb-1">📋 Yêu cầu đang xử lý</p>
-          <p className="text-3xl font-bold text-white">
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+          <p className="text-gray-500 text-sm font-medium mb-2 flex items-center justify-between">
+            <span>Yêu cầu đang xử lý</span>
+            <span className="w-8 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">↗</span>
+          </p>
+          <p className="text-4xl font-bold text-gray-900">
             {loading ? "-" : requestsProcessing}
           </p>
         </div>
 
       </div>
 
-      {/* Chart — flex-1 để chiếm hết phần còn lại, min-h-0 để không overflow */}
-      <div className="flex-1 min-h-0 bg-white/5 rounded-lg p-6 border border-gray-700 flex flex-col">
+      {/* Chart */}
+      <div className="flex-1 min-h-[400px] bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col">
 
-        <h1 className="text-xl font-bold text-white mb-4 flex-shrink-0">
-          📊 Thống kê hệ thống
-        </h1>
+        <h2 className="text-lg font-bold text-gray-900 mb-6 flex-shrink-0">
+          Thống kê chi tiết
+        </h2>
 
         {/* Container với chiều cao cụ thể để Chart.js render đúng */}
         <div className="flex-1 min-h-0 relative">
-          <Bar data={chartData} options={chartOptions} />
+          <Bar data={chartData} options={chartOptions as any} />
         </div>
 
       </div>

@@ -28,13 +28,8 @@ export default function CitizenLayout({
   return (
     <AuthGuard allowedRoles={["Citizen"]}>
       <div className="min-h-screen bg-[#133249] flex flex-col lg:flex-row">
-<<<<<<< HEAD
         <CitizenSidebar />
         <div className="flex-1 flex flex-col lg:ml-[var(--sidebar-width)] transition-[margin-left] duration-300 relative">
-=======
-        {!isRequestPage && <CitizenSidebar />}
-        <div className={`flex-1 flex flex-col relative ${isRequestPage ? "" : "lg:ml-64"}`}>
->>>>>>> ee959ef043edcce473029bb01051e0d15b834017
           {/* Background Pattern - Global for Citizen pages */}
           <div
             className="absolute inset-0 opacity-10 pointer-events-none z-0"

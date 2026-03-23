@@ -43,7 +43,7 @@ export default function ManagerDashboardPage() {
 
       setSuppliesTotal(suppliesRes.meta?.total ?? 0);
 
-      setRequestsProcessing(requestsRes.length ?? 0);
+      setRequestsProcessing(requestsRes.meta?.total ?? 0);
 
       setVehiclesTotal(vehiclesRes?.total ?? 0);
 

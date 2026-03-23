@@ -227,16 +227,16 @@ export default function Home() {
             {/* News 2 */}
             <div className="group cursor-pointer">
               <div className="relative h-60 rounded-2xl overflow-hidden mb-5 bg-slate-200 flex items-center justify-center">
-                <img src="https://images.unsplash.com/photo-1586528116311-ad8ed7c83a48?q=80&w=800" alt="News 2" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <img src="https://image.voh.com.vn/voh/image/2024/10/30/cuu-tro-ung-ho-dong-bao-lu-lut-bao-082619.jpg" alt="News 2" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-xs font-bold px-3 py-1.5 rounded-full text-slate-800">
                   09:00 HÔM NAY
                 </div>
               </div>
               <h3 className="font-bold text-xl text-slate-900 mb-3 group-hover:text-blue-700 transition-colors">
-                Tổng kho Đà Nẵng xuất kích 10 xe nhu yếu phẩm
+                Hơn 1.387 tỷ đồng đăng ký ủng hộ đồng bào vùng lũ qua Ban Vận động cứu trợ Trung ương
               </h3>
               <p className="text-slate-600 text-sm line-clamp-3">
-                Đã có hàng ngàn chăn mền, nhu yếu phẩm đóng gói chuẩn bị xuất xe lên đường về rốn lũ Quảng Bình...
+               Ban Vận động cứu trợ Trung ương – Ủy ban Trung ương MTTQ Việt Nam cho biết đã có hơn 1.387 tỷ đồng và hiện vật được các tổ chức, cá nhân đăng ký ủng hộ hỗ trợ đồng bào các tỉnh bị thiệt hại do mưa lũ.
               </p>
             </div>
 

@@ -1,23 +1,39 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { toast } from "sonner";
+import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import { teamRepository } from "@/modules/teams/infrastructure/team.repository.impl";
 import type { Team, TeamMember } from "@/modules/teams/domain/team.entity";
 import AddMemberModal from "../components/AddMemberModal";
 import { Modal } from "@/shared/ui/components";
 
-interface TeamDetailPageProps {
+// Dynamic import cho OpenMap để tránh SSR issues
+const OpenMap = dynamic(
+  () => import("@/modules/map/presentation/components/OpenMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-48 bg-slate-300 rounded-lg animate-pulse flex items-center justify-center text-slate-500">
+        Đang tải bản đồ...
+      </div>
+    ),
+  },
+);
+
+interface CoordinatorTeamDetailPageProps {
   teamId: string;
   /** true = Coordinator (full control), false = Team Leader (limited) */
   isCoordinator?: boolean;
 }
 
-export default function TeamDetailPage({
+export default function CoordinatorTeamDetailPage({
   teamId,
   isCoordinator = true,
-}: TeamDetailPageProps) {
+}: CoordinatorTeamDetailPageProps) {
   const router = useRouter();
   const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +43,22 @@ export default function TeamDetailPage({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState("");
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Location states for minimap
+  const [currentLocation, setCurrentLocation] = useState("Đang tải vị trí...");
+  const [coordinates, setCoordinates] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   const fetchTeam = useCallback(async () => {
     setLoading(true);
@@ -42,8 +74,61 @@ export default function TeamDetailPage({
     }
   }, [teamId]);
 
+  const fetchLocation = async () => {
+    setIsLoadingLocation(true);
+    setLocationError(null);
+
+    if (!("geolocation" in navigator)) {
+      setLocationError("Trình duyệt không hỗ trợ định vị");
+      setCurrentLocation("Không khả dụng");
+      setIsLoadingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setCoordinates({ lat: latitude, lon: longitude });
+
+        try {
+          // Proxy qua Next.js để tránh CORS (Nominatim)
+          const response = await fetch(
+            `/api/reverse-geocode?lat=${latitude}&lon=${longitude}`,
+          );
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          // Nominatim field order: road > suburb > city_district > city > county > state
+          const location =
+            data.address?.road ||
+            data.address?.suburb ||
+            data.address?.city_district ||
+            data.address?.city ||
+            data.address?.county ||
+            data.address?.state ||
+            data.display_name ||
+            `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+          setCurrentLocation(location);
+        } catch (error) {
+          if (error instanceof Error && error.name === "AbortError") {
+            setLocationError("Lấy địa chỉ hết thời gian chờ");
+          }
+          setCurrentLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        } finally {
+          setIsLoadingLocation(false);
+        }
+      },
+      (error) => {
+        setIsLoadingLocation(false);
+        setLocationError(error.message || "Không thể truy cập vị trí");
+        setCurrentLocation("Không khả dụng");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  };
+
   useEffect(() => {
     fetchTeam();
+    fetchLocation();
   }, [fetchTeam]);
 
   // ── Actions ─────────────────────────────────────────────
@@ -189,9 +274,10 @@ export default function TeamDetailPage({
     );
   }
 
-  const leader = team.members?.find((m) => m._id === team.leaderId);
+  const leaderIdStr = team.teamLeader?._id || (typeof team.leaderId === "string" ? team.leaderId : (team.leaderId as any)?._id);
+  const leader = team.teamLeader || team.members?.find((m) => m._id === leaderIdStr);
   const isAvailable = team.status === "AVAILABLE";
-  const memberCount = team.members?.length || 0;
+  const memberCount = team.memberStats?.total || team.members?.length || 0;
   const canDelete = isCoordinator && isAvailable && memberCount === 0;
 
   return (
@@ -210,7 +296,7 @@ export default function TeamDetailPage({
       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center gap-4">
           <div className="flex-1">
-            {editingName ?
+            {editingName ? (
               <div className="flex gap-2 items-center">
                 <input
                   type="text"
@@ -236,7 +322,8 @@ export default function TeamDetailPage({
                   ✕
                 </button>
               </div>
-            : <div className="flex items-center gap-3">
+            ) : (
+              <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold text-white">{team.name}</h1>
                 {isCoordinator && (
                   <button
@@ -248,14 +335,14 @@ export default function TeamDetailPage({
                   </button>
                 )}
               </div>
-            }
+            )}
 
             <div className="flex flex-wrap gap-3 mt-2">
               <span
                 className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                  isAvailable ?
-                    "bg-green-500/20 text-green-300 border-green-500/30"
-                  : "bg-red-500/20 text-red-300 border-red-500/30"
+                  isAvailable
+                    ? "bg-green-500/20 text-green-300 border-green-500/30"
+                    : "bg-red-500/20 text-red-300 border-red-500/30"
                 }`}
               >
                 {isAvailable ? "🟢 Sẵn sàng" : "🔴 Đang bận"}
@@ -265,7 +352,7 @@ export default function TeamDetailPage({
                 {leader?.displayName || leader?.userName || "Chưa chỉ định"}
               </span>
               <span className="text-gray-400 text-sm flex items-center gap-1">
-                👥 {memberCount} / 100 thành viên
+                👥 {memberCount} / 100 thành viên {team.memberStats && <span className="text-green-400 ml-1">({team.memberStats.active} active)</span>}
               </span>
             </div>
           </div>
@@ -294,13 +381,68 @@ export default function TeamDetailPage({
         </div>
       </div>
 
+      {/* Location Bar with Mini Map */}
+      <div className="bg-slate-200 rounded-xl p-5 shadow-lg border-l-4 border-[#FF7700] mb-6">
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2 text-slate-600">
+            <span className="text-xl" aria-hidden="true">
+              📍
+            </span>
+            <span className="text-sm font-bold uppercase tracking-wide">
+              Vị trí đội hiện tại
+            </span>
+          </div>
+          <button
+            onClick={fetchLocation}
+            disabled={isLoadingLocation}
+            className="text-[#FF3535] text-sm font-bold uppercase hover:underline disabled:opacity-50 disabled:cursor-not-allowed transition-opacity focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 rounded px-2 py-1"
+            aria-label="Cập nhật vị trí đội hiện tại"
+          >
+            {isLoadingLocation ? "Đang tải..." : "Cập nhật"}
+          </button>
+        </div>
+        {locationError && (
+          <div className="text-xs text-red-600 mb-2 flex items-center gap-1">
+            <span>⚠️</span>
+            <span>{locationError}</span>
+          </div>
+        )}
+        <p className="text-slate-800 text-lg font-bold mb-2">
+          {isLoadingLocation ? (
+            <span className="inline-flex items-center gap-2">
+              <span className="w-4 h-4 border-2 border-slate-800 border-t-transparent rounded-full animate-spin"></span>
+              Đang tải...
+            </span>
+          ) : (
+            currentLocation
+          )}
+        </p>
+        {coordinates && (
+          <div className="text-xs text-slate-500 font-mono mb-3">
+            Lat: {coordinates.lat.toFixed(4)} • Long:{" "}
+            {coordinates.lon.toFixed(4)}
+          </div>
+        )}
+
+        {/* Mini Map */}
+        {coordinates && (
+          <div className="mt-4 h-64 rounded-lg overflow-hidden border-2 border-slate-300 shadow-inner">
+            <OpenMap
+              latitude={coordinates.lat}
+              longitude={coordinates.lon}
+              address={currentLocation}
+            />
+          </div>
+        )}
+      </div>
+
       {/* Members Table */}
       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
         <h2 className="text-lg font-bold text-white mb-4">
           👥 Danh sách thành viên ({memberCount})
         </h2>
 
-        {!team.members || team.members.length === 0 ?
+        {!team.members || team.members.length === 0 ? (
           <div className="text-center py-8">
             <div className="text-4xl mb-3">🫥</div>
             <p className="text-gray-400">Đội chưa có thành viên nào</p>
@@ -308,7 +450,8 @@ export default function TeamDetailPage({
               Nhấn &quot;Thêm thành viên&quot; để bắt đầu
             </p>
           </div>
-        : <div className="overflow-x-auto">
+        ) : (
+          <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-gray-400">
@@ -321,7 +464,7 @@ export default function TeamDetailPage({
               </thead>
               <tbody>
                 {team.members.map((member) => {
-                  const isLeader = member._id === team.leaderId;
+                  const isLeader = member._id === leaderIdStr;
                   return (
                     <tr
                       key={member._id}
@@ -345,34 +488,25 @@ export default function TeamDetailPage({
                       <td className="py-3 px-2 text-gray-400">
                         {member.phoneNumber || "—"}
                       </td>
-                      <td className="py-3 px-2 text-gray-400">{member.role}</td>
+                      <td className="py-3 px-2 text-gray-400">
+                        {isLeader ? "Team leader" : "Team member"}
+                      </td>
                       <td className="py-3 px-2 text-right">
-                        <div className="flex justify-end gap-2">
-                          {/* Change Leader button (only Coordinator, only when AVAILABLE) */}
-                          {isCoordinator && !isLeader && isAvailable && (
+                        {!isLeader && (
+                          <div className="relative inline-block text-left">
                             <button
-                              onClick={() => handleChangeLeader(member._id)}
-                              disabled={actionLoading === "leader"}
-                              className="px-2 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 rounded text-xs transition-colors"
-                              title="Đặt làm Leader"
+                              onClick={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setDropdownPos({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX - 160 }); // Align rightish
+                                setOpenDropdown(openDropdown === member._id ? null : member._id);
+                              }}
+                              className="p-1 px-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors font-bold tracking-widest cursor-pointer"
+                              title="Hành động"
                             >
-                              ⭐ Leader
+                              •••
                             </button>
-                          )}
-                          {/* Remove button (not for leader, not for self if not coordinator) */}
-                          {!isLeader && (
-                            <button
-                              onClick={() => handleRemoveMember(member)}
-                              disabled={
-                                actionLoading === `remove-${member._id}`
-                              }
-                              className="px-2 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded text-xs transition-colors disabled:opacity-50"
-                              title="Xoá khỏi đội"
-                            >
-                              🗑️ Xoá
-                            </button>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
@@ -380,8 +514,56 @@ export default function TeamDetailPage({
               </tbody>
             </table>
           </div>
-        }
+        )}
       </div>
+
+      {/* Global Dropdown via Portal */}
+      {mounted && openDropdown && dropdownPos && createPortal(
+        <>
+          <div 
+            className="fixed inset-0 z-[60]" 
+            onClick={() => setOpenDropdown(null)}
+          />
+          <div 
+            className="fixed z-[70] w-48 bg-[#1a3a52] rounded-lg shadow-2xl border border-white/20 overflow-hidden flex flex-col py-1 animate-in fade-in zoom-in-95 duration-100"
+            style={{ 
+              top: `${dropdownPos.top + 8}px`, 
+              left: `${dropdownPos.left}px` 
+            }}
+          >
+            {team.members?.find(m => m._id === openDropdown) && (() => {
+              const member = team.members.find(m => m._id === openDropdown)!;
+              return (
+                <>
+                  {isCoordinator && isAvailable && (
+                    <button
+                      onClick={() => {
+                        setOpenDropdown(null);
+                        handleChangeLeader(member._id);
+                      }}
+                      disabled={actionLoading === "leader"}
+                      className="w-full text-left px-4 py-3 text-sm text-yellow-300 hover:bg-white/10 transition-colors disabled:opacity-50 flex items-center gap-2 border-b border-white/5 last:border-0"
+                    >
+                      ⭐ Đặt làm Leader
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setOpenDropdown(null);
+                      handleRemoveMember(member);
+                    }}
+                    disabled={actionLoading === `remove-${member._id}`}
+                    className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-white/10 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    🗑️ Xoá khỏi đội
+                  </button>
+                </>
+              );
+            })()}
+          </div>
+        </>,
+        document.body
+      )}
 
       {/* Add Member Modal */}
       <AddMemberModal

@@ -9,9 +9,9 @@ import {
   GetMissionsFilter,
   CreateMissionInput,
   UpdateMissionInput,
-  AssignTeamInput,
   RescueTeam,
 } from "./mission.entity";
+import { MissionRequest } from "./missionRequest.entity";
 
 import { Timeline } from "@/modules/timelines/domain/timeline.entity";
 
@@ -23,8 +23,14 @@ export interface IMissionRepository {
   updateMission(missionId: string, input: UpdateMissionInput): Promise<Mission>;
   deleteMission(missionId: string): Promise<void>;
 
-  // ─── Assignment ──────────────────────────────────────────
-  assignTeam(missionId: string, input: AssignTeamInput): Promise<Timeline>;
+  // ─── Planning & Fulfillment ──────────────────────────────
+  getMissionRequests(missionId: string): Promise<MissionRequest[]>;
+  addRequests(missionId: string, input: { requestIds: string[]; note?: string }): Promise<void>;
+  removeRequest(missionId: string, missionRequestId: string): Promise<void>;
+  removeTeam(missionId: string, teamId: string): Promise<void>;
+  addTeams(missionId: string, input: { teamIds: string[]; note?: string }): Promise<Timeline[]>;
+  startMission(missionId: string): Promise<Mission>;
+  updateMissionRequestProgress(missionRequestId: string, payload: { peopleRescuedIncrement?: number; suppliesDelivered?: { supplyId: string; quantityDelivered: number }[] }): Promise<void>;
 
   // ─── Status Control ──────────────────────────────────────
   pauseMission(missionId: string): Promise<Mission>;

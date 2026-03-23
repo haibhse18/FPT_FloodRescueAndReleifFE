@@ -2,8 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import { GetMissionDetailUseCase } from "../../application/getMissionDetail.usecase";
-import { AssignTeamUseCase } from "../../application/assignTeam.usecase";
+import { AddRequestsToMissionUseCase } from "../../application/addRequestsToMission.usecase";
+import { RemoveRequestFromMissionUseCase } from "../../application/removeRequestFromMission.usecase";
+import { AddTeamsToMissionUseCase } from "../../application/addTeamsToMission.usecase";
+import { RemoveTeamFromMissionUseCase } from "../../application/removeTeamFromMission.usecase";
+import { StartMissionUseCase } from "../../application/startMission.usecase";
+import { GetMissionRequestsUseCase } from "../../application/getMissionRequests.usecase";
 import { PauseMissionUseCase } from "../../application/pauseMission.usecase";
 import { ResumeMissionUseCase } from "../../application/resumeMission.usecase";
 import { AbortMissionUseCase } from "../../application/abortMission.usecase";
@@ -11,16 +18,39 @@ import { GetTimelinesUseCase } from "@/modules/timelines/application/getTimeline
 import { missionRepository } from "../../infrastructure/mission.repository.impl";
 import { timelineRepository } from "@/modules/timelines/infrastructure/timeline.repository.impl";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
-import AssignTeamModal from "../components/AssignTeamModal";
+import { requestsApi } from "@/modules/requests/infrastructure/requests.api";
+import AddRequestsModal from "../components/AddRequestsModal";
+import AddTeamsModal from "../components/AddTeamsModal";
 import type { Mission, RescueTeam } from "../../domain/mission.entity";
+import type { MissionRequest } from "../../domain/missionRequest.entity";
 import type { Timeline } from "@/modules/timelines/domain/timeline.entity";
 import type { CoordinatorRequest } from "@/modules/requests/domain/request.entity";
 import { useToast } from "@/hooks/use-toast";
+import { missionRequestApi } from "../../infrastructure/missionRequest.api";
+import { useNotificationStore } from "@/store/useNotification.store";
+
+// Dynamic import cho OpenMap để tránh SSR issues
+const OpenMap = dynamic(
+  () => import("@/modules/map/presentation/components/OpenMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-64 bg-slate-300 rounded-lg animate-pulse flex items-center justify-center text-slate-500">
+        Đang tải bản đồ...
+      </div>
+    ),
+  },
+);
 
 // ─── Use Cases ────────────────────────────────────────────
 
 const getMissionDetailUseCase = new GetMissionDetailUseCase(missionRepository);
-const assignTeamUseCase = new AssignTeamUseCase(missionRepository);
+const addRequestsUseCase = new AddRequestsToMissionUseCase(missionRepository);
+const removeRequestUseCase = new RemoveRequestFromMissionUseCase(missionRepository);
+const addTeamsUseCase = new AddTeamsToMissionUseCase(missionRepository);
+const removeTeamUseCase = new RemoveTeamFromMissionUseCase(missionRepository);
+const startMissionUseCase = new StartMissionUseCase(missionRepository);
+const getMissionRequestsUseCase = new GetMissionRequestsUseCase(missionRepository);
 const pauseMissionUseCase = new PauseMissionUseCase(missionRepository);
 const resumeMissionUseCase = new ResumeMissionUseCase(missionRepository);
 const abortMissionUseCase = new AbortMissionUseCase(missionRepository);
@@ -59,6 +89,15 @@ const TIMELINE_STATUS_LABELS: Record<string, string> = {
   CANCELLED: "🚫 Đã hủy",
 };
 
+const REQUEST_STATUS_COLORS: Record<string, string> = {
+  PENDING: "bg-gray-500/20 text-gray-300",
+  IN_PROGRESS: "bg-blue-500/20 text-blue-300",
+  PARTIAL: "bg-purple-500/20 text-purple-300",
+  FULFILLED: "bg-green-500/20 text-green-300",
+  CLOSED: "bg-gray-500/20 text-gray-500",
+  DROPPED: "bg-red-500/20 text-red-500",
+};
+
 // ─── Component ────────────────────────────────────────────
 
 export default function MissionDetailPage() {
@@ -67,70 +106,237 @@ export default function MissionDetailPage() {
   const missionId = params?.id as string;
   const { toast } = useToast();
 
+  // Debug log
+  useEffect(() => {
+    console.log("🔍 MissionDetailPage params:", params);
+    console.log("🔍 Extracted missionId:", missionId);
+  }, [params, missionId]);
+
   const [mission, setMission] = useState<Mission | null>(null);
   const [timelines, setTimelines] = useState<Timeline[]>([]);
+  const [missionRequests, setMissionRequests] = useState<MissionRequest[]>([]);
   const [teams, setTeams] = useState<RescueTeam[]>([]);
-  const [requests, setRequests] = useState<CoordinatorRequest[]>([]);
+  const [verifiedRequests, setVerifiedRequests] = useState<CoordinatorRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Location states for minimap
+  const [currentLocation, setCurrentLocation] = useState("Đang tải vị trí...");
+  const [coordinates, setCoordinates] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  
+  // Modals state
+  const [showAddRequestsModal, setShowAddRequestsModal] = useState(false);
+  const [showAddTeamsModal, setShowAddTeamsModal] = useState(false);
   const [showAbortConfirm, setShowAbortConfirm] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    if (!missionId) return;
-    setLoading(true);
-    try {
-      const [missionData, timelinesData] = await Promise.all([
-        getMissionDetailUseCase.execute(missionId),
-        getTimelinesUseCase.execute({ missionId }),
-      ]);
-      setMission(missionData);
-      setTimelines(timelinesData.data || []);
-    } catch (error) {
-      console.error("Failed to fetch mission:", error);
-    } finally {
-      setLoading(false);
+  // Notifications for auto-refresh
+  
+
+  const fetchLocation = useCallback(async () => {
+    setIsLoadingLocation(true);
+    setLocationError(null);
+
+    if (!("geolocation" in navigator)) {
+      setLocationError("Trình duyệt không hỗ trợ định vị");
+      setCurrentLocation("Không khả dụng");
+      setIsLoadingLocation(false);
+      return;
     }
-  }, [missionId]);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setCoordinates({ lat: latitude, lon: longitude });
+
+        try {
+          const response = await fetch(
+            `/api/reverse-geocode?lat=${latitude}&lon=${longitude}`,
+          );
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          const location =
+            data.address?.road ||
+            data.address?.suburb ||
+            data.address?.city_district ||
+            data.address?.city ||
+            data.address?.county ||
+            data.address?.state ||
+            data.display_name ||
+            `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+          setCurrentLocation(location);
+        } catch (error) {
+          if (error instanceof Error && error.name === "AbortError") {
+            setLocationError("Lấy địa chỉ hết thời gian chờ");
+          }
+          setCurrentLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        } finally {
+          setIsLoadingLocation(false);
+        }
+      },
+      (error) => {
+        setIsLoadingLocation(false);
+        setLocationError(error.message || "Không thể truy cập vị trí");
+        setCurrentLocation("Không khả dụng");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    fetchLocation();
+  }, [fetchData, fetchLocation]);
+
+  // Auto-refresh on websocket notifications for this mission
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const latest = notifications[0];
+      if (latest.missionId === missionId) {
+        fetchData();
+      }
+    }
+  }, [notifications, missionId, fetchData]);
 
   const loadAssignData = async () => {
     try {
-      const [teamsData, requestsData] = await Promise.all([
-        missionRepository.getTeams(),
-        requestRepository.getAllRequests({ status: "VERIFIED", limit: 100 }),
-      ]);
-      setTeams(teamsData);
-      setRequests(requestsData.data || []);
-    } catch (error) {
+      // Load verified requests
+      const reqRes = await requestsApi.getAllRequests({ status: "VERIFIED" });
+      const availableRequests = (reqRes as any).data || [];
+
+      // We need to fetch ALL active mission-requests in other missions to remove them from `availableRequests`
+      const activeMissionReqsRes = await missionRequestApi.getAll({
+        status: "PENDING,IN_PROGRESS",
+        limit: 1000, 
+      });
+      const allActiveMr = (activeMissionReqsRes as any).data || [];
+      const busyRequestIds = new Set(
+        allActiveMr.map((mr: any) => typeof mr.requestId === "object" ? mr.requestId?._id : mr.requestId)
+      );
+
+      // Now filter out those that are currently PENDING/IN_PROGRESS in ANY mission
+      let filteredReqs = availableRequests.filter((r: CoordinatorRequest) => !busyRequestIds.has(r._id));
+      setVerifiedRequests(filteredReqs);
+
+      // Load teams that are actually AVAILABLE
+      const teamRes = await missionRepository.getTeams({ status: "AVAILABLE" });
+      const availableTeams = teamRes || [];
+
+      // Even if team is AVAILABLE, maybe they are already planned in this mission
+      // So let's filter them out purely from current `timelines` array
+      const plannedTeamIds = new Set(
+        timelines.map(t => typeof t.teamId === "object" ? (t.teamId as any)?._id : t.teamId)
+      );
+      
+      const filteredTeams = availableTeams.filter((t: RescueTeam) => !plannedTeamIds.has(t._id));
+      setTeams(filteredTeams);
+
+    } catch (error: any) {
       console.error("Failed to load assign data:", error);
     }
   };
 
-  const openAssignModal = async () => {
+  const openAddRequestsModal = async () => {
     await loadAssignData();
-    setShowAssignModal(true);
+    setShowAddRequestsModal(true);
+  };
+  
+  const openAddTeamsModal = async () => {
+    await loadAssignData();
+    setShowAddTeamsModal(true);
   };
 
-  const handleAssign = async (
-    teamId: string,
-    requestId: string,
-    note?: string,
-  ) => {
+  const handleAddRequests = async (requestIds: string[], note?: string) => {
     try {
-      await assignTeamUseCase.execute(missionId, { teamId, requestId, note });
-      toast({ title: "✅ Đã phân công đội thành công" });
+      await addRequestsUseCase.execute(missionId, { requestIds, note });
+      toast({ title: "✅ Đã thêm yêu cầu thành công" });
       await fetchData();
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: error.message || "Phân công thất bại",
+        description: error.message || "Thêm yêu cầu thất bại",
       });
       throw error;
+    }
+  };
+
+  const handleAddTeams = async (teamIds: string[], note?: string) => {
+    try {
+      await addTeamsUseCase.execute(missionId, { teamIds, note });
+      toast({ title: "✅ Đã thêm đội thành công" });
+      await fetchData();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error.message || "Thêm đội thất bại",
+      });
+      throw error;
+    }
+  };
+
+  const handleRemoveRequest = async (mr: MissionRequest) => {
+    const reqIdStr = typeof mr.requestId === "object" ? (mr.requestId as any)?._id : mr.requestId;
+    if (!reqIdStr) return;
+
+    if (!confirm("Bạn có chắc chắn muốn xóa yêu cầu này khỏi nhiệm vụ?")) return;
+    setActionLoading(true);
+    try {
+      await removeRequestUseCase.execute(missionId, reqIdStr);
+      toast({ title: "🗑 Đã xóa yêu cầu" });
+      await fetchData();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error.message || "Xóa yêu cầu thất bại",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRemoveTeam = async (timeline: Timeline) => {
+    const teamIdStr = typeof timeline.teamId === "string" ? timeline.teamId : (timeline.teamId as any)?._id || timeline.teamId;
+    if (!teamIdStr) return;
+
+    if (!confirm("Bạn có chắc chắn muốn xóa đội này khỏi nhiệm vụ?")) return;
+    setActionLoading(true);
+    try {
+      await removeTeamUseCase.execute(missionId, teamIdStr);
+      toast({ title: "🗑 Đã xóa đội khỏi phân công" });
+      await fetchData();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error.message || "Xóa đội thất bại",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleStartMission = async () => {
+    setActionLoading(true);
+    try {
+      await startMissionUseCase.execute(missionId);
+      toast({ title: "🚀 Nhiệm vụ đã bắt đầu" });
+      await fetchData();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error.message || "Bắt đầu nhiệm vụ thất bại!",
+      });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -200,9 +406,17 @@ export default function MissionDetailPage() {
 
   if (!mission) {
     return (
-      <div className="p-6 text-center text-gray-400">
+      <div className="p-6 text-center">
         <p className="text-4xl mb-4">❓</p>
-        <p>Không tìm thấy nhiệm vụ</p>
+        {error ? (
+          <>
+            <p className="text-red-400 font-bold mb-2">Lỗi tải nhiệm vụ</p>
+            <p className="text-gray-400 text-sm mb-4">{error}</p>
+            <p className="text-gray-500 text-xs mb-4">ID: {missionId}</p>
+          </>
+        ) : (
+          <p className="text-gray-400">Không tìm thấy nhiệm vụ</p>
+        )}
         <button
           onClick={() => router.back()}
           className="mt-4 px-4 py-2 bg-white/5 rounded-lg text-gray-300 hover:bg-white/10"
@@ -213,13 +427,16 @@ export default function MissionDetailPage() {
     );
   }
 
-  const isActive = ["PLANNED", "IN_PROGRESS", "PAUSED"].includes(
+  const isActive = ["PLANNED", "IN_PROGRESS", "PAUSED", "DRAFT", "PARTIAL"].includes(
     mission.status,
   );
-  const canAssign = ["PLANNED", "IN_PROGRESS"].includes(mission.status);
+  
+  const isDraft = mission.status === "DRAFT";
+  const canStart = isDraft && missionRequests.length > 0 && timelines.length > 0;
+  
   const canPause = mission.status === "IN_PROGRESS";
   const canResume = mission.status === "PAUSED";
-  const canAbort = isActive;
+  const canAbort = ["PLANNED", "IN_PROGRESS", "PAUSED", "DRAFT"].includes(mission.status);
 
   return (
     <div className="p-4 lg:p-6 relative z-10">
@@ -268,13 +485,17 @@ export default function MissionDetailPage() {
           {/* Action Buttons */}
           {isActive && (
             <div className="flex flex-wrap gap-2 shrink-0">
-              {canAssign && (
-                <button
-                  onClick={openAssignModal}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm"
-                >
-                  👥 Phân công đội
-                </button>
+              {isDraft && (
+                <>
+                  <button
+                    onClick={handleStartMission}
+                    title={!canStart ? "Cần ít nhất 1 Request và 1 Team để bắt đầu" : "Bắt đầu nhiệm vụ"}
+                    disabled={!canStart || actionLoading}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-colors text-sm"
+                  >
+                    🚀 Bắt đầu nhiệm vụ
+                  </button>
+                </>
               )}
               {canPause && (
                 <button
@@ -308,14 +529,141 @@ export default function MissionDetailPage() {
         </div>
       </div>
 
-      {/* Timelines Section */}
-      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-white">📊 Timelines</h2>
-          <span className="text-sm text-gray-400">
-            {timelines.length} timeline(s)
-          </span>
+      {/* Location Bar with Mini Map */}
+      <div className="bg-slate-200 rounded-xl p-5 shadow-lg border-l-4 border-[#FF7700] mb-6">
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2 text-slate-600">
+            <span className="text-xl" aria-hidden="true">
+              📍
+            </span>
+            <span className="text-sm font-bold uppercase tracking-wide">
+              Vị trí nhiệm vụ hiện tại
+            </span>
+          </div>
+          <button
+            onClick={fetchLocation}
+            disabled={isLoadingLocation}
+            className="text-[#FF3535] text-sm font-bold uppercase hover:underline disabled:opacity-50 disabled:cursor-not-allowed transition-opacity focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 rounded px-2 py-1"
+            aria-label="Cập nhật vị trí"
+          >
+            {isLoadingLocation ? "Đang tải..." : "Cập nhật"}
+          </button>
         </div>
+        {locationError && (
+          <div className="text-xs text-red-600 mb-2 flex items-center gap-1">
+            <span>⚠️</span>
+            <span>{locationError}</span>
+          </div>
+        )}
+        <p className="text-slate-800 text-lg font-bold mb-2">
+          {isLoadingLocation ?
+            <span className="inline-flex items-center gap-2">
+              <span className="w-4 h-4 border-2 border-slate-800 border-t-transparent rounded-full animate-spin"></span>
+              Đang tải...
+            </span>
+            : currentLocation}
+        </p>
+        {coordinates && (
+          <div className="text-xs text-slate-500 font-mono mb-3">
+            Lat: {coordinates.lat.toFixed(4)} • Long:{" "}
+            {coordinates.lon.toFixed(4)}
+          </div>
+        )}
+
+        {/* Mini Map */}
+        {coordinates && (
+          <div className="mt-4 h-64 rounded-lg overflow-hidden border-2 border-slate-300 shadow-inner">
+            <OpenMap
+              latitude={coordinates.lat}
+              longitude={coordinates.lon}
+              address={currentLocation}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Requests Section */}
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-white">📋 Mission Requests</h2>
+            <div className="flex items-center gap-3">
+              {isDraft && (
+                <button
+                  onClick={openAddRequestsModal}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm flex items-center gap-1"
+                >
+                  ➕ Thêm Request
+                </button>
+              )}
+              <span className="text-sm text-gray-400">
+                {missionRequests.length} request(s)
+              </span>
+            </div>
+          </div>
+
+          {missionRequests.length === 0 ? (
+            <div className="text-center py-10 text-gray-400 border border-dashed border-white/10 rounded-xl">
+              <p className="text-3xl mb-2">📋</p>
+              <p>Chưa có yêu cầu nào.</p>
+              {isDraft && <p className="text-sm mt-1">Hãy thêm Request để bắt đầu.</p>}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {missionRequests.map((mr) => (
+                <div key={mr._id} className="bg-white/5 border border-white/5 rounded-xl p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${REQUEST_STATUS_COLORS[mr.status] || ''}`}>
+                          {mr.status}
+                        </span>
+                      </div>
+                      <p className="text-gray-300 font-mono text-xs">
+                        Request ID: {typeof mr.requestId === "object" ? (mr.requestId as any)?._id : mr.requestId}
+                      </p>
+                      <div className="mt-2 text-sm text-gray-400">
+                        Tiến độ cứu hộ: {mr.peopleRescued || 0} / {mr.requestPeopleSnapshot || 0} người
+                        <div className="w-full bg-gray-700 rounded-full h-1.5 mb-1 mt-1">
+                          <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `${mr.fulfillmentPercent || 0}%` }}></div>
+                        </div>
+                      </div>
+                    </div>
+                    {isDraft && (
+                      <button
+                        onClick={() => handleRemoveRequest(mr)}
+                        disabled={actionLoading}
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors"
+                        title="Xóa yêu cầu khỏi nhiệm vụ"
+                      >
+                        🗑
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Timelines Section */}
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-white">📊 Timelines</h2>
+            <div className="flex items-center gap-3">
+              {isDraft && (
+                <button
+                  onClick={openAddTeamsModal}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm flex items-center gap-1"
+                >
+                  👥 Thêm Đội
+                </button>
+              )}
+              <span className="text-sm text-gray-400">
+                {timelines.length} timeline(s)
+              </span>
+            </div>
+          </div>
 
         {timelines.length === 0 ?
           <div className="text-center py-10 text-gray-400">
@@ -339,7 +687,7 @@ export default function MissionDetailPage() {
                         {TIMELINE_STATUS_LABELS[tl.status] || tl.status}
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
+                    <div className="grid grid-cols-2 lg:grid-cols-2 gap-2 text-sm">
                       <div>
                         <span className="text-gray-500 text-xs">Team</span>
                         <p className="text-gray-300 font-mono text-xs">
@@ -356,31 +704,13 @@ export default function MissionDetailPage() {
                         </p>
                       </div>
                       <div>
-                        <span className="text-gray-500 text-xs">Request</span>
-                        <p className="text-gray-300 font-mono text-xs">
-                          {typeof tl.requestId === "string" ?
-                            tl.requestId
-                          : (tl.requestId as unknown as { _id: string })?._id}
-                        </p>
-                      </div>
-                      <div>
                         <span className="text-gray-500 text-xs">
                           Phân công lúc
                         </span>
                         <p className="text-gray-300 text-xs">
                           {tl.assignedAt ?
                             new Date(tl.assignedAt).toLocaleString("vi-VN")
-                          : "—"}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500 text-xs">
-                          Hoàn thành lúc
-                        </span>
-                        <p className="text-gray-300 text-xs">
-                          {tl.completedAt ?
-                            new Date(tl.completedAt).toLocaleString("vi-VN")
-                          : "—"}
+                          : (tl.createdAt ? new Date(tl.createdAt).toLocaleString("vi-VN") : "—")}
                         </p>
                       </div>
                     </div>
@@ -394,26 +724,43 @@ export default function MissionDetailPage() {
                         ❌ {tl.failureReason}
                       </p>
                     )}
-                    {tl.rescuedCount !== undefined && tl.rescuedCount > 0 && (
+                    {missionRequests && missionRequests.length > 0 && missionRequests.reduce((sum, mr) => sum + (mr.peopleRescued || 0), 0) > 0 && (
                       <p className="text-green-400 text-xs mt-1">
-                        🙋 Đã cứu: {tl.rescuedCount} người
+                        🙋 Đã cứu: {missionRequests.reduce((sum, mr) => sum + (mr.peopleRescued || 0), 0)} người
                       </p>
                     )}
                   </div>
+                  {isDraft && (
+                    <button
+                      onClick={() => handleRemoveTeam(tl)}
+                      disabled={actionLoading}
+                      className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors"
+                      title="Xóa đội khỏi nhiệm vụ"
+                    >
+                      🗑
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         }
-      </div>
+      </div></div>
 
-      {/* Assign Team Modal */}
-      <AssignTeamModal
-        isOpen={showAssignModal}
-        onClose={() => setShowAssignModal(false)}
-        onAssign={handleAssign}
+      {showAddRequestsModal && (
+        <AddRequestsModal
+          isOpen={showAddRequestsModal}
+          onClose={() => setShowAddRequestsModal(false)}
+          onAdd={handleAddRequests}
+          requests={verifiedRequests}
+        />
+      )}
+
+      <AddTeamsModal
+        isOpen={showAddTeamsModal}
+        onClose={() => setShowAddTeamsModal(false)}
+        onAdd={handleAddTeams}
         teams={teams}
-        requests={requests}
       />
 
       {/* Abort Confirmation */}

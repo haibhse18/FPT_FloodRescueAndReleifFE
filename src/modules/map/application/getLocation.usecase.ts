@@ -3,6 +3,7 @@
  * Handle location-related operations
  */
 
+
 import { IMapRepository } from '../domain/map.repository';
 import { Location, Coordinates } from '../domain/location.entity';
 

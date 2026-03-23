@@ -6,6 +6,8 @@
 import { Supply, SupplyRequest, CreateSupplyRequestData } from './supply.entity';
 
 export interface ISupplyRepository {
+
+    importExcel(file: File): Promise<void>;
     /**
      * Lấy danh sách supplies
      */
@@ -14,7 +16,7 @@ export interface ISupplyRepository {
     /**
      * Lấy danh sách supply requests
      */
-    getSupplyRequests(): Promise<SupplyRequest[]>;
+    getSupplyRequests(): Promise<{ data: SupplyRequest[], meta: { page: number, totalPages: number, total: number } }>;
 
     /**
      * Tạo supply request mới

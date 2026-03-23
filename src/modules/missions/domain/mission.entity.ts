@@ -6,6 +6,7 @@
 // ─── Enums ───────────────────────────────────────────────
 
 export type MissionStatus =
+  | "DRAFT"
   | "PLANNED"
   | "IN_PROGRESS"
   | "PAUSED"

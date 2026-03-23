@@ -146,6 +146,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       console.error("Get current user error:", error);
       // Token không hợp lệ, xóa auth state
       get().clearAuth();
+      throw error;
     } finally {
       set({ loading: false });
     }

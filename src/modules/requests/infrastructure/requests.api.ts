@@ -33,6 +33,7 @@ export interface CreateRescueRequestDTO {
   priority?: string;
   peopleCount?: number;
   requestSupply?: unknown[];
+  requestSupplies?: { supplyId: string; requestedQty: number }[];
   location?: string | { type?: string; coordinates: [number, number] };
   dangerType?: string;
   numberOfPeople?: number;
@@ -68,13 +69,35 @@ export const requestsApi = {
     });
   },
 
-  /** POST /citizen/emergency-request */
+  /**
+   * @deprecated No matching endpoint in swagger.
+   * Use createRescueRequest (POST /requests) with CreateRescueRequestDTO instead.
+   */
   createEmergencyRequest: async (
     data: EmergencyRequestDTO,
   ): Promise<ApiResponse> => {
-    return apiClient.post("/citizen/emergency-request", data, {
-      headers: authSession.getAuthHeaders(),
-    });
+    return apiClient.post(
+      "/requests",
+      {
+        type: "Rescue",
+        incidentType: "Other",
+        description: data.description,
+        priority:
+          data.urgencyLevel === "critical"
+            ? "Critical"
+            : data.urgencyLevel === "high"
+              ? "High"
+              : "Normal",
+        peopleCount: data.peopleCount,
+        location: {
+          type: "Point",
+          coordinates: [data.location.lng, data.location.lat],
+        },
+      },
+      {
+        headers: authSession.getAuthHeaders(),
+      },
+    );
   },
 
   /** GET /requests/my */
@@ -82,31 +105,34 @@ export const requestsApi = {
     const queryString =
       params ?
         "?" + new URLSearchParams(params as Record<string, string>).toString()
-      : "";
+        : "";
     return apiClient.get(`/requests/my${queryString}`, {
       headers: authSession.getAuthHeaders(),
     });
   },
 
-  /** GET /citizen/history */
+  /** GET /requests/my — alias for getMyRequests (replaces old /citizen/history) */
   getHistory: async (): Promise<ApiResponse> => {
-    return apiClient.get("/citizen/history", {
+    return apiClient.get("/requests/my", {
       headers: authSession.getAuthHeaders(),
     });
   },
 
-  /** GET /requests/{id} */
+  /** GET /requests/{requestId} */
   getRequestDetail: async (requestId: string): Promise<ApiResponse> => {
     return apiClient.get(`/requests/${requestId}`, {
       headers: authSession.getAuthHeaders(),
     });
   },
 
-  /** PATCH /requests/{id}/confirm */
+  /**
+   * @deprecated No matching endpoint in swagger — this endpoint does not exist.
+   * Citizens should use cancelRequest if needed.
+   */
   confirmRequest: async (requestId: string): Promise<ApiResponse> => {
-    return apiClient.patch(`/requests/${requestId}/confirm`, undefined, {
-      headers: authSession.getAuthHeaders(),
-    });
+    throw new Error(
+      "Endpoint /requests/{requestId}/confirm khong co trong Swagger hien tai.",
+    );
   },
 
   // ────────────────────────────────────────────────────────
@@ -230,10 +256,8 @@ export const requestsApi = {
     requestId: string,
     status: string,
   ): Promise<ApiResponse> => {
-    return apiClient.patch(
-      `/requests/${requestId}/status`,
-      { status },
-      { headers: authSession.getAuthHeaders() },
+    throw new Error(
+      `Endpoint /requests/{requestId}/status khong co trong Swagger hien tai. Khong the cap nhat sang ${status}.`,
     );
   },
 };

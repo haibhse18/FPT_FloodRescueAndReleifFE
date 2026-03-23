@@ -72,15 +72,72 @@ export const missionApi = {
   },
 
   // ────────────────────────────────────────────────────────
-  // ASSIGNMENT
+  // PLANNING & FULFILLMENT (Unified v2.2)
   // ────────────────────────────────────────────────────────
 
-  /** PATCH /missions/{id}/assign — assign team + request → creates Timeline */
-  assignTeam: async (
+  /** GET /missions/{id}/requests — list mission requests */
+  getMissionRequests: async (missionId: string): Promise<ApiResponse> => {
+    return apiClient.get(`/missions/${missionId}/requests`, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** POST /missions/{id}/requests — add requests to mission (creates MissionRequest as PENDING) */
+  addRequests: async (
     missionId: string,
-    input: { teamId: string; requestId: string; note?: string },
+    input: { requestIds: string[]; note?: string },
   ): Promise<ApiResponse> => {
-    return apiClient.patch(`/missions/${missionId}/assign`, input, {
+    return apiClient.post(`/missions/${missionId}/requests`, input, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** DELETE /missions/{id}/requests/{missionRequestId} — remove request from mission (PENDING/DROPPED only) */
+  removeRequest: async (
+    missionId: string,
+    missionRequestId: string,
+  ): Promise<ApiResponse> => {
+    return apiClient.delete(`/missions/${missionId}/requests/${missionRequestId}`, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** DELETE /missions/{id}/teams/{teamId} — remove team from mission (PLANNED only) */
+  removeTeam: async (
+    missionId: string,
+    teamId: string,
+  ): Promise<ApiResponse> => {
+    return apiClient.delete(`/missions/${missionId}/teams/${teamId}`, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** POST /missions/{id}/teams — assign team to mission (creates Timeline as PLANNED) */
+  addTeams: async (
+    missionId: string,
+    input: { teamIds: string[]; note?: string },
+  ): Promise<ApiResponse> => {
+    return apiClient.post(`/missions/${missionId}/teams`, input, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** PATCH /missions/{id}/start — PLANNED timelines -> ASSIGNED, DRAFT mission -> PLANNED */
+  startMission: async (missionId: string): Promise<ApiResponse> => {
+    return apiClient.patch(`/missions/${missionId}/start`, undefined, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  /** POST /mission-requests/{id}/progress — increments rescued people and delivered supplies */
+  updateMissionRequestProgress: async (
+    missionRequestId: string,
+    payload: {
+      peopleRescuedIncrement?: number;
+      suppliesDelivered?: { supplyId: string; quantityDelivered: number }[];
+    },
+  ): Promise<ApiResponse> => {
+    return apiClient.post(`/mission-requests/${missionRequestId}/progress`, payload, {
       headers: authSession.getAuthHeaders(),
     });
   },

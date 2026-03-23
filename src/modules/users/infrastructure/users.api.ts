@@ -11,11 +11,11 @@ export type ReportType = 'daily' | 'weekly' | 'monthly';
 
 export const managerApi = {
     /**
-     * Get dashboard statistics
-     * GET /manager/dashboard
+     * Get summary report / dashboard statistics
+     * GET /reports/summary
      */
     getDashboardStats: async (): Promise<ApiResponse> => {
-        return apiClient.get('/manager/dashboard', {
+        return apiClient.get('/reports/summary', {
             headers: authSession.getAuthHeaders(),
         });
     },
@@ -32,21 +32,21 @@ export const managerApi = {
 
     /**
      * Get users list
-     * GET /manager/users
+     * GET /users
      */
     getUsers: async (role?: string): Promise<ApiResponse> => {
         const params = role ? `?role=${role}` : '';
-        return apiClient.get(`/manager/users${params}`, {
+        return apiClient.get(`/users${params}`, {
             headers: authSession.getAuthHeaders(),
         });
     },
 
     /**
-     * Update user
-     * PUT /manager/users/{userId}
+     * Update user role (only role field is supported by the API)
+     * PATCH /users/{userId}/role
      */
-    updateUser: async (userId: string, data: unknown): Promise<ApiResponse> => {
-        return apiClient.put(`/manager/users/${userId}`, data, {
+    updateUser: async (userId: string, data: { role: string }): Promise<ApiResponse> => {
+        return apiClient.patch(`/users/${userId}/role`, data, {
             headers: authSession.getAuthHeaders(),
         });
     },
@@ -61,26 +61,26 @@ export const managerApi = {
         });
     },
 
-    
+
 };
 
 export const adminApi = {
     /**
      * Get all users (admin access)
-     * GET /admin/users
+     * GET /users
      */
     getAllUsers: async (): Promise<ApiResponse> => {
-        return apiClient.get('/admin/users', {
+        return apiClient.get('/users', {
             headers: authSession.getAuthHeaders(),
         });
     },
 
     /**
-     * Get system configuration
-     * GET /admin/config
+     * Get system categories/configuration
+     * GET /system/categories
      */
     getSystemConfig: async (): Promise<ApiResponse> => {
-        return apiClient.get('/admin/config', {
+        return apiClient.get('/system/categories', {
             headers: authSession.getAuthHeaders(),
         });
     },

@@ -10,9 +10,9 @@ import {
   GetMissionsFilter,
   CreateMissionInput,
   UpdateMissionInput,
-  AssignTeamInput,
   RescueTeam,
 } from "../domain/mission.entity";
+import { MissionRequest } from "../domain/missionRequest.entity";
 import { Timeline } from "@/modules/timelines/domain/timeline.entity";
 import { missionApi } from "./mission.api";
 
@@ -54,14 +54,52 @@ export class MissionRepositoryImpl implements IMissionRepository {
     await missionApi.deleteMission(missionId);
   }
 
-  // ─── Assignment ──────────────────────────────────────────
+  // ─── Planning & Fulfillment ──────────────────────────────
 
-  async assignTeam(
+  async getMissionRequests(missionId: string): Promise<MissionRequest[]> {
+    const response = await missionApi.getMissionRequests(missionId);
+    return ((response as any).data ?? []) as MissionRequest[];
+  }
+
+  async addRequests(
     missionId: string,
-    input: AssignTeamInput,
-  ): Promise<Timeline> {
-    const response = await missionApi.assignTeam(missionId, input);
-    return ((response as any).data ?? response) as Timeline;
+    input: { requestIds: string[]; note?: string },
+  ): Promise<void> {
+    await missionApi.addRequests(missionId, input);
+  }
+
+  async removeRequest(
+    missionId: string,
+    missionRequestId: string,
+  ): Promise<void> {
+    await missionApi.removeRequest(missionId, missionRequestId);
+  }
+
+  async removeTeam(missionId: string, teamId: string): Promise<void> {
+    await missionApi.removeTeam(missionId, teamId);
+  }
+
+  async addTeams(
+    missionId: string,
+    input: { teamIds: string[]; note?: string },
+  ): Promise<Timeline[]> {
+    const response = await missionApi.addTeams(missionId, input);
+    return ((response as any).data ?? []) as Timeline[];
+  }
+
+  async startMission(missionId: string): Promise<Mission> {
+    const response = await missionApi.startMission(missionId);
+    return ((response as any).data ?? response) as Mission;
+  }
+
+  async updateMissionRequestProgress(
+    missionRequestId: string,
+    payload: {
+      peopleRescuedIncrement?: number;
+      suppliesDelivered?: { supplyId: string; quantityDelivered: number }[];
+    },
+  ): Promise<void> {
+    await missionApi.updateMissionRequestProgress(missionRequestId, payload);
   }
 
   // ─── Status Control ──────────────────────────────────────

@@ -9,6 +9,9 @@ import {
   PaginatedTimelines,
   GetTimelinesFilter,
   TimelineCancelInput,
+  TimelineCompleteInput,
+  TimelineFailInput,
+  TimelineWithdrawInput,
 } from "../domain/timeline.entity";
 import { timelineApi } from "./timeline.api";
 
@@ -37,6 +40,40 @@ export class TimelineRepositoryImpl implements ITimelineRepository {
     input?: TimelineCancelInput,
   ): Promise<void> {
     await timelineApi.cancelTimeline(timelineId, input);
+  }
+
+  async acceptTimeline(timelineId: string): Promise<Timeline> {
+    const response = await timelineApi.acceptTimeline(timelineId);
+    return ((response as any).data ?? response) as Timeline;
+  }
+
+  async arriveTimeline(timelineId: string): Promise<Timeline> {
+    const response = await timelineApi.arriveTimeline(timelineId);
+    return ((response as any).data ?? response) as Timeline;
+  }
+
+  async completeTimeline(
+    timelineId: string,
+    input: TimelineCompleteInput,
+  ): Promise<Timeline> {
+    const response = await timelineApi.completeTimeline(timelineId, input);
+    return ((response as any).data ?? response) as Timeline;
+  }
+
+  async failTimeline(
+    timelineId: string,
+    input: TimelineFailInput,
+  ): Promise<Timeline> {
+    const response = await timelineApi.failTimeline(timelineId, input);
+    return ((response as any).data ?? response) as Timeline;
+  }
+
+  async withdrawTimeline(
+    timelineId: string,
+    input: TimelineWithdrawInput,
+  ): Promise<Timeline> {
+    const response = await timelineApi.withdrawTimeline(timelineId, input);
+    return ((response as any).data ?? response) as Timeline;
   }
 }
 

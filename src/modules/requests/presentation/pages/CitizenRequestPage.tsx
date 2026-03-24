@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
@@ -293,6 +293,8 @@ export default function CitizenRequestPage() {
     string | null
   >(null);
   const [desktopMapHeight, setDesktopMapHeight] = useState(520);
+  const [isCheckingActiveRequest, setIsCheckingActiveRequest] = useState(true);
+  const [activeRequestIdOnEntry, setActiveRequestIdOnEntry] = useState<string | null>(null);
 
   const reliefFamilySize = Math.max(
     RELIEF_MIN_FAMILY_MEMBERS,
@@ -324,7 +326,7 @@ export default function CitizenRequestPage() {
     reliefMedicineDetails,
   );
 
-  const findActiveRequestId = async (): Promise<string | null> => {
+  const findActiveRequestId = useCallback(async (): Promise<string | null> => {
     try {
       const requests = await requestRepository.getMyRequests({ page: 1, limit: 20 });
       const sorted = [...(requests || [])].sort((a: any, b: any) => {
@@ -342,7 +344,34 @@ export default function CitizenRequestPage() {
       console.error("Cannot resolve active request:", lookupError);
       return null;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const guardActiveRequest = async () => {
+      const activeRequestId = await findActiveRequestId();
+      if (cancelled) return;
+
+      if (activeRequestId) {
+        setActiveRequestIdOnEntry(activeRequestId);
+        toast({
+          title: "Bạn đã có yêu cầu đang xử lý",
+          description: "Hệ thống chuyển bạn tới yêu cầu hiện tại để tránh tạo trùng.",
+        });
+        router.replace(`/history/${activeRequestId}`);
+        return;
+      }
+
+      setIsCheckingActiveRequest(false);
+    };
+
+    void guardActiveRequest();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [findActiveRequestId, router, toast]);
 
   // Quick action templates
   const quickRescueActions = [
@@ -1070,6 +1099,17 @@ export default function CitizenRequestPage() {
   const submitDisabled = requestType === "Rescue" ? descOverLimit : reliefNoteOverLimit;
   const sectionCardClass =
     "rounded-2xl border border-white/15 bg-[#16384f]/65 backdrop-blur-sm shadow-[0_10px_30px_rgba(0,0,0,0.15)]";
+
+  if (isCheckingActiveRequest || activeRequestIdOnEntry) {
+    return (
+      <div className="h-[100dvh] bg-[#133249] flex items-center justify-center px-4">
+        <div className="text-center space-y-3">
+          <div className="mx-auto w-12 h-12 border-4 border-[#FF7700] border-t-transparent rounded-full animate-spin" />
+          <p className="text-white/90 text-sm">Đang kiểm tra yêu cầu hiện tại...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[100dvh] bg-[#133249] flex flex-col overflow-hidden overscroll-none">

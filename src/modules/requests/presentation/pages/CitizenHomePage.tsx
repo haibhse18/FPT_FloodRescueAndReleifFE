@@ -27,6 +27,7 @@ function normalizeStatus(status: unknown): string {
 export default function CitizenHomePage() {
   const [userName, setUserName] = useState("Người dùng");
   const [isLoading, setIsLoading] = useState(true);
+  const [isCheckingActiveRequest, setIsCheckingActiveRequest] = useState(true);
   const [activeRequest, setActiveRequest] = useState<{
     id: string;
     status: string;
@@ -72,6 +73,8 @@ export default function CitizenHomePage() {
       } catch {
         // Keep SOS in default emergency mode if API fails.
         setActiveRequest(null);
+      } finally {
+        setIsCheckingActiveRequest(false);
       }
     };
 
@@ -157,12 +160,18 @@ export default function CitizenHomePage() {
                 </span>
               </p>
               <p className="text-[#FF7700] font-bold text-2xl lg:text-3xl mb-2">
-                {activeRequest ? "YÊU CẦU ĐANG ĐƯỢC XỬ LÝ" : "CẦN HỖ TRỢ NGAY?"}
+                {isCheckingActiveRequest
+                  ? "ĐANG KIỂM TRA YÊU CẦU"
+                  : activeRequest
+                    ? "YÊU CẦU ĐANG ĐƯỢC XỬ LÝ"
+                    : "CẦN HỖ TRỢ NGAY?"}
               </p>
               <p className="text-slate-300 text-base lg:text-lg">
-                {activeRequest
-                  ? "Nhấn nút bên dưới để theo dõi yêu cầu cứu hộ gần nhất của bạn"
-                  : "Bấm nút bên dưới để gửi tín hiệu cấp cứu và vị trí của bạn"}
+                {isCheckingActiveRequest
+                  ? "Vui lòng đợi hệ thống kiểm tra yêu cầu hiện tại của bạn"
+                  : activeRequest
+                    ? "Nhấn nút bên dưới để theo dõi yêu cầu cứu hộ gần nhất của bạn"
+                    : "Bấm nút bên dưới để gửi tín hiệu cấp cứu và vị trí của bạn"}
               </p>
             </div>
 
@@ -172,7 +181,23 @@ export default function CitizenHomePage() {
               role="group"
               aria-label="Nút cứu hộ khẩn cấp"
             >
-              {activeRequest ? (
+              {isCheckingActiveRequest ? (
+                <>
+                  <div
+                    className="absolute w-64 h-64 lg:w-80 lg:h-80 rounded-full border border-slate-400/20 animate-ping-slow"
+                    aria-hidden="true"
+                  ></div>
+                  <div
+                    className="relative w-48 h-48 lg:w-56 lg:h-56 rounded-full bg-slate-600/70 border-4 border-white/70 flex flex-col items-center justify-center gap-2 z-20"
+                    aria-live="polite"
+                  >
+                    <div className="w-8 h-8 border-4 border-white/80 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm lg:text-base font-black tracking-wide text-white text-center px-4">
+                      ĐANG KIỂM TRA
+                    </span>
+                  </div>
+                </>
+              ) : activeRequest ? (
                 <>
                   <div
                     className="absolute w-64 h-64 lg:w-80 lg:h-80 rounded-full border border-orange-400/30 animate-ping-slow"

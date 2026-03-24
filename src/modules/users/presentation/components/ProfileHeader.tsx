@@ -1,5 +1,8 @@
 "use client";
 
+import { Card } from "@/shared/ui/components";
+import { FiEdit2, FiMail, FiPhone, FiX } from "react-icons/fi";
+
 interface ProfileHeaderProps {
   name: string;
   role: string;
@@ -22,7 +25,7 @@ export default function ProfileHeader({
   const initial = name ? name.charAt(0).toUpperCase() : "?";
 
   return (
-    <div className="bg-[#16384f]/70 border border-white/15 rounded-3xl p-6 lg:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.2)] backdrop-blur-sm">
+    <Card variant="dark-blur" padding="lg">
       <div className="flex flex-col lg:flex-row items-center gap-6">
         {/* Avatar */}
         <div className="relative flex-shrink-0">
@@ -59,13 +62,15 @@ export default function ProfileHeader({
             ) : (
               <>
                 {phone && (
-                  <span className="flex items-center gap-2 text-white/85 font-medium text-sm bg-white/5 border border-white/10 px-4 py-2 rounded-full shadow-sm">
-                    <span>📱</span>{phone}
+                  <span className="flex items-center gap-2 text-white/90 font-medium text-sm bg-slate-800/40 border border-slate-700/50 px-4 py-2 rounded-full shadow-sm">
+                    <FiPhone />
+                    {phone}
                   </span>
                 )}
                 {email && (
-                  <span className="flex items-center gap-2 text-white/85 font-medium text-sm bg-white/5 border border-white/10 px-4 py-2 rounded-full shadow-sm">
-                    <span>✉️</span>{email}
+                  <span className="flex items-center gap-2 text-white/90 font-medium text-sm bg-slate-800/40 border border-slate-700/50 px-4 py-2 rounded-full shadow-sm">
+                    <FiMail />
+                    {email}
                   </span>
                 )}
                 <span className="flex items-center gap-2 text-[#FFD1A0] text-xs font-bold bg-[#FF7700]/15 border border-[#FF7700]/35 px-4 py-2 rounded-full shadow-sm">
@@ -81,15 +86,23 @@ export default function ProfileHeader({
         <div className="flex flex-col gap-2">
           <button
             onClick={onEditToggle}
-            className={`px-6 py-3 rounded-full font-bold text-sm transition-all shadow-sm ${isEditMode
+            className={`px-6 py-3 rounded-full font-bold text-sm transition-all shadow-sm flex items-center gap-2 ${isEditMode
               ? "bg-red-500/15 hover:bg-red-500/25 border border-red-400/35 text-red-200"
               : "bg-[#FF7700] hover:bg-[#e66a00] text-white"
               }`}
           >
-            {isEditMode ? "❌ Hủy chỉnh sửa" : "✏️ Chỉnh sửa hồ sơ"}
+            {isEditMode ? (
+              <>
+                <FiX /> Hủy chỉnh sửa
+              </>
+            ) : (
+              <>
+                <FiEdit2 /> Chỉnh sửa hồ sơ
+              </>
+            )}
           </button>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

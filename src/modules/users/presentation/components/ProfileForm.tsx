@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, Input, Skeleton } from "@/shared/ui/components";
+import { FiClipboard, FiMail, FiMapPin, FiPhone, FiSave, FiUser } from "react-icons/fi";
 
 export interface CitizenProfile {
   name: string;
@@ -33,7 +34,7 @@ export default function ProfileForm({
 }: ProfileFormProps) {
   if (isLoading) {
     return (
-      <Card className="mb-6 bg-[#16384f]/70 border border-white/15 rounded-3xl p-6 lg:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.2)] backdrop-blur-sm">
+      <Card variant="dark-blur" padding="lg" className="mb-6">
         <div className="space-y-4 animate-pulse">
           <Skeleton className="h-8 w-1/3 mb-6 bg-white/10 rounded-lg" />
           {[1, 2, 3, 4, 5].map((i) => (
@@ -48,9 +49,11 @@ export default function ProfileForm({
   }
 
   return (
-    <Card className="mb-6 bg-[#16384f]/70 border border-white/15 rounded-3xl p-6 lg:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.2)] backdrop-blur-sm">
+    <Card variant="dark-blur" padding="lg" className="mb-6">
       <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4">
-        <span className="text-2xl bg-white/10 text-[#FFD1A0] p-2 rounded-xl">📋</span>
+        <span className="text-2xl bg-white/10 text-[#FFD1A0] p-2 rounded-xl">
+          <FiClipboard />
+        </span>
         <h3 className="text-2xl font-bold text-white">Thông tin cá nhân</h3>
       </div>
 
@@ -58,7 +61,12 @@ export default function ProfileForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-white">
           {/* Name */}
           <Input
-            label="👤 Họ và tên"
+            label={
+              <span className="flex items-center gap-2">
+                <FiUser className="text-base" />
+                Họ và tên
+              </span>
+            }
             value={isEditMode ? editedProfile.name : profile.name}
             onChange={(e) =>
               onProfileChange({ ...editedProfile, name: e.target.value })
@@ -74,7 +82,12 @@ export default function ProfileForm({
 
           {/* Phone */}
           <Input
-            label="📱 Số điện thoại"
+            label={
+              <span className="flex items-center gap-2">
+                <FiPhone className="text-base" />
+                Số điện thoại
+              </span>
+            }
             value={isEditMode ? editedProfile.phone : profile.phone}
             onChange={(e) =>
               onProfileChange({ ...editedProfile, phone: e.target.value })
@@ -90,7 +103,12 @@ export default function ProfileForm({
 
           {/* Email */}
           <Input
-            label="✉️ Email"
+            label={
+              <span className="flex items-center gap-2">
+                <FiMail className="text-base" />
+                Email
+              </span>
+            }
             value={isEditMode ? editedProfile.email : profile.email}
             onChange={(e) =>
               onProfileChange({ ...editedProfile, email: e.target.value })
@@ -109,8 +127,9 @@ export default function ProfileForm({
           <div className="md:col-span-2">
             {isEditMode ? (
               <div className="w-full">
-                <label className="block text-sm font-bold mb-2 text-white/75">
-                  📍 Địa chỉ
+                <label className="flex items-center gap-2 text-sm font-bold mb-2 text-white/75">
+                  <FiMapPin className="text-base" />
+                  Địa chỉ
                 </label>
                 <textarea
                   value={editedProfile.address}
@@ -126,7 +145,12 @@ export default function ProfileForm({
               </div>
             ) : (
               <Input
-                label="📍 Địa chỉ"
+                label={
+                  <span className="flex items-center gap-2">
+                    <FiMapPin className="text-base" />
+                    Địa chỉ
+                  </span>
+                }
                 value={profile.address}
                 readOnly={true}
                 disabled={true}
@@ -142,7 +166,7 @@ export default function ProfileForm({
             <button
               onClick={onCancel}
               disabled={isSaving}
-              className="px-6 py-3 bg-white/5 border border-white/20 hover:bg-white/10 text-white/85 font-bold rounded-full transition-all disabled:opacity-50 shadow-sm"
+              className="px-6 py-3 bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/60 text-white/90 font-bold rounded-full transition-all disabled:opacity-50 shadow-sm"
             >
               Hủy bỏ
             </button>
@@ -157,7 +181,9 @@ export default function ProfileForm({
                   Đang lưu...
                 </>
               ) : (
-                "💾 Lưu thay đổi"
+                <>
+                  <FiSave /> Lưu thay đổi
+                </>
               )}
             </button>
           </div>

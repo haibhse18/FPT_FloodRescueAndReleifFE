@@ -2,6 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import {
+  FiAlertTriangle,
+  FiCheckCircle,
+  FiClock,
+  FiTrendingUp,
+} from "react-icons/fi";
 import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
 import { LogoutUseCase } from "@/modules/auth/application/logout.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
@@ -176,7 +182,9 @@ export default function CitizenProfilePage() {
             {/* Save success toast */}
             {saveSuccess && (
               <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 font-semibold">
-                <span className="text-xl">✅</span>
+                <span className="text-xl">
+                  <FiCheckCircle />
+                </span>
                 Cập nhật thông tin thành công!
               </div>
             )}
@@ -185,7 +193,9 @@ export default function CitizenProfilePage() {
             {error && (
               <div className="flex items-center justify-between gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
                 <div className="flex items-center gap-3 text-red-400 font-medium">
-                  <span className="text-xl">⚠️</span>
+                  <span className="text-xl">
+                    <FiAlertTriangle />
+                  </span>
                   <span>{error}</span>
                 </div>
                 <button
@@ -215,19 +225,19 @@ export default function CitizenProfilePage() {
             <div className="grid grid-cols-3 gap-3">
               {[
                 {
-                  icon: "📊",
+                  icon: <FiTrendingUp />,
                   label: "Tổng yêu cầu",
                   value: stats.total,
                   accent: "border-l-blue-500",
                 },
                 {
-                  icon: "✅",
+                  icon: <FiCheckCircle />,
                   label: "Hoàn thành",
                   value: stats.completed,
                   accent: "border-l-green-500",
                 },
                 {
-                  icon: "⏳",
+                  icon: <FiClock />,
                   label: "Đang xử lý",
                   value: stats.inProgress,
                   accent: "border-l-[#FF7700]",
@@ -237,7 +247,9 @@ export default function CitizenProfilePage() {
                   key={s.label}
                   className={`bg-white/5 border border-white/10 border-l-4 ${s.accent} rounded-xl p-4`}
                 >
-                  <span className="text-2xl block mb-2">{s.icon}</span>
+                  <span className="text-2xl block mb-2 text-white/80">
+                    {s.icon}
+                  </span>
                   <p className="text-2xl lg:text-3xl font-black text-white mb-1">
                     {isLoading ? (
                       <span className="inline-block w-8 h-7 bg-white/10 rounded animate-pulse align-middle" />

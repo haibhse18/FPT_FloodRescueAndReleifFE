@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
+  label?: ReactNode;
   error?: string;
   helperText?: string;
 }
@@ -17,8 +17,8 @@ export function Input({ label, error, helperText, className = '', required, disa
       )}
       <input
         className={`w-full px-4 py-3 border rounded-lg transition-all
-          ${error 
-            ? 'border-[var(--color-error)] focus:border-[var(--color-error)] focus:ring-2 focus:ring-[var(--color-error-light)]' 
+          ${error
+            ? 'border-[var(--color-error)] focus:border-[var(--color-error)] focus:ring-2 focus:ring-[var(--color-error-light)]'
             : 'border-[var(--color-border)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-teal-pale)]'
           }
           ${disabled ? 'bg-[var(--color-surface)] cursor-not-allowed opacity-60' : 'bg-white'}
@@ -34,7 +34,7 @@ export function Input({ label, error, helperText, className = '', required, disa
 }
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label?: string;
+  label?: ReactNode;
   error?: string;
   helperText?: string;
 }
@@ -50,8 +50,8 @@ export function Textarea({ label, error, helperText, className = '', required, d
       )}
       <textarea
         className={`w-full px-4 py-3 border rounded-lg transition-all resize-vertical min-h-[100px]
-          ${error 
-            ? 'border-[var(--color-error)] focus:border-[var(--color-error)] focus:ring-2 focus:ring-[var(--color-error-light)]' 
+          ${error
+            ? 'border-[var(--color-error)] focus:border-[var(--color-error)] focus:ring-2 focus:ring-[var(--color-error-light)]'
             : 'border-[var(--color-border)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-teal-pale)]'
           }
           ${disabled ? 'bg-[var(--color-surface)] cursor-not-allowed opacity-60' : 'bg-white'}
@@ -84,8 +84,8 @@ export function Select({ label, error, helperText, options, className = '', requ
       )}
       <select
         className={`w-full px-4 py-3 border rounded-lg transition-all appearance-none
-          ${error 
-            ? 'border-[var(--color-error)] focus:border-[var(--color-error)] focus:ring-2 focus:ring-[var(--color-error-light)]' 
+          ${error
+            ? 'border-[var(--color-error)] focus:border-[var(--color-error)] focus:ring-2 focus:ring-[var(--color-error-light)]'
             : 'border-[var(--color-border)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-teal-pale)]'
           }
           ${disabled ? 'bg-[var(--color-surface)] cursor-not-allowed opacity-60' : 'bg-white'}

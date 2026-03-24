@@ -75,9 +75,9 @@ export default function CompletedStepView({
   const statusInfo = getStatusText();
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col">
       {/* Hero Summary - Fixed */}
-      <div className="flex-shrink-0 bg-white/10 border border-white/20 rounded-2xl p-6 text-center space-y-3">
+      <div className="flex-shrink-0 bg-white/10 border border-white/20 rounded-2xl p-4 text-center space-y-2 mb-4">
         <div className="flex justify-center">
           {getStatusIcon()}
         </div>
@@ -107,9 +107,9 @@ export default function CompletedStepView({
       </div>
 
       {/* Main Content - Flex-1 */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-4 overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-4 min-h-0">
         {/* Map Summary - 60% */}
-        <div className="lg:col-span-3 h-full">
+        <div className="lg:col-span-3 h-full overflow-hidden">
           <GoongTeamMissionMap
             step="completed"
             missionRequests={missionRequests}
@@ -118,11 +118,11 @@ export default function CompletedStepView({
         </div>
 
         {/* Results Panel - 40% - Scrollable */}
-        <div className="lg:col-span-2 h-full overflow-y-auto space-y-4">
+        <div className="lg:col-span-2 h-full overflow-y-auto scrollbar-hide pr-2 space-y-4">
           {/* Request Results */}
           <div className="bg-white/10 border border-white/20 rounded-xl p-5 space-y-3">
             <h3 className="text-sm font-semibold text-white">Kết quả từng yêu cầu</h3>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
+            <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-hide">
               {missionRequests.map((mr) => {
                 const requestId = typeof mr.requestId === "string" 
                   ? mr.requestId 

@@ -9,12 +9,14 @@ interface EnRouteStepViewProps {
   missionRequests: MissionRequest[];
   onArrived: () => void;
   loading?: boolean;
+  disabled?: boolean;
 }
 
 export default function EnRouteStepView({
   missionRequests,
   onArrived,
   loading = false,
+  disabled = false,
 }: EnRouteStepViewProps) {
   const [teamLocation, setTeamLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -53,9 +55,9 @@ export default function EnRouteStepView({
   }, []);
 
   return (
-    <div className="relative h-full flex flex-col overflow-hidden">
+    <div className="relative h-full flex flex-col">
       {/* Full-width Map */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative overflow-hidden">
         <GoongTeamMissionMap
           step="enroute"
           missionRequests={missionRequests}
@@ -83,7 +85,7 @@ export default function EnRouteStepView({
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
         <button
           onClick={onArrived}
-          disabled={loading}
+          disabled={loading || disabled}
           className="px-10 py-5 rounded-full bg-mission-action-primary hover:bg-mission-action-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-lg transition-all transform hover:scale-110 disabled:transform-none shadow-2xl flex items-center gap-3"
         >
           {loading ? (

@@ -108,6 +108,31 @@ input[type="password"]::-webkit-textfield-decoration-container {
     }
 }
 
+/* Smooth progress bar fill animation for stepper */
+@keyframes progressFill {
+    from {
+        transform: scaleX(0);
+    }
+    to {
+        transform: scaleX(1);
+    }
+}
+
+.stepper-progress-bar {
+    animation: progressFill 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: left;
+}
+
+/* Hide scrollbar for all browsers */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+}
+
 @layer base {
   :root {
     --sidebar-width: 5rem;

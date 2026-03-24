@@ -14,6 +14,7 @@ interface AssignedStepViewProps {
   onAccept: () => void;
   onReject: () => void;
   loading?: boolean;
+  disabled?: boolean;
 }
 
 export default function AssignedStepView({
@@ -22,6 +23,7 @@ export default function AssignedStepView({
   onAccept,
   onReject,
   loading = false,
+  disabled = false,
 }: AssignedStepViewProps) {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -64,9 +66,9 @@ export default function AssignedStepView({
   const totalSupplies = Object.keys(suppliesNeeded).length;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
       {/* Map Section - 65% */}
-      <div className="lg:col-span-2 h-full">
+      <div className="lg:col-span-2 h-full overflow-hidden">
         <GoongTeamMissionMap
           step="assigned"
           missionRequests={missionRequests}
@@ -78,7 +80,7 @@ export default function AssignedStepView({
       </div>
 
       {/* Summary Panel - 35% - Scrollable */}
-      <div className="lg:col-span-1 h-full overflow-y-auto space-y-4">
+      <div className="lg:col-span-1 h-full overflow-y-auto scrollbar-hide pr-2 space-y-4">
         {/* Header */}
         <div className="flex items-center gap-2 text-mission-text-primary">
           <FaBell className="text-mission-icon-people text-lg" />
@@ -127,21 +129,20 @@ export default function AssignedStepView({
           </div>
         </div>
 
-        {/* Distance & Time */}
-        <div className="flex items-center justify-between text-sm px-2">
-          <div className="text-mission-text-muted">
-            <span className="font-medium">Distance:</span> <span className="text-mission-text-primary">4.2 mi</span>
+        {/* Warehouse Info */}
+        <div className="bg-mission-bg-secondary border border-mission-border rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <FaMapMarkerAlt className="text-mission-icon-location text-lg" />
+            <h4 className="text-sm font-bold text-mission-text-primary uppercase tracking-wide">Warehouse</h4>
           </div>
-          <div className="text-mission-text-muted">
-            <span className="font-medium">Est. Time:</span> <span className="text-mission-text-primary">45 min</span>
-          </div>
+          <p className="text-mission-text-primary font-semibold">{(mission as any).warehouseName || "N/A"}</p>
         </div>
 
         {/* Action Buttons */}
         <div className="space-y-3 pt-2">
           <button
             onClick={onAccept}
-            disabled={loading}
+            disabled={loading || disabled}
             className="w-full px-6 py-4 rounded-xl bg-mission-action-accept hover:bg-mission-action-accept-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base transition-all transform hover:scale-105 disabled:transform-none flex items-center justify-center gap-2 shadow-lg"
           >
             {loading ? (
@@ -159,8 +160,8 @@ export default function AssignedStepView({
 
           <button
             onClick={onReject}
-            disabled={loading}
-            className="w-full px-4 py-2 text-mission-action-reject hover:text-mission-action-reject-hover disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all flex items-center justify-center gap-2"
+            disabled={loading || disabled}
+            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/20 text-mission-action-reject hover:bg-white/10 hover:text-mission-action-reject-hover disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all flex items-center justify-center gap-2"
           >
             <FaTimes />
             Reject

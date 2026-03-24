@@ -16,6 +16,7 @@ interface InProgressStepViewProps {
   onCompleteRequest: (teamRequestId: string, note?: string) => Promise<void>;
   onCompleteMission: () => Promise<void>;
   loading?: string | null;
+  disabled?: boolean;
 }
 
 export default function InProgressStepView({
@@ -25,6 +26,7 @@ export default function InProgressStepView({
   onCompleteRequest,
   onCompleteMission,
   loading = null,
+  disabled = false,
 }: InProgressStepViewProps) {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [progressData, setProgressData] = useState<Record<string, {
@@ -196,14 +198,14 @@ export default function InProgressStepView({
           <div className="flex gap-2">
             <button
               onClick={() => handleUpdateProgress(mr._id)}
-              disabled={loading === `progress_${mr._id}` || isCompleted}
+              disabled={loading === `progress_${mr._id}` || isCompleted || disabled}
               className="px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/40 text-xs font-semibold disabled:opacity-50 transition-all"
             >
               {loading === `progress_${mr._id}` ? "..." : "Cập nhật"}
             </button>
             <button
               onClick={() => handleCompleteRequest(mr._id)}
-              disabled={loading === `complete_${mr._id}` || isCompleted}
+              disabled={loading === `complete_${mr._id}` || isCompleted || disabled}
               className="px-3 py-1.5 rounded-lg bg-mission-status-completed/20 text-mission-status-completed hover:bg-mission-status-completed/30 border border-mission-status-completed/40 text-xs font-semibold disabled:opacity-50 transition-all"
             >
               {loading === `complete_${mr._id}` ? "..." : "Hoàn thành"}
@@ -302,9 +304,9 @@ export default function InProgressStepView({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
       {/* Map Section - 60% */}
-      <div className="lg:col-span-3 h-full">
+      <div className="lg:col-span-3 h-full overflow-hidden">
         <GoongTeamMissionMap
           step="inprogress"
           missionRequests={missionRequests}
@@ -315,7 +317,7 @@ export default function InProgressStepView({
       </div>
 
       {/* Request Cards Section - 40% */}
-      <div className="lg:col-span-2 h-full flex flex-col">
+      <div className="lg:col-span-2 h-full flex flex-col min-h-0">
         {/* Container Card */}
         <div className="bg-mission-bg-secondary border border-mission-border-subtle rounded-xl p-4 flex flex-col h-full">
           {/* Header */}
@@ -331,7 +333,7 @@ export default function InProgressStepView({
           </div>
 
           {/* Request Cards List */}
-          <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-4">
+          <div className="flex-1 overflow-y-auto scrollbar-hide space-y-3 pr-2 mb-4">
             {/* Sort: incomplete requests first, completed requests last */}
             {missionRequests
               .sort((a, b) => {
@@ -353,7 +355,7 @@ export default function InProgressStepView({
           <div className="pt-3 border-t border-mission-border-subtle">
             <button
               onClick={onCompleteMission}
-              disabled={loading === "complete_mission"}
+              disabled={loading === "complete_mission" || disabled}
               className="w-full px-6 py-3 rounded-lg bg-mission-status-completed/20 hover:bg-mission-status-completed/30 disabled:opacity-50 disabled:cursor-not-allowed text-mission-status-completed border border-mission-status-completed/40 font-bold text-sm transition-all flex items-center justify-center gap-2"
             >
               {loading === "complete_mission" ? (

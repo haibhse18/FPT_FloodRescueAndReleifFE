@@ -33,13 +33,13 @@ export default function ProfileForm({
 }: ProfileFormProps) {
   if (isLoading) {
     return (
-      <Card className="mb-6 bg-white border border-gray-100 rounded-3xl p-6 lg:p-8 shadow-sm">
+      <Card className="mb-6 bg-[#16384f]/70 border border-white/15 rounded-3xl p-6 lg:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.2)] backdrop-blur-sm">
         <div className="space-y-4 animate-pulse">
-          <Skeleton className="h-8 w-1/3 mb-6 bg-gray-200 rounded-lg" />
+          <Skeleton className="h-8 w-1/3 mb-6 bg-white/10 rounded-lg" />
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="space-y-2">
-              <Skeleton className="h-4 w-1/4 bg-gray-100 rounded-md" />
-              <Skeleton className="h-12 w-full bg-gray-50 rounded-xl" />
+              <Skeleton className="h-4 w-1/4 bg-white/10 rounded-md" />
+              <Skeleton className="h-12 w-full bg-white/10 rounded-xl" />
             </div>
           ))}
         </div>
@@ -48,14 +48,14 @@ export default function ProfileForm({
   }
 
   return (
-    <Card className="mb-6 bg-white border border-gray-100 rounded-3xl p-6 lg:p-8 shadow-sm">
-      <div className="flex items-center gap-3 mb-8 border-b border-gray-100 pb-4">
-        <span className="text-2xl bg-gray-50 text-gray-700 p-2 rounded-xl">📋</span>
-        <h3 className="text-2xl font-bold text-gray-900">Thông tin cá nhân</h3>
+    <Card className="mb-6 bg-[#16384f]/70 border border-white/15 rounded-3xl p-6 lg:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.2)] backdrop-blur-sm">
+      <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4">
+        <span className="text-2xl bg-white/10 text-[#FFD1A0] p-2 rounded-xl">📋</span>
+        <h3 className="text-2xl font-bold text-white">Thông tin cá nhân</h3>
       </div>
 
       <div className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-gray-900">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-white">
           {/* Name */}
           <Input
             label="👤 Họ và tên"
@@ -67,8 +67,8 @@ export default function ProfileForm({
             readOnly={!isEditMode}
             className={
               !isEditMode
-                ? "bg-transparent border-0 border-b-2 border-gray-100 rounded-none px-0 text-gray-900 font-bold text-base focus:ring-0"
-                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-emerald-500 rounded-xl px-4 py-3"
+                ? "bg-transparent border-0 border-b-2 border-white/15 rounded-none px-0 text-white font-bold text-base focus:ring-0"
+                : "bg-[#0f2f44]/80 border-white/20 text-white focus:border-[#FF7700] rounded-xl px-4 py-3"
             }
           />
 
@@ -83,8 +83,8 @@ export default function ProfileForm({
             readOnly={!isEditMode}
             className={
               !isEditMode
-                ? "bg-transparent border-0 border-b-2 border-gray-100 rounded-none px-0 text-gray-900 font-bold text-base focus:ring-0"
-                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-emerald-500 rounded-xl px-4 py-3"
+                ? "bg-transparent border-0 border-b-2 border-white/15 rounded-none px-0 text-white font-bold text-base focus:ring-0"
+                : "bg-[#0f2f44]/80 border-white/20 text-white focus:border-[#FF7700] rounded-xl px-4 py-3"
             }
           />
 
@@ -100,8 +100,8 @@ export default function ProfileForm({
             type="email"
             className={
               !isEditMode
-                ? "bg-transparent border-0 border-b-2 border-gray-100 rounded-none px-0 text-gray-900 font-bold text-base focus:ring-0"
-                : "bg-gray-50 border-gray-200 text-gray-900 focus:border-emerald-500 rounded-xl px-4 py-3"
+                ? "bg-transparent border-0 border-b-2 border-white/15 rounded-none px-0 text-white font-bold text-base focus:ring-0"
+                : "bg-[#0f2f44]/80 border-white/20 text-white focus:border-[#FF7700] rounded-xl px-4 py-3"
             }
           />
 
@@ -109,7 +109,7 @@ export default function ProfileForm({
           <div className="md:col-span-2">
             {isEditMode ? (
               <div className="w-full">
-                <label className="block text-sm font-bold mb-2 text-gray-600">
+                <label className="block text-sm font-bold mb-2 text-white/75">
                   📍 Địa chỉ
                 </label>
                 <textarea
@@ -121,7 +121,7 @@ export default function ProfileForm({
                     })
                   }
                   rows={2}
-                  className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-[#0f2f44]/80 border border-white/20 text-white focus:border-[#FF7700] focus:ring-2 focus:ring-[#FF7700]/25 outline-none transition resize-none"
                 />
               </div>
             ) : (
@@ -130,7 +130,7 @@ export default function ProfileForm({
                 value={profile.address}
                 readOnly={true}
                 disabled={true}
-                className="bg-transparent border-0 border-b-2 border-gray-100 rounded-none px-0 text-gray-900 font-bold text-base focus:ring-0"
+                className="bg-transparent border-0 border-b-2 border-white/15 rounded-none px-0 text-white font-bold text-base focus:ring-0"
               />
             )}
           </div>
@@ -138,18 +138,18 @@ export default function ProfileForm({
 
         {/* Save/Cancel Buttons */}
         {isEditMode && (
-          <div className="flex gap-4 pt-6 mt-4 border-t border-gray-100 justify-end">
+          <div className="flex gap-4 pt-6 mt-4 border-t border-white/10 justify-end">
             <button
               onClick={onCancel}
               disabled={isSaving}
-              className="px-6 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 font-bold rounded-full transition-all disabled:opacity-50 shadow-sm"
+              className="px-6 py-3 bg-white/5 border border-white/20 hover:bg-white/10 text-white/85 font-bold rounded-full transition-all disabled:opacity-50 shadow-sm"
             >
               Hủy bỏ
             </button>
             <button
               onClick={onSave}
               disabled={isSaving}
-              className="px-8 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-full transition-all disabled:opacity-60 flex items-center gap-2 shadow-sm"
+              className="px-8 py-3 bg-[#FF7700] hover:bg-[#e66a00] text-white font-bold rounded-full transition-all disabled:opacity-60 flex items-center gap-2 shadow-sm"
             >
               {isSaving ? (
                 <>

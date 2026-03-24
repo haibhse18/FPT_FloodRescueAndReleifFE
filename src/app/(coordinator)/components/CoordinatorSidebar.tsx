@@ -43,7 +43,7 @@ export default function CoordinatorSidebar() {
     { icon: <PiSirenBold />, label: "Yêu cầu", href: "/requests" },
     { icon: <PiCrosshairSimpleBold />, label: "Nhiệm vụ", href: "/mission-control" },
     { icon: <PiUsersThreeBold />, label: "Quản lí team", href: "/team-control" },
-    { icon: <PiUserCircleBold />, label: "Cá nhân", href: "/profile" },
+    { icon: <PiUserCircleBold />, label: "Cá nhân", href: "/coordinator/profile" },
   ];
 
   return (

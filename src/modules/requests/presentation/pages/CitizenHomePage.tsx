@@ -5,7 +5,6 @@ import Link from "next/link";
 import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
-import NotificationBell from "@/modules/notifications/presentation/components/NotificationBell";
 
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 
@@ -119,9 +118,8 @@ export default function CitizenHomePage() {
                 </span>
               </div>
             </div>
-            {/* User Greeting and Bell */}
+            {/* User Greeting */}
             <div className="flex items-center gap-2 sm:gap-4">
-              <NotificationBell />
               <Link
                 href="/profile"
                 className="flex items-center gap-3 rounded-xl px-1 py-1 hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50"

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
-import MissionMapView from "./MissionMapView";
+import GoongTeamMissionMap from "@/modules/map/presentation/components/GoongTeamMissionMap";
 import type { MissionRequest } from "@/modules/missions/domain/missionRequest.entity";
 import type { TeamRequest } from "@/modules/teamRequests/domain/teamRequest.entity";
 
@@ -302,19 +302,20 @@ export default function InProgressStepView({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full overflow-hidden">
       {/* Map Section - 60% */}
-      <div className="lg:col-span-3">
-        <MissionMapView
+      <div className="lg:col-span-3 h-full">
+        <GoongTeamMissionMap
+          step="inprogress"
           missionRequests={missionRequests}
           selectedRequestId={selectedRequestId}
           onRequestClick={setSelectedRequestId}
-          className="h-[400px] lg:h-full"
+          className="h-full"
         />
       </div>
 
       {/* Request Cards Section - 40% */}
-      <div className="lg:col-span-2 flex flex-col">
+      <div className="lg:col-span-2 h-full flex flex-col">
         {/* Container Card */}
         <div className="bg-mission-bg-secondary border border-mission-border-subtle rounded-xl p-4 flex flex-col h-full">
           {/* Header */}

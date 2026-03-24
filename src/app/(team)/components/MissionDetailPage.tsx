@@ -308,10 +308,10 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
   };
 
   return (
-    <div className="mission-detail-scope relative z-10 min-h-screen pb-24 lg:pb-6">
+    <div className="mission-detail-scope relative z-10 h-screen flex flex-col overflow-hidden">
       {/* Offline Warning */}
       {!isOnline && (
-        <div className="bg-yellow-500/20 border border-yellow-500/40 p-3 flex items-center gap-3">
+        <div className="flex-shrink-0 bg-yellow-500/20 border border-yellow-500/40 p-3 flex items-center gap-3">
           <div className="text-yellow-300 text-lg">📡</div>
           <div className="flex-1">
             <p className="text-yellow-300 text-sm font-semibold">Mất kết nối internet</p>
@@ -321,7 +321,7 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
       )}
 
       {/* Header */}
-      <div className="bg-white/5 border-b border-white/20 sticky top-0 z-20 backdrop-blur-sm">
+      <div className="flex-shrink-0 bg-white/5 border-b border-white/20 z-20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <button
             onClick={() => router.push("/missions-history")}
@@ -356,11 +356,11 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
         />
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      {/* Main Content - Flex-1 */}
+      <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 flex flex-col overflow-hidden">
         {/* Show viewing indicator if viewing a previous step */}
         {viewingStep !== null && viewingStep !== currentStepIndex && (
-          <div className="mb-4 bg-mission-status-assigned/20 border border-mission-status-assigned/40 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex-shrink-0 mb-4 bg-mission-status-assigned/20 border border-mission-status-assigned/40 rounded-lg p-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-mission-status-assigned text-sm font-semibold">👁️ Đang xem lại bước trước</span>
               <span className="text-mission-text-muted text-xs">Các thao tác đã bị vô hiệu hóa</span>
@@ -374,43 +374,45 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
           </div>
         )}
 
-        {/* Render step based on displayStepIndex */}
-        {displayStepIndex === 0 && (
-          <AssignedStepView
-            mission={mission}
-            missionRequests={missionRequests}
-            onAccept={handleAccept}
-            onReject={handleReject}
-            loading={actionLoading === "accept" || actionLoading === "reject"}
-          />
-        )}
+        {/* Render step based on displayStepIndex - Flex-1 container */}
+        <div className="flex-1 overflow-hidden">
+          {displayStepIndex === 0 && (
+            <AssignedStepView
+              mission={mission}
+              missionRequests={missionRequests}
+              onAccept={handleAccept}
+              onReject={handleReject}
+              loading={actionLoading === "accept" || actionLoading === "reject"}
+            />
+          )}
 
-        {displayStepIndex === 1 && (
-          <EnRouteStepView
-            missionRequests={missionRequests}
-            onArrived={handleArrived}
-            loading={actionLoading === "arrive"}
-          />
-        )}
+          {displayStepIndex === 1 && (
+            <EnRouteStepView
+              missionRequests={missionRequests}
+              onArrived={handleArrived}
+              loading={actionLoading === "arrive"}
+            />
+          )}
 
-        {displayStepIndex === 2 && (
-          <InProgressStepView
-            missionRequests={missionRequests}
-            teamRequests={teamRequests}
-            onUpdateProgress={handleUpdateProgress}
-            onCompleteRequest={handleCompleteRequest}
-            onCompleteMission={handleCompleteMission}
-            loading={actionLoading}
-          />
-        )}
+          {displayStepIndex === 2 && (
+            <InProgressStepView
+              missionRequests={missionRequests}
+              teamRequests={teamRequests}
+              onUpdateProgress={handleUpdateProgress}
+              onCompleteRequest={handleCompleteRequest}
+              onCompleteMission={handleCompleteMission}
+              loading={actionLoading}
+            />
+          )}
 
-        {displayStepIndex === 3 && (
-          <CompletedStepView
-            timeline={timeline}
-            mission={mission}
-            missionRequests={missionRequests}
-          />
-        )}
+          {displayStepIndex === 3 && (
+            <CompletedStepView
+              timeline={timeline}
+              mission={mission}
+              missionRequests={missionRequests}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { FaCheckCircle, FaExclamationTriangle, FaTimes, FaFileAlt } from "react-icons/fa";
-import MissionMapView from "./MissionMapView";
+import GoongTeamMissionMap from "@/modules/map/presentation/components/GoongTeamMissionMap";
 import type { Timeline } from "@/modules/timelines/domain/timeline.entity";
 import type { Mission } from "@/modules/missions/domain/mission.entity";
 import type { MissionRequest } from "@/modules/missions/domain/missionRequest.entity";
@@ -75,9 +75,9 @@ export default function CompletedStepView({
   const statusInfo = getStatusText();
 
   return (
-    <div className="space-y-6">
-      {/* Hero Summary */}
-      <div className="bg-white/10 border border-white/20 rounded-2xl p-8 text-center space-y-4">
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Hero Summary - Fixed */}
+      <div className="flex-shrink-0 bg-white/10 border border-white/20 rounded-2xl p-6 text-center space-y-3">
         <div className="flex justify-center">
           {getStatusIcon()}
         </div>
@@ -106,18 +106,19 @@ export default function CompletedStepView({
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+      {/* Main Content - Flex-1 */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-4 overflow-hidden">
         {/* Map Summary - 60% */}
-        <div className="lg:col-span-3">
-          <MissionMapView
+        <div className="lg:col-span-3 h-full">
+          <GoongTeamMissionMap
+            step="completed"
             missionRequests={missionRequests}
-            className="h-[400px] lg:h-[500px]"
+            className="h-full"
           />
         </div>
 
-        {/* Results Panel - 40% */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* Results Panel - 40% - Scrollable */}
+        <div className="lg:col-span-2 h-full overflow-y-auto space-y-4">
           {/* Request Results */}
           <div className="bg-white/10 border border-white/20 rounded-xl p-5 space-y-3">
             <h3 className="text-sm font-semibold text-white">Kết quả từng yêu cầu</h3>

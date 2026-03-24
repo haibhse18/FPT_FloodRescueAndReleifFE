@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaCheckCircle, FaTimes, FaUsers, FaBoxOpen, FaMapMarkerAlt, FaBell } from "react-icons/fa";
-import MissionMapView from "./MissionMapView";
+import GoongTeamMissionMap from "@/modules/map/presentation/components/GoongTeamMissionMap";
+import { warehouseRepository } from "@/modules/warehouse/infrastructure/warehouse.repository.impl";
 import type { Mission } from "@/modules/missions/domain/mission.entity";
 import type { MissionRequest } from "@/modules/missions/domain/missionRequest.entity";
+import type { Warehouse } from "@/modules/warehouse/domain/warehouse.entity";
 
 interface AssignedStepViewProps {
   mission: Mission;
@@ -22,6 +24,19 @@ export default function AssignedStepView({
   loading = false,
 }: AssignedStepViewProps) {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+
+  useEffect(() => {
+    const fetchWarehouses = async () => {
+      try {
+        const data = await warehouseRepository.getWarehouses();
+        setWarehouses(data.warehouses || []);
+      } catch (err) {
+        console.error("Error fetching warehouses:", err);
+      }
+    };
+    fetchWarehouses();
+  }, []);
 
   // Calculate summary statistics
   const totalPeople = missionRequests.reduce((sum, mr) => {
@@ -49,19 +64,21 @@ export default function AssignedStepView({
   const totalSupplies = Object.keys(suppliesNeeded).length;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full overflow-hidden">
       {/* Map Section - 65% */}
-      <div className="lg:col-span-2">
-        <MissionMapView
+      <div className="lg:col-span-2 h-full">
+        <GoongTeamMissionMap
+          step="assigned"
           missionRequests={missionRequests}
+          warehouses={warehouses}
           selectedRequestId={selectedRequestId}
           onRequestClick={setSelectedRequestId}
-          className="h-[500px] lg:h-full rounded-xl overflow-hidden"
+          className="h-full"
         />
       </div>
 
-      {/* Summary Panel - 35% */}
-      <div className="lg:col-span-1 space-y-4">
+      {/* Summary Panel - 35% - Scrollable */}
+      <div className="lg:col-span-1 h-full overflow-y-auto space-y-4">
         {/* Header */}
         <div className="flex items-center gap-2 text-mission-text-primary">
           <FaBell className="text-mission-icon-people text-lg" />

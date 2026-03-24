@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FaMapMarkedAlt } from "react-icons/fa";
-import MissionMapView from "./MissionMapView";
+import GoongTeamMissionMap from "@/modules/map/presentation/components/GoongTeamMissionMap";
 import type { MissionRequest } from "@/modules/missions/domain/missionRequest.entity";
 
 interface EnRouteStepViewProps {
@@ -53,10 +53,11 @@ export default function EnRouteStepView({
   }, []);
 
   return (
-    <div className="relative h-full flex flex-col">
+    <div className="relative h-full flex flex-col overflow-hidden">
       {/* Full-width Map */}
       <div className="flex-1 relative">
-        <MissionMapView
+        <GoongTeamMissionMap
+          step="enroute"
           missionRequests={missionRequests}
           teamLocation={teamLocation}
           className="h-full"

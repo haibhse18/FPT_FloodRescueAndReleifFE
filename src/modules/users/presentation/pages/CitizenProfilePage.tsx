@@ -3,17 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
-  FiAlertTriangle,
-  FiCheckCircle,
-  FiClock,
-  FiTrendingUp,
-} from "react-icons/fi";
+  CheckCircle,
+  WarningCircle,
+} from "phosphor-react";
 import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
 import { LogoutUseCase } from "@/modules/auth/application/logout.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
 import { UpdateProfileUseCase } from "@/modules/users/application/updateProfile.usecase";
 import { userRepository } from "@/modules/users/infrastructure/user.repository.impl";
-import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 import {
   ProfileHeader,
   ProfileForm,
@@ -27,12 +24,6 @@ const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 const logoutUseCase = new LogoutUseCase(authRepository);
 const updateProfileUseCase = new UpdateProfileUseCase(userRepository);
 
-interface RequestStats {
-  total: number;
-  completed: number;
-  inProgress: number;
-}
-
 export default function CitizenProfilePage() {
   const router = useRouter();
 
@@ -42,11 +33,6 @@ export default function CitizenProfilePage() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [stats, setStats] = useState<RequestStats>({
-    total: 0,
-    completed: 0,
-    inProgress: 0,
-  });
 
   const [profile, setProfile] = useState<CitizenProfile>({
     name: "",
@@ -61,54 +47,26 @@ export default function CitizenProfilePage() {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch profile and request history in parallel
-      const [userData, requests] = await Promise.allSettled([
-        getCurrentUserUseCase.execute(),
-        requestRepository.getMyRequests(),
-      ]);
-
-      if (userData.status === "fulfilled" && userData.value) {
-        const u = userData.value;
-        const newProfile: CitizenProfile = {
-          name: u.displayName || u.userName || "Người dùng",
-          phone: u.phoneNumber || "",
-          email: u.email || "",
-          address: u.address || "",
-          role: u.role || "citizen",
-        };
-        setProfile(newProfile);
-        setEditedProfile(newProfile);
-      } else {
-        throw new Error("Không tải được thông tin người dùng");
-      }
-
-      if (requests.status === "fulfilled") {
-        const list = requests.value as any[];
-        setStats({
-          total: list.length,
-          completed: list.filter((r) =>
-            ["Completed", "COMPLETED"].includes(r.status),
-          ).length,
-          inProgress: list.filter((r) =>
-            ["In Progress", "IN_PROGRESS", "Accepted", "ACCEPTED"].includes(
-              r.status,
-            ),
-          ).length,
-        });
-      }
+      const user = await getCurrentUserUseCase.execute();
+      const newProfile: CitizenProfile = {
+        name: user.displayName || user.userName || "Người dùng",
+        phone: user.phoneNumber || "",
+        email: user.email || "",
+        address: user.address || "",
+        role: user.role || "citizen",
+      };
+      setProfile(newProfile);
+      setEditedProfile(newProfile);
     } catch (err) {
       let msg = "Không thể tải thông tin cá nhân";
       if (err instanceof Error) {
-        if (
-          err.message.includes("401") ||
-          err.message.includes("đăng nhập")
-        ) {
-          msg = "Phiên đăng nhập hết hạn — Vui lòng đăng nhập lại";
+        if (err.message.includes("401") || err.message.includes("đăng nhập")) {
+          msg = "Phiên đăng nhập hết hạn - Vui lòng đăng nhập lại";
         } else if (
           err.message.includes("network") ||
           err.message.includes("ERR_NETWORK")
         ) {
-          msg = "Lỗi kết nối mạng — Vui lòng thử lại";
+          msg = "Lỗi kết nối mạng - Vui lòng thử lại";
         } else {
           msg = err.message;
         }
@@ -165,45 +123,43 @@ export default function CitizenProfilePage() {
     <div className="bg-[#133249] min-h-screen">
       <div className="flex flex-col relative">
         {/* Header */}
-        <header className="sticky top-0 z-50 p-4 lg:p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-white text-xl lg:text-2xl font-extrabold mb-0.5">
+        <header className="sticky top-0 z-50 p-4 lg:p-6 border-b border-white/10 bg-gradient-to-br from-[#1a4a6b]/40 to-transparent backdrop-blur-md">
+          <div className="max-w-5xl mx-auto">
+            <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">
               Hồ sơ cá nhân
             </h1>
-            <p className="text-white/70 text-xs lg:text-sm">
-              Cập nhật thông tin và cài đặt
+            <p className="text-white/70 text-sm">
+              Cập nhật thông tin và cài đặt của bạn
             </p>
           </div>
         </header>
 
         <main className="pb-24 lg:pb-8 overflow-auto min-h-screen">
-          <div className="max-w-4xl mx-auto p-4 lg:p-8 space-y-5">
+          <div className="max-w-5xl mx-auto p-4 lg:p-8 space-y-6">
 
             {/* Save success toast */}
             {saveSuccess && (
-              <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 font-semibold">
-                <span className="text-xl">
-                  <FiCheckCircle />
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/30">
+                <CheckCircle weight="fill" className="text-green-400 flex-shrink-0" size={20} />
+                <span className="text-green-400 text-sm font-medium">
+                  Cập nhật thông tin thành công!
                 </span>
-                Cập nhật thông tin thành công!
               </div>
             )}
 
             {/* Error banner */}
             {error && (
-              <div className="flex items-center justify-between gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-                <div className="flex items-center gap-3 text-red-400 font-medium">
-                  <span className="text-xl">
-                    <FiAlertTriangle />
-                  </span>
-                  <span>{error}</span>
+              <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
+                <div className="flex items-center gap-3">
+                  <WarningCircle weight="fill" className="text-red-400 flex-shrink-0" size={20} />
+                  <span className="text-red-400 text-sm font-medium">{error}</span>
                 </div>
                 <button
                   onClick={() => {
                     setError(null);
                     fetchProfile();
                   }}
-                  className="flex-shrink-0 px-4 py-1.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 font-bold text-sm rounded-lg transition-all"
+                  className="flex-shrink-0 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 font-medium text-xs rounded-lg transition-colors duration-200"
                 >
                   Thử lại
                 </button>
@@ -220,49 +176,6 @@ export default function CitizenProfilePage() {
               isEditMode={isEditMode}
               onEditToggle={() => setIsEditMode(!isEditMode)}
             />
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                {
-                  icon: <FiTrendingUp />,
-                  label: "Tổng yêu cầu",
-                  value: stats.total,
-                  accent: "border-l-blue-500",
-                },
-                {
-                  icon: <FiCheckCircle />,
-                  label: "Hoàn thành",
-                  value: stats.completed,
-                  accent: "border-l-green-500",
-                },
-                {
-                  icon: <FiClock />,
-                  label: "Đang xử lý",
-                  value: stats.inProgress,
-                  accent: "border-l-[#FF7700]",
-                },
-              ].map((s) => (
-                <div
-                  key={s.label}
-                  className={`bg-white/5 border border-white/10 border-l-4 ${s.accent} rounded-xl p-4`}
-                >
-                  <span className="text-2xl block mb-2 text-white/80">
-                    {s.icon}
-                  </span>
-                  <p className="text-2xl lg:text-3xl font-black text-white mb-1">
-                    {isLoading ? (
-                      <span className="inline-block w-8 h-7 bg-white/10 rounded animate-pulse align-middle" />
-                    ) : (
-                      s.value
-                    )}
-                  </p>
-                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">
-                    {s.label}
-                  </p>
-                </div>
-              ))}
-            </div>
 
             {/* Profile Form */}
             <ProfileForm

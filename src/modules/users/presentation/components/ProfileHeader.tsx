@@ -82,8 +82,8 @@ export default function ProfileHeader({
           <button
             onClick={onEditToggle}
             className={`px-6 py-3 rounded-full font-bold text-sm transition-all shadow-sm ${isEditMode
-                ? "bg-red-500/15 hover:bg-red-500/25 border border-red-400/35 text-red-200"
-                : "bg-[#FF7700] hover:bg-[#e66a00] text-white"
+              ? "bg-red-500/15 hover:bg-red-500/25 border border-red-400/35 text-red-200"
+              : "bg-[#FF7700] hover:bg-[#e66a00] text-white"
               }`}
           >
             {isEditMode ? "❌ Hủy chỉnh sửa" : "✏️ Chỉnh sửa hồ sơ"}

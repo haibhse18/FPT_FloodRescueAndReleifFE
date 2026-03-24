@@ -47,9 +47,9 @@ export default function ProfileQuickSettings({
   const displaySettings = settings.length > 0 ? settings : defaultSettings;
 
   return (
-    <Card className="mb-6 bg-white border border-gray-100 rounded-3xl p-6 lg:p-8 shadow-sm">
-      <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-        <span className="text-2xl bg-gray-50 text-gray-700 p-2 rounded-xl">⚙️</span>
+    <Card className="mb-6 bg-[#16384f]/70 border border-white/15 rounded-3xl p-6 lg:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.2)] backdrop-blur-sm">
+      <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+        <span className="text-2xl bg-white/10 text-[#FFD1A0] p-2 rounded-xl">⚙️</span>
         Cài đặt nhanh
       </h3>
 
@@ -58,14 +58,14 @@ export default function ProfileQuickSettings({
           <Link
             key={index}
             href={setting.href}
-            className="flex items-center gap-5 p-5 rounded-2xl bg-white hover:bg-gray-50 border border-gray-100 hover:border-emerald-500 transition-all duration-200 shadow-sm group"
+            className="flex items-center gap-5 p-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#FF7700]/45 transition-all duration-200 shadow-sm group"
           >
             <div className="text-3xl group-hover:scale-110 transition-transform">{setting.icon}</div>
             <div className="flex-1">
-              <p className="text-gray-900 font-bold mb-1">{setting.label}</p>
-              <p className="text-sm font-medium text-gray-500">{setting.description}</p>
+              <p className="text-white font-bold mb-1">{setting.label}</p>
+              <p className="text-sm font-medium text-white/65">{setting.description}</p>
             </div>
-            <span className="text-2xl text-gray-400 group-hover:text-emerald-500 font-bold transition-colors">›</span>
+            <span className="text-2xl text-white/45 group-hover:text-[#FFD1A0] font-bold transition-colors">›</span>
           </Link>
         ))}
       </div>

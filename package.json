@@ -11,6 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@goongmaps/goong-js": "^1.0.9",
     "@openmapvn/openmapvn-gl": "^1.0.1",
     "@radix-ui/react-toast": "^1.2.15",
     "axios": "^1.13.4",

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaArrowLeft, FaBell, FaUserCircle } from "react-icons/fa";
+import { FaArrowLeft } from "react-icons/fa";
 import { toast } from "sonner";
 import "../styles/mission-detail-colors.css";
 import MissionProgressStepper from "./MissionProgressStepper";
@@ -308,10 +308,10 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
   };
 
   return (
-    <div className="mission-detail-scope relative z-10 min-h-screen pb-24 lg:pb-6">
+    <div className="mission-detail-scope relative z-10 h-screen flex flex-col overflow-hidden">
       {/* Offline Warning */}
       {!isOnline && (
-        <div className="bg-yellow-500/20 border border-yellow-500/40 p-3 flex items-center gap-3">
+        <div className="flex-shrink-0 bg-yellow-500/20 border border-yellow-500/40 p-3 flex items-center gap-3">
           <div className="text-yellow-300 text-lg">📡</div>
           <div className="flex-1">
             <p className="text-yellow-300 text-sm font-semibold">Mất kết nối internet</p>
@@ -320,97 +320,99 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
         </div>
       )}
 
-      {/* Header */}
-      <div className="bg-white/5 border-b border-white/20 sticky top-0 z-20 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <button
-            onClick={() => router.push("/missions-history")}
-            className="text-white/70 hover:text-white flex items-center gap-2 text-sm"
-          >
-            <FaArrowLeft />
-            Quay lại
-          </button>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-mono text-white/70">{missionCode}</span>
-              <span className="px-2 py-0.5 rounded-full text-[11px] bg-white/10 text-white border border-white/20">
+      {/* Header - Single Row with Stepper */}
+      <div className="flex-shrink-0 bg-white/5 border-b border-white/20 z-20 backdrop-blur-sm h-20">
+        <div className="h-full max-w-7xl mx-auto px-4 flex items-center gap-3 lg:gap-6">
+          {/* Left: Back Icon + Mission Info */}
+          <div className="flex items-center gap-2 lg:gap-4 min-w-0 flex-shrink-0">
+            <button
+              onClick={() => router.push("/missions-history")}
+              className="text-white/70 hover:text-white transition-colors flex-shrink-0"
+              title="Quay lại"
+            >
+              <FaArrowLeft className="text-base lg:text-lg" />
+            </button>
+            
+            <div className="flex items-center gap-2 lg:gap-3 min-w-0">
+              <h1 className="text-sm lg:text-base font-bold text-white truncate">{mission.name}</h1>
+              <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] bg-white/10 text-white border border-white/20 whitespace-nowrap flex-shrink-0">
                 {missionTypeLabel}
               </span>
+              <span className="hidden md:inline-block text-xs font-mono text-white/70 whitespace-nowrap flex-shrink-0">{missionCode}</span>
             </div>
-            <h1 className="text-lg font-bold text-white truncate">{mission.name}</h1>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button className="text-white/70 hover:text-white">
-              <FaBell className="text-xl" />
-            </button>
+          {/* Center: Stepper (compact) - Centered with equal flex on both sides */}
+          <div className="flex-1 flex justify-center min-w-0">
+            <div className="max-w-2xl w-full">
+              <MissionProgressStepper 
+                currentStatus={timeline.status}
+                onStepClick={handleStepClick}
+                viewingStep={displayStepIndex}
+                compact={true}
+              />
+            </div>
+          </div>
+          
+          {/* Right: Back to Current Step Button */}
+          <div className="flex-shrink-0">
+            {viewingStep !== null && viewingStep !== currentStepIndex && (
+              <button
+                onClick={() => setViewingStep(null)}
+                className="px-3 py-1.5 rounded-lg bg-mission-status-assigned/20 border border-mission-status-assigned/40 text-mission-status-assigned text-xs font-semibold hover:bg-mission-status-assigned/30 transition-all flex items-center gap-1.5"
+                title="Quay lại bước hiện tại"
+              >
+                <span className="hidden lg:inline">Bước hiện tại</span>
+              </button>
+            )}
           </div>
         </div>
-
-        {/* Progress Stepper */}
-        <MissionProgressStepper 
-          currentStatus={timeline.status}
-          onStepClick={handleStepClick}
-          viewingStep={displayStepIndex}
-        />
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Show viewing indicator if viewing a previous step */}
-        {viewingStep !== null && viewingStep !== currentStepIndex && (
-          <div className="mb-4 bg-mission-status-assigned/20 border border-mission-status-assigned/40 rounded-lg p-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-mission-status-assigned text-sm font-semibold">👁️ Đang xem lại bước trước</span>
-              <span className="text-mission-text-muted text-xs">Các thao tác đã bị vô hiệu hóa</span>
-            </div>
-            <button
-              onClick={() => setViewingStep(null)}
-              className="px-3 py-1 rounded-lg bg-mission-status-assigned text-white text-xs font-semibold hover:bg-mission-status-assigned/80 transition-all"
-            >
-              Quay lại bước hiện tại
-            </button>
-          </div>
-        )}
+      {/* Main Content - Flex-1 */}
+      <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 flex flex-col overflow-hidden">
+        {/* Render step based on displayStepIndex - Flex-1 container */}
+        <div className="flex-1 overflow-hidden">
+          {displayStepIndex === 0 && (
+            <AssignedStepView
+              mission={mission}
+              missionRequests={missionRequests}
+              onAccept={handleAccept}
+              onReject={handleReject}
+              loading={actionLoading === "accept" || actionLoading === "reject"}
+              disabled={viewingStep !== null && viewingStep !== currentStepIndex}
+            />
+          )}
 
-        {/* Render step based on displayStepIndex */}
-        {displayStepIndex === 0 && (
-          <AssignedStepView
-            mission={mission}
-            missionRequests={missionRequests}
-            onAccept={handleAccept}
-            onReject={handleReject}
-            loading={actionLoading === "accept" || actionLoading === "reject"}
-          />
-        )}
+          {displayStepIndex === 1 && (
+            <EnRouteStepView
+              missionRequests={missionRequests}
+              onArrived={handleArrived}
+              loading={actionLoading === "arrive"}
+              disabled={viewingStep !== null && viewingStep !== currentStepIndex}
+            />
+          )}
 
-        {displayStepIndex === 1 && (
-          <EnRouteStepView
-            missionRequests={missionRequests}
-            onArrived={handleArrived}
-            loading={actionLoading === "arrive"}
-          />
-        )}
+          {displayStepIndex === 2 && (
+            <InProgressStepView
+              missionRequests={missionRequests}
+              teamRequests={teamRequests}
+              onUpdateProgress={handleUpdateProgress}
+              onCompleteRequest={handleCompleteRequest}
+              onCompleteMission={handleCompleteMission}
+              loading={actionLoading}
+              disabled={viewingStep !== null && viewingStep !== currentStepIndex}
+            />
+          )}
 
-        {displayStepIndex === 2 && (
-          <InProgressStepView
-            missionRequests={missionRequests}
-            teamRequests={teamRequests}
-            onUpdateProgress={handleUpdateProgress}
-            onCompleteRequest={handleCompleteRequest}
-            onCompleteMission={handleCompleteMission}
-            loading={actionLoading}
-          />
-        )}
-
-        {displayStepIndex === 3 && (
-          <CompletedStepView
-            timeline={timeline}
-            mission={mission}
-            missionRequests={missionRequests}
-          />
-        )}
+          {displayStepIndex === 3 && (
+            <CompletedStepView
+              timeline={timeline}
+              mission={mission}
+              missionRequests={missionRequests}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

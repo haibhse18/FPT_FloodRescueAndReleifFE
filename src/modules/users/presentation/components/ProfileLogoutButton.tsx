@@ -17,7 +17,7 @@ export default function ProfileLogoutButton({
     >
       {isLoading ? (
         <>
-          <span className="inline-block w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+          <span className="inline-block w-5 h-5 border-2 border-red-200/30 border-t-red-200 rounded-full animate-spin" />
           <span>Đang đăng xuất...</span>
         </>
       ) : (

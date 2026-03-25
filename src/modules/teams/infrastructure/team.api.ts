@@ -52,6 +52,24 @@ export const teamsApi = {
     });
   },
 
+  //Approve/Reject volunteer by Admin 
+
+  approve: async (applicationId: string) => {
+    return apiClient.patch(`/team-applications/${applicationId}/approve`, undefined, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
+  reject: async (applicationId: string, reason: string) => {
+    return apiClient.patch(
+      `/team-applications/${applicationId}/reject`,
+      { reason },
+      {
+        headers: authSession.getAuthHeaders(),
+      }
+    );
+  },
+
   // ────────────────────────────────────────────────────────
   // CRUD
   // ────────────────────────────────────────────────────────

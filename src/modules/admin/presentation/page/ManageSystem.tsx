@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 
 import { Vehicle, VehicleStatus } from "@/modules/vehicles/domain/vehicles.enity";
 import { vehicleApi } from "@/modules/vehicles/infrastructure/vehicles.api";
@@ -14,6 +15,11 @@ import { warehouseApi } from "@/modules/warehouse/infrastructure/warehouse.api";
 
 import { GetLocationUseCase } from "@/modules/map/application/getLocation.usecase";
 import { mapRepository } from "@/modules/map/infrastructure/map.repository.impl";
+import { GetSuppliesUseCase, supplyRepository } from "@/modules/supplies";
+import { GetWarehouseUseCase } from "@/modules/warehouse/application/getWarehouse.usecase";
+import { warehouseRepository } from "@/modules/warehouse/infrastructure/warehouse.repository.impl";
+import { GetVehiclesUseCase, vehicleRepository } from "@/modules/vehicles";
+import { Table } from "@/shared/ui/components/Table";
 
 // Tránh lỗi SSR với maplibre-gl
 const OpenMap = dynamic(
@@ -42,19 +48,22 @@ const OpenMap = dynamic(
 );
 
 const getLocationUseCase = new GetLocationUseCase(mapRepository);
+const getSuppliesUseCase = new GetSuppliesUseCase(supplyRepository);
+const getWarehousesUseCase = new GetWarehouseUseCase(warehouseRepository);
+const getVehiclesUseCase = new GetVehiclesUseCase(vehicleRepository);
 
 // ─── Status styles ───────────────────────────────────────────────────────────
-const STATUS_SUPPLIES: Record<SupplyStatus, { label: string; bg: string; color: string; border: string }> = {
-  SUBMITTED: { label: "Sẵn sàng",  bg: "#f6ffed", color: "#389e0d", border: "#b7eb8f" },
-  CANCELLED: { label: "Đã hủy",    bg: "#fff7e6", color: "#d46b08", border: "#ffd591" },
-  CLOSED:    { label: "Đã đóng",   bg: "#fff1f0", color: "#cf1322", border: "#ffa39e" },
+const STATUS_SUPPLIES: Record<SupplyStatus, { label: string; color: string }> = {
+  SUBMITTED:         { label: "Sẵn sàng",        color: "border border-emerald-400 text-emerald-400 bg-emerald-400/10 rounded-full px-2 py-0.5" },
+  CANCELLED:       { label: "Đã hủy",    color: "border border-amber-400   text-amber-400   bg-amber-400/10   rounded-full px-2 py-0.5" },
+  CLOSED:   { label: "Đã đóng", color: "border border-red-400     text-red-400     bg-red-400/10     rounded-full px-2 py-0.5" },
 };
 
-const STATUS_VEHICLE: Record<VehicleStatus, { label: string; bg: string; color: string; border: string }> = {
-  ACTIVE:         { label: "Sẵn sàng",       bg: "#f6ffed", color: "#389e0d", border: "#b7eb8f" },
-  IN_USE:         { label: "Đang sử dụng",   bg: "#e6f7ff", color: "#096dd9", border: "#91d5ff" },
-  MAINTENANCE:    { label: "Bảo trì",         bg: "#f5f5f5", color: "#595959", border: "#d9d9d9" },
-  OUT_OF_SERVICE: { label: "Ngưng hoạt động",bg: "#fff1f0", color: "#cf1322", border: "#ffa39e" },
+const STATUS_VEHICLE: Record<VehicleStatus, { label: string; color: string }> = {
+  ACTIVE:         { label: "Sẵn sàng",        color: "border border-emerald-400 text-emerald-400 bg-emerald-400/10 rounded-full px-2 py-0.5" },
+  IN_USE:         { label: "Đang sử dụng",    color: "border border-amber-400   text-amber-400   bg-amber-400/10   rounded-full px-2 py-0.5" },
+  MAINTENANCE:    { label: "Bảo trì",          color: "border border-gray-400    text-gray-400    bg-gray-400/10    rounded-full px-2 py-0.5" },
+  OUT_OF_SERVICE: { label: "Ngưng hoạt động", color: "border border-red-400     text-red-400     bg-red-400/10     rounded-full px-2 py-0.5" },
 };
 
 const STATUS_WAREHOUSE: Record<WAREHOUSE_STATUS, { label: string; bg: string; color: string; border: string }> = {
@@ -233,7 +242,9 @@ function StatCard({ title, value, accentColor }: { title: string; value: number;
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminSystemPage() {
   const [activeTab, setActiveTab] = useState<"Phương Tiện" | "Vật Tư" | "Kho">("Phương Tiện");
-  const [loading, setLoading] = useState(true);
+  const [loadingVehicles, setLoadingVehicles] = useState(false);
+  const [loadingSupplies, setLoadingSupplies] = useState(false);
+  const [loadingWarehouses, setLoadingWarehouses] = useState(false);
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [supplies, setSupplies] = useState<Supply[]>([]);
@@ -255,45 +266,163 @@ export default function AdminSystemPage() {
   const [warehouseTotal, setWarehouseTotal] = useState(0);
   const [warehouseAddresses, setWarehouseAddresses] = useState<Record<string, string>>({});
 
+  const searchParams = useSearchParams();
+
+
   // ─── Fetch ───────────────────────────────────────────────────────────────────
   const fetchVehicles = async (page: number, keyword: string) => {
-    setLoading(true);
+    setLoadingVehicles(true);
     try {
-      const res = await vehicleApi.getVehicles(`?page=${page}&limit=10&licensePlate=${keyword}|&type=${keyword}|&brand=${keyword}`);
+      const query =
+        `?page=${page}&limit=10` +
+        (keyword ? `&licensePlate=${encodeURIComponent(keyword)}|&type=${encodeURIComponent(keyword)}|&brand=${encodeURIComponent(keyword)}` : "");
+      const res = await vehicleApi.getVehicles(query);
+
       setVehicles(res.data || []);
       setVehiclePage(res.meta?.page || 1);
       setVehicleTotalPages(res.meta?.totalPages || 1);
-      setVehicleTotal(res.meta?.total || 0);
-    } finally {
-      setLoading(false);
-    }
-  };
 
+    } catch (error) { 
+      console.error("Fetch supplies error:", error);
+    } finally {
+      setLoadingVehicles(false);
+    }
+
+    const [vehiclesRes] =
+        await Promise.all([
+          getVehiclesUseCase.execute(),
+    ]);
+      setVehicleTotal(vehiclesRes.total ?? 0);
+
+  };
+  const columnsVehicle = [
+      {
+        key: "licensePlate",
+        header: "Biển số",
+        render: (row: Vehicle) => row.licensePlate ?? "-"
+      },
+      {
+        key: "vehicle",
+        header: "Xe",
+        render: (row: Vehicle) => `${row.brand ?? ""} ${row.model ?? ""}`
+      },
+      {
+        key: "type",
+        header: "Loại",
+        render: (row: Vehicle) => row.type ?? "-"
+      },
+      {
+        key: "capacity",
+        header: "Tải trọng",
+        render: (row: Vehicle) =>
+          row.capacity  ??"-"
+      },
+      {
+        key: "capacityUnit",
+        header: "Đơn vị tải trọng",
+        render: (row: Vehicle) => row.capacityUnit ?? "-"
+      },
+      {
+        key: "status",
+        header: "Trạng thái",
+        render: (row: any) => {
+                const s = STATUS_VEHICLE[row.status as VehicleStatus];
+                return s
+                  ? <span className={`inline-flex text-xs font-medium ${s.color}`}>{s.label}</span>
+                  : row.status;
+              }
+      },
+    ];
+/*--------------------Fetch Supplies--------------------*/
   const fetchSupplies = async (page: number, keyword: string) => {
-    setLoading(true);
+    setLoadingSupplies(true);
     try {
-      const res = await supplyApi.getSupplies(`?page=${page}&limit=10&name=${keyword}`);
+      const query =
+        `?page=${page}&limit=10` +
+        (keyword ? `&name=${encodeURIComponent(keyword)}` : "");
+
+      const res = await supplyApi.getSupplies(query);
+
       setSupplies(res.data || []);
       setSupplyPage(res.meta?.page || 1);
       setSupplyTotalPages(res.meta?.totalPages || 1);
-      setSupplyTotal(res.meta?.total || 0);
+
+    } catch (error) {
+      console.error("Fetch supplies error:", error);
     } finally {
-      setLoading(false);
+      setLoadingSupplies(false);
     }
+
+    const [suppliesRes] =
+      await Promise.all([
+        getSuppliesUseCase.execute(),
+      ]);
+
+    setSupplyTotal(suppliesRes.meta?.total ?? 0);
+
   };
 
+  const columnsSupplies = [
+      { key: "name", header: "Tên" },
+      { key: "category", header: "Loại" },
+      { key: "unit", header: "Đơn vị" },
+      { key: "unitWeight", header: "Trọng lượng" },
+      {
+            key: "status",
+            header: "Trạng thái",
+            render: (row: Supply) => {
+              const s = STATUS_SUPPLIES[row.status as SupplyStatus];
+                     return s
+                       ? <span className={`inline-flex text-xs font-medium ${s.color}`}>{s.label}</span>
+                       : row.status;
+                   }
+          },
+    ];
+/*--------------------Fetch Warehouses--------------------*/
   const fetchWarehouses = async (page: number, keyword: string) => {
-    setLoading(true);
+    setLoadingWarehouses(true);
     try {
-      const res = await warehouseApi.getWarehouses(`?page=${page}&limit=10&name=${keyword}`);
+      const query =
+        `?page=${page}&limit=10` +
+        (keyword ? `&name=${encodeURIComponent(keyword)}` : "");
+
+      const res = await warehouseApi.getWarehouses(query);
+
       setWarehouses(res.data || []);
       setWarehousePage(res.meta?.page || 1);
       setWarehouseTotalPages(res.meta?.totalPages || 1);
-      setWarehouseTotal(res.meta?.total || 0);
+
+    } catch (error) {
+      console.error("Fetch warehouses error:", error);
     } finally {
-      setLoading(false);
+    setLoadingWarehouses(false);
     }
+
+    const [warehousesRes] =
+        await Promise.all([
+          getWarehousesUseCase.execute(),
+        ]);
+
+      setWarehouseTotal(warehousesRes.total ?? 0);
   };
+
+  const columnsWarehouse=[
+    { key: "name", header: "Tên kho" },
+    {
+      key: "location",
+      header: "Địa chỉ",
+      render: (row: Warehouse) => warehouseAddresses[row._id] || "Đang tải...",
+    },
+    {
+      key: "status",
+      header: "Trạng thái",
+      render: (row: Warehouse) => {
+        const s = STATUS_WAREHOUSE[row.status as WAREHOUSE_STATUS];
+        return s ? <StatusBadge {...s} /> : <span>{row.status}</span>;
+      },
+    },
+  ];
+
 
   const getAddressFromCoordinates = async (lat: number, lon: number, warehouseId: string) => {
     try {
@@ -320,13 +449,35 @@ export default function AdminSystemPage() {
     fetchAddresses();
   }, [warehouses]);
 
-  useEffect(() => { fetchVehicles(vehiclePage, vehicleKeyword); }, [vehiclePage, vehicleKeyword]);
-  useEffect(() => { fetchSupplies(supplyPage, supplyKeyword); }, [supplyPage, supplyKeyword]);
-  useEffect(() => { fetchWarehouses(warehousePage, warehouseKeyword); }, [warehousePage, warehouseKeyword]);
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+
+    if (tab === "Phương Tiện" || tab === "Vật Tư" || tab === "Kho") {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+ useEffect(() => {
+  if (activeTab === "Phương Tiện") {
+    fetchVehicles(vehiclePage, vehicleKeyword);
+  }
+}, [activeTab,vehicleKeyword, vehiclePage]);
+
+useEffect(() => {
+  if (activeTab === "Vật Tư") {
+    fetchSupplies(supplyPage, supplyKeyword);
+  }
+}, [activeTab, supplyPage, supplyKeyword]);
+
+useEffect(() => {
+  if (activeTab === "Kho") {
+    fetchWarehouses(warehousePage, warehouseKeyword);
+  }
+}, [activeTab, warehousePage, warehouseKeyword]);
 
   const TAB_CONFIG: { label: "Phương Tiện" | "Vật Tư" | "Kho"; color: string }[] = [
-    { label: "Phương Tiện", color: "#1890ff" },
-    { label: "Vật Tư", color: "#52c41a" },
+    { label: "Phương Tiện", color: "#00629D" },
+    { label: "Vật Tư", color: "#1890ff" },
     { label: "Kho", color: "#fa8c16" },
   ];
 
@@ -397,9 +548,16 @@ export default function AdminSystemPage() {
 
       {/* ─── VEHICLE ─── */}
       {activeTab === "Phương Tiện" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            gap: "12px",
+          }}
+        >
           <div style={{ display: "flex", gap: "16px" }}>
-            <StatCard title="Tổng Phương Tiện" value={vehicleTotal} accentColor="#1890ff" />
+            <StatCard title="Tổng Phương Tiện" value={vehicleTotal} accentColor="#00629D" />
           </div>
 
           <div
@@ -423,31 +581,40 @@ export default function AdminSystemPage() {
             <Pagination page={vehiclePage} totalPages={vehicleTotalPages} setPage={setVehiclePage} />
           </div>
 
-          <DataTable
-            loading={loading}
-            columns={[
-              { key: "licensePlate", label: "Biển số" },
-              { key: "type", label: "Loại" },
-              { key: "brand", label: "Hãng" },
-              {
-                key: "status",
-                label: "Trạng thái",
-                render: (row: Vehicle) => {
-                  const s = STATUS_VEHICLE[row.status as VehicleStatus];
-                  return s ? <StatusBadge {...s} /> : <span>{row.status}</span>;
-                },
-              },
-            ]}
-            data={vehicles}
-          />
-        </div>
+           {/* Table */}
+            {loadingVehicles ? (
+                  <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-600 mx-auto"></div>
+                  </div>
+                ) : vehicles.length === 0 ? (
+                  <div className="text-center py-20 text-gray-500 font-medium bg-white rounded-3xl shadow-sm border border-gray-100">
+                    Không tìm thấy phương tiện nào
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-3xl shadow-sm border border-gray-100 text-gray-900"
+                    style={{
+                      flex: 1,
+                      overflow: "auto",
+                    }}
+                  >
+                    <Table columns={columnsVehicle} data={vehicles} striped={true} hoverable={true} />
+                  </div>
+                )}
+          </div>
       )}
 
       {/* ─── SUPPLY ─── */}
       {activeTab === "Vật Tư" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            gap: "12px",
+          }}
+        >
           <div style={{ display: "flex", gap: "16px" }}>
-            <StatCard title="Tổng Vật Tư" value={supplyTotal} accentColor="#52c41a" />
+            <StatCard title="Tổng Vật Tư" value={supplyTotal} accentColor="#1890ff" />
           </div>
 
           <div
@@ -470,156 +637,167 @@ export default function AdminSystemPage() {
             />
             <Pagination page={supplyPage} totalPages={supplyTotalPages} setPage={setSupplyPage} />
           </div>
-
-          <DataTable
-            loading={loading}
-            columns={[
-              { key: "name", label: "Tên" },
-              { key: "category", label: "Danh mục" },
-              { key: "unit", label: "Đơn vị" },
-              { key: "unitWeight", label: "Trọng lượng" },
-              {
-                key: "status",
-                label: "Trạng thái",
-                render: (row: Supply) => {
-                  const s = STATUS_SUPPLIES[row.status as SupplyStatus];
-                  return s ? <StatusBadge {...s} /> : <span>{row.status}</span>;
-                },
-              },
-            ]}
-            data={supplies}
-          />
+        {/*Table*/}
+           {loadingSupplies ? (
+        <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-600 mx-auto"></div>
+        </div>
+      ) : supplies.length === 0 ? (
+        <div className="text-center py-20 text-gray-500 font-medium bg-white rounded-3xl shadow-sm border border-gray-100">
+          <p>Không tìm thấy vật tư nào</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 text-gray-900"
+          style={{
+            flex: 1,
+            overflow: "auto",
+          }}
+        >
+          <Table columns={columnsSupplies} data={supplies} striped={true} hoverable={true} />
+        </div>
+      )}
         </div>
       )}
 
       {/* ─── WAREHOUSE ─── */}
       {activeTab === "Kho" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "flex", gap: "16px" }}>
-            <StatCard title="Tổng Kho" value={warehouseTotal} accentColor="#fa8c16" />
-          </div>
+  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+    {/* Stat */}
+    <div style={{ display: "flex", gap: "16px" }}>
+      <StatCard title="Tổng Kho" value={warehouseTotal} accentColor="#fa8c16" />
+    </div>
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              background: "#fff",
-              borderRadius: "8px",
-              padding: "12px 16px",
-              border: "1px solid #f0f0f0",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-            }}
-          >
-            <input
-              value={warehouseKeyword}
-              onChange={(e) => setWarehouseKeyword(e.target.value)}
-              style={inputStyle}
-              placeholder="Tìm kho..."
-            />
-            <Pagination page={warehousePage} totalPages={warehouseTotalPages} setPage={setWarehousePage} />
-          </div>
+    {/* Search + Pagination */}
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        background: "#fff",
+        borderRadius: "8px",
+        padding: "12px 16px",
+        border: "1px solid #f0f0f0",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+      }}
+    >
+      <input
+        value={warehouseKeyword}
+        onChange={(e) => setWarehouseKeyword(e.target.value)}
+        style={inputStyle}
+        placeholder="Tìm kho..."
+      />
+      <Pagination
+        page={warehousePage}
+        totalPages={warehouseTotalPages}
+        setPage={setWarehousePage}
+      />
+    </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 380px",
-              gap: "16px",
-            }}
-          >
-            <DataTable
-              loading={loading}
-              columns={[
-                { key: "name", label: "Tên kho" },
-                {
-                  key: "location",
-                  label: "Địa chỉ",
-                  render: (row: Warehouse) => warehouseAddresses[row._id] || "Đang tải...",
-                },
-                {
-                  key: "status",
-                  label: "Trạng thái",
-                  render: (row: Warehouse) => {
-                    const s = STATUS_WAREHOUSE[row.status as WAREHOUSE_STATUS];
-                    return s ? <StatusBadge {...s} /> : <span>{row.status}</span>;
-                  },
-                },
-              ]}
-              data={warehouses}
-            />
-
-            {/* Map panel */}
-            <div
-              style={{
-                background: "#fff",
-                borderRadius: "8px",
-                border: "1px solid #f0f0f0",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <div style={{ height: "340px" }}>
-                <OpenMap
-                  warehouses={warehouses.map((w) => ({
-                    id: w._id,
-                    name: w.name,
-                    longitude: w.location.coordinates[0],
-                    latitude: w.location.coordinates[1],
-                  }))}
-                />
-              </div>
-              <div
-                style={{
-                  borderTop: "1px solid #f0f0f0",
-                  padding: "14px 16px",
-                  maxHeight: "160px",
-                  overflowY: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "6px",
-                }}
-              >
-                {warehouses.length === 0 ? (
-                  <p style={{ fontSize: "13px", color: "#8c8c8c" }}>Không có dữ liệu bản đồ</p>
-                ) : (
-                  warehouses.map((wh) => (
-                    <div
-                      key={wh._id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        padding: "8px 12px",
-                        borderRadius: "6px",
-                        background: "#fafafa",
-                        border: "1px solid #f0f0f0",
-                        transition: "background 0.15s",
-                        cursor: "default",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#e6f7ff")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "#fafafa")}
-                    >
-                      <span
-                        style={{
-                          width: "8px",
-                          height: "8px",
-                          borderRadius: "50%",
-                          background: "#1890ff",
-                          flexShrink: 0,
-                          display: "inline-block",
-                        }}
-                      />
-                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#141414" }}>{wh.name}</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
+    {/* MAIN GRID */}
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 380px",
+        gap: "16px",
+        alignItems: "stretch", // 👈 fix chiều cao
+      }}
+    >
+      {/* TABLE */}
+      {loadingWarehouses ? (
+        <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-600 mx-auto"></div>
+        </div>
+      ) : warehouses.length === 0 ? (
+        <div className="text-center py-20 text-gray-500 font-medium bg-white rounded-3xl shadow-sm border border-gray-100">
+          Không tìm thấy kho nào
+        </div>
+      ) : (
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden text-gray-900">
+          <Table columns={columnsWarehouse} data={warehouses} striped hoverable />
         </div>
       )}
+
+      {/* MAP PANEL */}
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: "8px",
+          border: "1px solid #f0f0f0",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          display: "flex",
+          flexDirection: "column",
+          height: "100%", // 👈 quan trọng
+        }}
+      >
+        {/* MAP */}
+        <div style={{ height: "300px", flexShrink: 0 }}>
+          <OpenMap
+            warehouses={warehouses.map((w) => ({
+              id: w._id,
+              name: w.name,
+              longitude: w.location.coordinates[0],
+              latitude: w.location.coordinates[1],
+            }))}
+          />
+        </div>
+
+        {/* LIST dưới map */}
+       <div
+        style={{
+          height: "400px", 
+          overflowY: "auto",
+          borderTop: "1px solid #f0f0f0",
+          padding: "12px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          }}
+        >
+          {warehouses.length === 0 ? (
+            <p style={{ fontSize: "13px", color: "#8c8c8c" }}>
+              Không có dữ liệu bản đồ
+            </p>
+          ) : (
+            warehouses.map((wh) => (
+              <div
+                key={wh._id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "10px 12px",
+                  borderRadius: "6px",
+                  background: "#fafafa",
+                  border: "1px solid #f0f0f0",
+                  cursor: "pointer",
+                  transition: "0.2s",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "#e6f7ff")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "#fafafa")
+                }
+              >
+                <span
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    background: "#1890ff",
+                  }}
+                />
+                <span style={{ fontSize: "13px", fontWeight: 600 }}>
+                  {wh.name}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

@@ -26,11 +26,11 @@ export default function ProfileHeader({
       <div className="flex flex-col lg:flex-row items-center gap-6">
         {/* Avatar */}
         <div className="relative flex-shrink-0">
-          <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-full bg-emerald-50 border-2 border-emerald-100 flex items-center justify-center">
+          <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-full bg-[#316192] border-2 border-[#316192] flex items-center justify-center">
             {isLoading ? (
               <span className="w-full h-full rounded-full bg-gray-100 animate-pulse block" />
             ) : (
-              <span className="text-4xl lg:text-5xl font-black text-emerald-600">{initial}</span>
+              <span className="text-4xl lg:text-5xl font-black text-white">{initial}</span>
             )}
           </div>
           <span className="absolute bottom-1 right-1 w-5 h-5 bg-emerald-500 border-4 border-white rounded-full" />
@@ -46,7 +46,7 @@ export default function ProfileHeader({
           ) : (
             <>
               <h3 className="text-2xl lg:text-3xl font-black text-gray-900">{name || "Người dùng"}</h3>
-              <p className="text-emerald-600 font-bold text-sm tracking-wide">{role}</p>
+              <p className="text-[#316192] font-bold text-sm tracking-wide">{role}</p>
             </>
           )}
 
@@ -60,12 +60,12 @@ export default function ProfileHeader({
               <>
                 {phone && (
                   <span className="flex items-center gap-2 text-gray-600 font-medium text-sm bg-gray-50 border border-gray-100 px-4 py-2 rounded-full shadow-sm">
-                    <span>📱</span>{phone}
+                    {phone}
                   </span>
                 )}
                 {email && (
                   <span className="flex items-center gap-2 text-gray-600 font-medium text-sm bg-gray-50 border border-gray-100 px-4 py-2 rounded-full shadow-sm">
-                    <span>✉️</span>{email}
+                    {email}
                   </span>
                 )}
                 <span className="flex items-center gap-2 text-emerald-700 text-xs font-bold bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-full shadow-sm">
@@ -82,11 +82,11 @@ export default function ProfileHeader({
           <button
             onClick={onEditToggle}
             className={`px-6 py-3 rounded-full font-bold text-sm transition-all shadow-sm ${isEditMode
-                ? "bg-red-50 hover:bg-red-100 border border-red-200 text-red-600"
-                : "bg-emerald-700 hover:bg-emerald-800 text-white"
+              ? "bg-red-50 hover:bg-red-100 border border-red-200 text-red-600"
+              : "bg-[#316192] hover:bg-[#6694C8] text-white"
               }`}
           >
-            {isEditMode ? "❌ Hủy chỉnh sửa" : "✏️ Chỉnh sửa hồ sơ"}
+            {isEditMode ? " Hủy chỉnh sửa" : " Chỉnh sửa hồ sơ"}
           </button>
         </div>
       </div>

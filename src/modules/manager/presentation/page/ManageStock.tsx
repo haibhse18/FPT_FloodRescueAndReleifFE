@@ -9,6 +9,7 @@ import { Warehouse } from "@/modules/warehouse/domain/warehouse.entity";
 import { warehouseApi } from "@/modules/warehouse/infrastructure/warehouse.api";
 import { VehicleStatus } from "@/modules/vehicles/domain/vehicles.enity";
 import { InventoryStatus } from "@/modules/inventory/domain/inventory.entity";
+import { Upload } from "lucide-react";
 const OpenMap = dynamic(
   () => import("@/modules/map/presentation/components/OpenMap"),
   { ssr: false }
@@ -287,7 +288,7 @@ export default function StockPage() {
         className="px-5 py-2 rounded-full bg-white border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 shadow-sm font-medium">Prev</button>
       {Array.from({ length: totalPages }, (_, i) => (
         <button key={i} onClick={() => onPage(i + 1)}
-          className={`w-10 h-10 rounded-full font-bold shadow-sm flex items-center justify-center transition-colors ${page === i + 1 ? "bg-emerald-700 text-white" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}>
+          className={`w-10 h-10 rounded-full font-bold shadow-sm flex items-center justify-center transition-colors ${page === i + 1 ? "bg-[#1A3263] text-white" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}>
           {i + 1}
         </button>
       ))}
@@ -315,8 +316,9 @@ export default function StockPage() {
         <option value="VEHICLE">Phương tiện</option>
       </select>
 
-      <label className="px-5 py-3 bg-white border border-gray-200 rounded-full cursor-pointer text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
-        📁 Chọn file
+      <label className="cursor-pointer flex items-center gap-2 px-5 py-3 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-semibold transition-colors shadow-sm">
+          <Upload className="w-5 h-5" />
+          <span>Chọn file</span>
         <input type="file" className="hidden"
           onChange={(e) => onFileChange(e.target.files?.[0] ?? null)} />
       </label>
@@ -329,9 +331,10 @@ export default function StockPage() {
 
       <button onClick={onImport}
         disabled={!file}
-        className="px-6 py-3 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 rounded-full text-sm font-bold text-white shadow-sm transition-colors">
-        Import
-      </button>
+         className="px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-sm disabled:opacity-50 transition-colors"
+          >
+            ⬆ Import
+          </button>
     </div>
   );
 
@@ -359,7 +362,7 @@ export default function StockPage() {
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className={`px-5 py-3 text-sm font-bold border-b-2 -mb-[1px] transition-colors ${
               activeTab === tab.key
-                ? "border-emerald-700 text-emerald-800"
+                ? "border-[#4C7AAC] text-[#4C7AAC]"
                 : "border-transparent text-gray-500 hover:text-gray-800"
             }`}>
             {tab.label}
@@ -371,9 +374,9 @@ export default function StockPage() {
       {activeTab === "supply" && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-emerald-800 rounded-3xl p-6 shadow-md relative overflow-hidden group">
+            <div className="bg-[#1A3263] rounded-3xl p-6 shadow-md relative overflow-hidden group">
               <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-              <p className="text-emerald-100 text-sm font-medium mb-2 relative z-10 flex items-center justify-between">Vật tư</p>
+              <p className="text-emerald-100 text-sm font-medium mb-2 relative z-10 flex items-center justify-between">Tổng</p>
               <p className="text-4xl font-bold text-white relative z-10">{supplyStats.total}</p>
             </div>
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
@@ -402,7 +405,7 @@ export default function StockPage() {
                 placeholder="Tìm vật tư..."
                 className="w-full md:w-80 px-6 py-3 rounded-full bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
               <button onClick={() => fetchSupplyItems(supplyKeyword, 1)}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-full font-bold text-white shadow-sm transition-colors">Tìm</button>
+                className="px-6 py-3 bg-[#1A3263] hover:bg-[#1A3263]/80 rounded-full font-bold text-white shadow-sm transition-colors">Tìm kiếm</button>
             </div>
 
             <ImportBar
@@ -465,7 +468,7 @@ export default function StockPage() {
       {activeTab === "vehicle" && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-emerald-800 rounded-3xl p-6 shadow-md relative overflow-hidden group">
+            <div className="bg-[#1A3263] rounded-3xl p-6 shadow-md relative overflow-hidden group">
               <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
               <p className="text-emerald-100 text-sm font-medium mb-2 relative z-10 flex items-center justify-between">Tổng</p>
               <p className="text-4xl font-bold text-white relative z-10">{vehicleStats.total}</p>
@@ -496,7 +499,7 @@ export default function StockPage() {
                 placeholder="Tìm biển số..."
                 className="w-full md:w-80 px-6 py-3 rounded-full bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
               <button onClick={() => fetchVehicles(vehicleKeyword, 1)}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-full font-bold text-white shadow-sm transition-colors">Tìm</button>
+                className="px-6 py-3 bg-[#1A3263] hover:bg-[#1A3263]/80 rounded-full font-bold text-white shadow-sm transition-colors">Tìm kiếm</button>
             </div>
 
             <ImportBar

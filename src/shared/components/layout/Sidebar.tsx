@@ -119,18 +119,18 @@ function SidebarHeader({
   const visible = isExpanded && showTexts;
 
   return (
-    <div className="shrink-0 px-2 py-3 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent">
+    <div className="shrink-0 px-2 py-3">
       <div className="flex items-center">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-dark)] flex items-center justify-center text-2xl shadow-lg ring-1 ring-white/10 flex-shrink-0">
-          <Heart className="w-6 h-6 fill-[#F1A3263] text-white" />
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0097EC] to-[#0070b8] flex items-center justify-center text-2xl shadow-md flex-shrink-0">
+          <Heart className="w-6 h-6 fill-white text-white" />
         </div>
 
         <div className={textAreaCls(visible)}>
           <div className="pl-3 min-w-0">
-            <h1 className="text-lg font-black text-white tracking-tight uppercase leading-tight truncate">
+            <h1 className="text-lg font-black text-[#0d2d4a] tracking-tight uppercase leading-tight truncate">
               {title}
             </h1>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-tight truncate">
+            <p className="text-[10px] text-[#4a7fa5] font-bold uppercase tracking-widest leading-tight truncate">
               {subtitle}
             </p>
           </div>
@@ -163,7 +163,7 @@ function SidebarNotificationSection({
             onClick={onTogglePin}
             aria-label={isPinnedOpen ? "Bỏ ghim sidebar" : "Ghim sidebar ở trạng thái mở"}
             aria-pressed={isPinnedOpen}
-            className="flex-shrink-0 rounded-lg border border-white/10 bg-white/5 text-gray-200 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#0f2a3f] h-10 w-10 flex items-center justify-center transition-colors duration-200"
+            className="flex-shrink-0 rounded-lg border border-[#0097EC]/30 bg-[#0097EC]/10 text-[#0097EC] hover:bg-[#0097EC]/20 focus:outline-none focus:ring-2 focus:ring-[#0097EC] focus:ring-offset-2 focus:ring-offset-[#CFE5FF] h-10 w-10 flex items-center justify-center transition-colors duration-200"
           >
             {isPinnedOpen ? (
               <ChevronLeft className="w-4 h-4" />
@@ -173,7 +173,7 @@ function SidebarNotificationSection({
           </button>
         )}
       </div>
-      <div className="h-px w-full bg-white/10 shrink-0" aria-hidden="true" />
+      <div className="h-px w-full bg-[#0097EC]/20 shrink-0" aria-hidden="true" />
     </>
   );
 }
@@ -193,10 +193,10 @@ function SidebarNavItem({
       <Link
         href={item.href}
         aria-label={item.label}
-        className={`relative flex items-center rounded-xl py-3 font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#0f2a3f] ${
+        className={`relative flex items-center rounded-xl py-3 font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#0097EC] focus:ring-offset-2 focus:ring-offset-[#CFE5FF] ${
           isActive
-            ? "bg-[var(--color-primary)] text-white shadow-lg shadow-[var(--color-primary)]/20"
-            : "text-gray-400 hover:bg-white/5 hover:text-white"
+            ? "bg-[#0097EC]/10 text-[#0070b8]"
+            : "text-[#2d5a7a] hover:bg-[#0097EC]/5 hover:text-[#0070b8]"
         }`}
       >
         {/* Fixed-width icon area — always centered in collapsed width */}
@@ -224,7 +224,7 @@ function SidebarNavItem({
               isExpanded ? "mr-3" : "absolute top-1 right-1"
             } ${
               isActive
-                ? "bg-white text-[var(--color-primary)] scale-110"
+                ? "bg-[#0097EC] text-white scale-110"
                 : "bg-red-500 text-white group-hover/item:scale-110"
             }`}
           >
@@ -235,15 +235,15 @@ function SidebarNavItem({
         {/* Tooltip (collapsed only) */}
         {!isExpanded && (
           <div className="absolute left-full ml-3 pointer-events-none opacity-0 group-hover/item:opacity-100 group-hover/item:pointer-events-auto transition-opacity duration-150 z-50">
-            <div className="px-2 py-1 rounded-md bg-[#0c1f2f] text-white text-xs font-semibold whitespace-nowrap border border-white/10 shadow-lg">
+            <div className="px-2 py-1 rounded-md bg-[#0d2d4a] text-white text-xs font-semibold whitespace-nowrap border border-[#0097EC]/20 shadow-lg">
               {item.label}
             </div>
           </div>
         )}
 
-        {/* Active indicator */}
+        {/* Active indicator — left border #0097EC */}
         {isActive && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#0097EC] rounded-r-full shadow-[0_0_10px_rgba(0,151,236,0.4)]" />
         )}
       </Link>
     </li>
@@ -262,15 +262,15 @@ function SidebarFooter({
   const visible = isExpanded && showTexts;
 
   return (
-    <div className="shrink-0 px-2 py-2 bg-gradient-to-br from-white/5 to-transparent">
+    <div className="shrink-0 px-2 py-2">
       <Link
         href="/profile"
         aria-label={`Hồ sơ: ${user.name}`}
-        className="group flex items-center rounded-xl bg-white/5 hover:bg-white/10 transition-all active:scale-95 border border-white/5 hover:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#0f2a3f] py-2"
+        className="group flex items-center rounded-xl bg-[#0097EC]/10 hover:bg-[#0097EC]/20 transition-all active:scale-95 border border-[#0097EC]/20 hover:border-[#0097EC]/40 focus:outline-none focus:ring-2 focus:ring-[#0097EC] focus:ring-offset-2 focus:ring-offset-[#CFE5FF] py-2"
       >
         {/* Fixed-width avatar area */}
         <div className="w-12 flex items-center justify-center flex-shrink-0">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-md ring-2 ring-white/10 group-hover:ring-white/30 transition-all">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0097EC] to-[#0070b8] flex items-center justify-center text-white text-sm font-bold shadow-md ring-2 ring-[#0097EC]/20 group-hover:ring-[#0097EC]/50 transition-all">
             {user.name.charAt(0).toUpperCase()}
           </div>
         </div>
@@ -278,14 +278,14 @@ function SidebarFooter({
         {/* User info — clips to 0 when collapsed */}
         <div className={`${textAreaCls(visible)} flex items-center`}>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white truncate group-hover:text-blue-200 transition-colors">
+            <p className="text-sm font-bold text-[#0d2d4a] truncate group-hover:text-[#0070b8] transition-colors">
               {user.name}
             </p>
-            <p className="text-xs text-gray-400 font-medium truncate group-hover:text-gray-300 transition-colors">
+            <p className="text-xs text-[#4a7fa5] font-medium truncate group-hover:text-[#2d5a7a] transition-colors">
               {user.role}
             </p>
           </div>
-          <span className="text-gray-500 group-hover:text-white transition-colors text-lg ml-2 mr-3">
+          <span className="text-[#4a7fa5] group-hover:text-[#0097EC] transition-colors text-lg ml-2 mr-3">
             ›
           </span>
         </div>
@@ -315,10 +315,11 @@ export default function Sidebar({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleFocus}
-      className="group hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 bg-gradient-to-b from-[#133249] to-[#0f2a3f] border-r border-white/10 z-40 shadow-xl overflow-hidden"
+      className="group hidden lg:flex lg:flex-col fixed left-0 top-0 bottom-0 border-r border-[#EFF1F3]/20 z-40 shadow-lg overflow-hidden"
       style={{
         width: isExpanded ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH,
         transition: "width 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+        background: "#EFF1F3",
       }}
     >
       <div className="flex h-full flex-col relative">
@@ -329,7 +330,7 @@ export default function Sidebar({
           subtitle={subtitle}
         />
 
-        <div className="h-px w-full bg-white/10 shrink-0" aria-hidden="true" />
+        <div className="h-px w-full bg-[#0097EC]/20 shrink-0" aria-hidden="true" />
 
         <SidebarNotificationSection
           isExpanded={isExpanded}
@@ -358,7 +359,7 @@ export default function Sidebar({
           </div>
         </nav>
 
-        <div className="h-px w-full bg-white/10 shrink-0" aria-hidden="true" />
+        <div className="h-px w-full bg-[#0097EC]/20 shrink-0" aria-hidden="true" />
 
         <SidebarFooter user={user} isExpanded={isExpanded} showTexts={showTexts} />
       </div>

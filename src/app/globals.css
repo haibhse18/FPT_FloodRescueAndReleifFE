@@ -18,9 +18,6 @@ input[type="password"]::-webkit-textfield-decoration-container {
     display: none !important;
 }
 
-html {
-    scroll-behavior: smooth;
-}
 
 /* Success Popup Animation */
 @keyframes shrinkWidth {

@@ -50,7 +50,6 @@ export default function ProfileForm({
   return (
     <Card className="mb-6 bg-white border border-gray-100 rounded-3xl p-6 lg:p-8 shadow-sm">
       <div className="flex items-center gap-3 mb-8 border-b border-gray-100 pb-4">
-        <span className="text-2xl bg-gray-50 text-gray-700 p-2 rounded-xl">📋</span>
         <h3 className="text-2xl font-bold text-gray-900">Thông tin cá nhân</h3>
       </div>
 
@@ -58,7 +57,7 @@ export default function ProfileForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-gray-900">
           {/* Name */}
           <Input
-            label="👤 Họ và tên"
+            label="Họ và tên"
             value={isEditMode ? editedProfile.name : profile.name}
             onChange={(e) =>
               onProfileChange({ ...editedProfile, name: e.target.value })
@@ -74,7 +73,7 @@ export default function ProfileForm({
 
           {/* Phone */}
           <Input
-            label="📱 Số điện thoại"
+            label="Số điện thoại"
             value={isEditMode ? editedProfile.phone : profile.phone}
             onChange={(e) =>
               onProfileChange({ ...editedProfile, phone: e.target.value })
@@ -90,7 +89,7 @@ export default function ProfileForm({
 
           {/* Email */}
           <Input
-            label="✉️ Email"
+            label="Email"
             value={isEditMode ? editedProfile.email : profile.email}
             onChange={(e) =>
               onProfileChange({ ...editedProfile, email: e.target.value })
@@ -110,7 +109,7 @@ export default function ProfileForm({
             {isEditMode ? (
               <div className="w-full">
                 <label className="block text-sm font-bold mb-2 text-gray-600">
-                  📍 Địa chỉ
+                  Địa chỉ
                 </label>
                 <textarea
                   value={editedProfile.address}
@@ -126,7 +125,7 @@ export default function ProfileForm({
               </div>
             ) : (
               <Input
-                label="📍 Địa chỉ"
+                label="Địa chỉ"
                 value={profile.address}
                 readOnly={true}
                 disabled={true}
@@ -149,7 +148,7 @@ export default function ProfileForm({
             <button
               onClick={onSave}
               disabled={isSaving}
-              className="px-8 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-full transition-all disabled:opacity-60 flex items-center gap-2 shadow-sm"
+              className="px-8 py-3 bg-[#316192] hover:bg-[#6694C8] text-white font-bold rounded-full transition-all disabled:opacity-60 flex items-center gap-2 shadow-sm"
             >
               {isSaving ? (
                 <>
@@ -157,7 +156,7 @@ export default function ProfileForm({
                   Đang lưu...
                 </>
               ) : (
-                "💾 Lưu thay đổi"
+                "Lưu thay đổi"
               )}
             </button>
           </div>

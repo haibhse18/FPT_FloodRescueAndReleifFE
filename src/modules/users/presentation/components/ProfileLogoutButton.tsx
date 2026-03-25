@@ -22,7 +22,6 @@ export default function ProfileLogoutButton({
         </>
       ) : (
         <>
-          <span className="text-xl">🚪</span>
           <span>Đăng xuất</span>
         </>
       )}

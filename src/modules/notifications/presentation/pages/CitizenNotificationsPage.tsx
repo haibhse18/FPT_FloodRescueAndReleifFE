@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useNotificationStore } from "@/store/useNotification.store";
 import { useAuthStore } from "@/store/useAuth.store";
+import { RefreshCw } from "lucide-react";
 
 // Maps notification type → UI presentation
 const TYPE_META: Record<
@@ -133,7 +134,7 @@ export default function CitizenNotificationsPage() {
               className="p-2 lg:p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all"
               aria-label="Làm mới thông báo"
             >
-              <span className="text-xl inline-block">🔄</span>
+              <span className="text-lg text-white"><RefreshCw/></span>
             </button>
           </div>
         </div>

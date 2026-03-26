@@ -91,11 +91,11 @@ export default function NotificationBell() {
       <button
         ref={buttonRef}
         onClick={() => setOpen(!open)}
-        className="relative flex items-center rounded-lg bg-white/5 hover:bg-white/10 transition-all active:scale-95 border border-white/5 hover:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#0f2a3f] h-10 w-10"
+        className="relative flex items-center rounded-lg bg-[#0097EC]/10 hover:bg-[#0097EC]/20 transition-all active:scale-95 border border-[#0097EC]/20 hover:border-[#0097EC]/40 focus:outline-none focus:ring-2 focus:ring-[#0097EC] focus:ring-offset-2 focus:ring-offset-[#EFF1F3] h-10 w-10"
         aria-label="Thông báo"
       >
         <div className="w-10 flex items-center justify-center flex-shrink-0 relative">
-          <Bell className="h-5 w-5 text-white/80" />
+          <Bell className="h-5 w-5 text-[#2d5a7a]" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] flex items-center justify-center px-1 text-[9px] font-bold bg-red-500 text-white rounded-full shadow-lg">
               {unreadCount > 99 ? "99+" : unreadCount}

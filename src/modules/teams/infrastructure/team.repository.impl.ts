@@ -82,6 +82,17 @@ export class TeamRepositoryImpl implements ITeamRepository {
     // Could be { data: [...] } or direct array
     return result.data || result || [];
   }
+
+  //-Approve/Reject volunteer by Admin
+  async approve(applicationId: string): Promise<Team> {
+    const response = await teamsApi.approve(applicationId);
+    return (response as any).data ?? response;
+  }
+
+  async reject(applicationId: string, reason: string): Promise<Team> {
+    const response = await teamsApi.reject(applicationId, reason);
+    return (response as any).data ?? response;
+  }
 }
 
 // Singleton instance

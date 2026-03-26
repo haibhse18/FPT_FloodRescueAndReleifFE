@@ -46,7 +46,6 @@ export default function AdminSidebar() {
     { icon: <PiHouseLineBold />, label: "Dashboard", href: "/admin-dashboard" },
     { icon: <PiUsersThreeBold />, label: "Người dùng", href: "/admin-users" },
     { icon: <PiGearSixBold />, label: "Hệ thống", href: "/admin-system" },
-    { icon: <PiChartLineUpBold />, label: "Theo dõi", href: "/admin-monitoring" },
   ];
 
   return (

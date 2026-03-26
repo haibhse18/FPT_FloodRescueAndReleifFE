@@ -16,6 +16,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
     display: none !important;
 }
 
+
 /* Success Popup Animation */
 @keyframes shrinkWidth {
     from {
@@ -88,9 +89,12 @@ input[type="password"]::-webkit-textfield-decoration-container {
 }
 
 @keyframes pulse-marker {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.7;
     }
@@ -134,8 +138,8 @@ input[type="password"]::-webkit-textfield-decoration-container {
 }
 
 @layer base {
-  :root {
-    --sidebar-width: 5rem;
+    :root {
+        --sidebar-width: 5rem;
         --background: 0 0% 100%;
         --foreground: 0 0% 3.9%;
         --card: 0 0% 100%;
@@ -192,20 +196,11 @@ input[type="password"]::-webkit-textfield-decoration-container {
 }
 
 @layer base {
-
-    html,
-    body {
-        min-height: 100%;
-        overscroll-behavior-y: none;
-        overscroll-behavior-x: none;
-    }
-
     * {
         @apply border-border;
     }
 
     body {
         @apply bg-background text-foreground;
-        -webkit-overflow-scrolling: touch;
     }
 }

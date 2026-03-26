@@ -43,7 +43,7 @@ export default function ManagerSidebar() {
   }, []);
 
   const navItems: NavItem[] = [
-    { icon: <PiHouseLineBold />, label: "Dashboard", href: "/manager-dashboard" },
+    { icon: <PiHouseLineBold />, label: "Tổng quan", href: "/manager-dashboard" },
     { icon: <PiPackageBold />, label: "Vật tư", href: "/manager-investory-control/equipments" },
     { icon: <PiTruckBold />, label: "Phương tiện", href: "/manager-investory-control/vehicles" },
     { icon: <PiChartBarBold />, label: "Tồn kho", href: "/manager-investory-control/stock" },

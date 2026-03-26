@@ -7,6 +7,7 @@
 
 export type TimelineStatus =
   | "ASSIGNED"
+  | "CLAIMING_SUPPLIES"
   | "EN_ROUTE"
   | "ON_SITE"
   | "COMPLETED"

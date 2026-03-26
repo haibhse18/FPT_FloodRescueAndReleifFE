@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import "../styles/mission-detail-colors.css";
 import MissionProgressStepper from "./MissionProgressStepper";
 import AssignedStepView from "./AssignedStepView";
+import ClaimStepView from "./ClaimStepView";
 import EnRouteStepView from "./EnRouteStepView";
 import InProgressStepView from "./InProgressStepView";
 import CompletedStepView from "./CompletedStepView";
@@ -14,6 +15,7 @@ import { timelineRepository } from "@/modules/timelines/infrastructure/timeline.
 import { missionRepository } from "@/modules/missions/infrastructure/mission.repository.impl";
 import { teamRequestRepository } from "@/modules/teamRequests/infrastructure/teamRequest.repository.impl";
 import { AcceptTimelineUseCase } from "@/modules/timelines/application/acceptTimeline.usecase";
+import { ConfirmSupplyClaimUseCase } from "@/modules/timelines/application/confirmSupplyClaim.usecase";
 import { ArriveTimelineUseCase } from "@/modules/timelines/application/arriveTimeline.usecase";
 import { CompleteTimelineUseCase } from "@/modules/timelines/application/completeTimeline.usecase";
 import { WithdrawTimelineUseCase } from "@/modules/timelines/application/withdrawTimeline.usecase";
@@ -27,6 +29,7 @@ import type { MissionRequest } from "@/modules/missions/domain/missionRequest.en
 import type { TeamRequest } from "@/modules/teamRequests/domain/teamRequest.entity";
 
 const acceptTimelineUseCase = new AcceptTimelineUseCase(timelineRepository);
+const confirmSupplyClaimUseCase = new ConfirmSupplyClaimUseCase(timelineRepository);
 const arriveTimelineUseCase = new ArriveTimelineUseCase(timelineRepository);
 const completeTimelineUseCase = new CompleteTimelineUseCase(timelineRepository);
 const withdrawTimelineUseCase = new WithdrawTimelineUseCase(timelineRepository);
@@ -232,6 +235,22 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
     }
   };
 
+  const handleConfirmClaim = async () => {
+    if (!timeline) return;
+    
+    setActionLoading("confirm_claim");
+    try {
+      const updated = await confirmSupplyClaimUseCase.execute(timeline._id);
+      setTimeline(updated);
+      toast.success("✅ Đã xác nhận nhận vật tư. Bắt đầu di chuyển!");
+      await refetchData();
+    } catch (error: any) {
+      toast.error(error?.message || "Không thể xác nhận");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleCompleteMission = async () => {
     if (!timeline) return;
     
@@ -291,9 +310,10 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
   // Step navigation logic
   const getCurrentStepIndex = () => {
     if (timeline.status === "ASSIGNED") return 0;
-    if (timeline.status === "EN_ROUTE") return 1;
-    if (timeline.status === "ON_SITE") return 2;
-    if (isTerminal) return 3;
+    if (timeline.status === "CLAIMING_SUPPLIES") return 1;
+    if (timeline.status === "EN_ROUTE") return 2;
+    if (timeline.status === "ON_SITE") return 3;
+    if (isTerminal) return 4;
     return 0;
   };
 
@@ -385,6 +405,17 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
           )}
 
           {displayStepIndex === 1 && (
+            <ClaimStepView
+              timeline={timeline}
+              mission={mission}
+              missionRequests={missionRequests}
+              onConfirmClaim={handleConfirmClaim}
+              loading={actionLoading === "confirm_claim"}
+              disabled={viewingStep !== null && viewingStep !== currentStepIndex}
+            />
+          )}
+
+          {displayStepIndex === 2 && (
             <EnRouteStepView
               missionRequests={missionRequests}
               onArrived={handleArrived}
@@ -393,7 +424,7 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
             />
           )}
 
-          {displayStepIndex === 2 && (
+          {displayStepIndex === 3 && (
             <InProgressStepView
               missionRequests={missionRequests}
               teamRequests={teamRequests}
@@ -405,7 +436,7 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
             />
           )}
 
-          {displayStepIndex === 3 && (
+          {displayStepIndex === 4 && (
             <CompletedStepView
               timeline={timeline}
               mission={mission}

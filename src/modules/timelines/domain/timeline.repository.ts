@@ -21,6 +21,7 @@ export interface ITimelineRepository {
     input?: TimelineCancelInput,
   ): Promise<void>;
   acceptTimeline(timelineId: string): Promise<Timeline>;
+  confirmSupplyClaim(timelineId: string, note?: string): Promise<Timeline>;
   arriveTimeline(timelineId: string): Promise<Timeline>;
   completeTimeline(
     timelineId: string,

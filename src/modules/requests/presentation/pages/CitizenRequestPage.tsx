@@ -1098,11 +1098,11 @@ export default function CitizenRequestPage() {
   const reliefNoteOverLimit = reliefNoteLen > MAX_DESCRIPTION;
   const submitDisabled = requestType === "Rescue" ? descOverLimit : reliefNoteOverLimit;
   const sectionCardClass =
-    "rounded-2xl border border-white/15 bg-[#16384f]/65 backdrop-blur-sm shadow-[0_10px_30px_rgba(0,0,0,0.15)]";
+    "rounded-2xl border border-white/20 bg-[#0f2f44]/70 backdrop-blur-sm shadow-[0_10px_24px_rgba(0,0,0,0.18)]";
 
   if (isCheckingActiveRequest || activeRequestIdOnEntry) {
     return (
-      <div className="h-[100dvh] bg-[#133249] flex items-center justify-center px-4">
+      <div className="h-[100dvh] bg-transparent flex items-center justify-center px-4">
         <div className="text-center space-y-3">
           <div className="mx-auto w-12 h-12 border-4 border-[#FF7700] border-t-transparent rounded-full animate-spin" />
           <p className="text-white/90 text-sm">Đang kiểm tra yêu cầu hiện tại...</p>
@@ -1112,8 +1112,8 @@ export default function CitizenRequestPage() {
   }
 
   return (
-    <div className="h-[100dvh] bg-[#133249] flex flex-col overflow-hidden overscroll-none">
-      <header className="sticky top-0 z-50 px-4 py-3 lg:px-5 lg:py-4 border-b border-white/15 bg-[#133249]/95 backdrop-blur-md">
+    <div className="min-h-[100dvh] bg-transparent flex flex-col overflow-x-hidden">
+      <header className="sticky top-0 z-50 px-4 py-3 lg:px-5 lg:py-4 border-b border-white/15 bg-[#0b2233]/82 backdrop-blur-md">
         <div className="flex items-center justify-between">
           <button
             type="button"
@@ -1124,12 +1124,12 @@ export default function CitizenRequestPage() {
           </button>
           <div className="text-right">
             <h1 className="text-white text-xl lg:text-2xl font-extrabold">Gửi yêu cầu</h1>
-            <p className="text-white/80 text-xs lg:text-sm">Chọn vị trí chính xác để coordinator điều phối nhanh hơn</p>
+            <p className="text-white/90 text-xs lg:text-sm">Chọn vị trí chính xác để coordinator điều phối nhanh hơn</p>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 overflow-hidden overscroll-none">
+      <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain">
         <div className="h-full lg:grid lg:grid-cols-12">
           <section className="lg:col-span-3 overflow-y-auto overscroll-contain pb-20 lg:pb-4 border-r border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0))]">
             <div className="p-4 lg:p-3.5 space-y-4 max-w-[600px] mx-auto">
@@ -1155,7 +1155,7 @@ export default function CitizenRequestPage() {
                       onClick={() => handleRequestTypeChange(type.id)}
                       className={`cursor-pointer rounded-lg p-3 border-2 transition-all duration-200 ${requestType === type.id ?
                         "bg-[#FF7700]/20 border-[#FF7700] shadow-[0_0_12px_rgba(255,119,0,0.25)]"
-                        : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
+                        : "bg-[#0f2f44]/70 border-white/20 hover:bg-[#1a3f57]/80 hover:border-white/30"
                         }`}
                     >
                       <div className="font-bold text-white text-sm lg:text-base">{type.title}</div>
@@ -1166,7 +1166,7 @@ export default function CitizenRequestPage() {
               </div>
 
               {requestType === "Rescue" && (
-                <div className={`${sectionCardClass} p-4 space-y-3.5 bg-white/[0.04] border border-white/10 rounded-xl`}>
+                <div className={`${sectionCardClass} p-4 space-y-3.5 bg-[#0f2f44]/70 border border-white/20 rounded-xl`}>
                   <div className="space-y-2.5">
                     <label className="text-sm text-white font-semibold block">Tình huống</label>
                     <select
@@ -1256,7 +1256,7 @@ export default function CitizenRequestPage() {
               )}
 
               {requestType === "Relief" && (
-                <div className={`${sectionCardClass} p-4 space-y-3.5 bg-white/[0.04] border border-white/10 rounded-xl`}>
+                <div className={`${sectionCardClass} p-4 space-y-3.5 bg-[#0f2f44]/70 border border-white/20 rounded-xl`}>
                   <div className="space-y-2.5">
                     <label className="text-sm text-white font-semibold block">Tình huống khu vực *</label>
                     <select
@@ -1341,7 +1341,7 @@ export default function CitizenRequestPage() {
                             key={context}
                             className={`rounded-lg border px-3 py-2 transition-all duration-200 ${checked
                               ? "border-[#FF7700] bg-[#FF7700]/15"
-                              : "border-white/15 bg-white/5"
+                              : "border-white/20 bg-[#0f2f44]/70"
                               }`}
                           >
                             <div className="flex items-center justify-between gap-2">
@@ -1374,7 +1374,7 @@ export default function CitizenRequestPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-lg border border-white/15 bg-[#0f2f44]/70 p-3 space-y-1.5 text-xs">
+                  <div className="rounded-lg border border-white/20 bg-[#0f2f44]/70 p-3 space-y-1.5 text-xs">
                     <p className="text-white/80">Tổng thành viên: <span className="text-white font-semibold">{reliefFamilySize}</span></p>
                     <p className="text-white/80">Người trưởng thành tự động: <span className="text-[#FFD1A0] font-semibold">{reliefAdultCount}</span></p>
                     <p className="text-white/70">Trẻ em: {selectedChildCount} | Người già: {selectedElderlyCount} | Bị thương: {selectedInjuredCount}</p>
@@ -1403,7 +1403,7 @@ export default function CitizenRequestPage() {
                     />
                   )}
 
-                  <div className="rounded-lg border border-white/15 bg-white/[0.03] p-3 space-y-2">
+                  <div className="rounded-lg border border-white/20 bg-[#0f2f44]/70 p-3 space-y-2">
                     <p className="text-xs text-white font-semibold">Tổng nhu cầu thiết yếu.</p>
                     <p className="text-[11px] text-white/70 leading-relaxed">
                       {reliefSupplyPlan.totalLines.length > 0
@@ -1429,7 +1429,7 @@ export default function CitizenRequestPage() {
                 </div>
               )}
 
-              <div className="sticky bottom-0 bg-gradient-to-t from-[#133249] via-[#133249]/98 to-transparent pt-3 pb-2 border-t border-white/10">
+              <div className="sticky bottom-0 bg-gradient-to-t from-[#0b2233]/92 via-[#0b2233]/78 to-transparent pt-3 pb-2 border-t border-white/10">
                 <button
                   onClick={requestType === "Rescue" ? handleRescueSubmit : handleReliefSubmit}
                   disabled={isSubmitting || submitDisabled}
@@ -1449,7 +1449,7 @@ export default function CitizenRequestPage() {
           </section>
 
           <aside className="hidden lg:block lg:col-span-9 p-4">
-            <div className="h-full rounded-2xl border border-white/15 bg-[linear-gradient(145deg,rgba(0,0,0,0.22),rgba(255,255,255,0.04))] p-3.5 flex flex-col gap-3 shadow-[0_10px_36px_rgba(0,0,0,0.2)]">
+            <div className="h-full rounded-2xl border border-white/20 bg-[#0f2f44]/70 p-3.5 flex flex-col gap-3 shadow-[0_10px_36px_rgba(0,0,0,0.2)]">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-white text-xl font-bold tracking-tight">Bản đồ vị trí</h3>
@@ -1469,7 +1469,7 @@ export default function CitizenRequestPage() {
                     onClick={() => setIsManualSelectionMode(!isManualSelectionMode)}
                     className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-all duration-200 ${isManualSelectionMode
                       ? "border-[#FF7700] bg-[#FF7700]/20 text-[#FFD1A0] shadow-[0_0_8px_rgba(255,119,0,0.2)]"
-                      : "border-white/15 bg-white/5 text-white hover:bg-white/10 hover:border-white/25"
+                      : "border-white/20 bg-[#0f2f44]/70 text-white hover:bg-[#1a3f57]/80 hover:border-white/30"
                       }`}
                   >
                     {isManualSelectionMode ? "✓ Chọn thủ công" : "Chọn thủ công"}
@@ -1477,7 +1477,7 @@ export default function CitizenRequestPage() {
                 </div>
               </div>
 
-              <div className="flex-1 min-h-0 rounded-xl overflow-hidden border border-white/10">
+              <div className="flex-1 min-h-0 rounded-xl overflow-hidden border border-white/20">
                 <OpenMap
                   latitude={coordinates?.lat}
                   longitude={coordinates?.lon}
@@ -1488,7 +1488,7 @@ export default function CitizenRequestPage() {
                 />
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+              <div className="rounded-xl border border-white/20 bg-[#0f2f44]/70 p-3">
                 <p className="text-white text-sm font-semibold truncate">{currentLocation}</p>
                 {coordinates && (
                   <p className="text-white/70 text-xs mt-1 font-mono">
@@ -1503,7 +1503,7 @@ export default function CitizenRequestPage() {
 
       {isReliefComboModalOpen && (
         <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-[2px] flex items-center justify-center p-4">
-          <div className="w-full max-w-3xl max-h-[88vh] overflow-hidden rounded-2xl border border-white/20 bg-[#133249] shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+          <div className="w-full max-w-3xl max-h-[88vh] overflow-hidden rounded-2xl border border-white/20 bg-[#0f2f44]/80 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
               <div>
                 <h3 className="text-white text-lg font-bold">Combo nhu yếu phẩm.</h3>
@@ -1519,14 +1519,14 @@ export default function CitizenRequestPage() {
 
             <div className="overflow-y-auto max-h-[calc(88vh-64px)] p-4 space-y-3">
               {Object.values(RELIEF_GROUP_COMBO_TEMPLATES).map((combo) => (
-                <div key={combo.key} className="rounded-xl border border-white/10 bg-white/[0.03] p-3 space-y-2">
+                <div key={combo.key} className="rounded-xl border border-white/20 bg-[#0f2f44]/70 p-3 space-y-2">
                   <div>
                     <p className="text-white font-semibold text-sm">{combo.label}</p>
                     <p className="text-white/65 text-xs">{combo.description}</p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     {combo.items.map((item) => (
-                      <div key={`${combo.key}-${item.label}`} className="rounded-md border border-white/10 bg-[#0f2f44]/70 px-2.5 py-2 text-white/90">
+                      <div key={`${combo.key}-${item.label}`} className="rounded-md border border-white/20 bg-[#0f2f44]/70 px-2.5 py-2 text-white/90">
                         {item.label}: <span className="font-semibold text-[#FFD1A0]">{item.qtyPerPerson3Days}</span>
                       </div>
                     ))}

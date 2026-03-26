@@ -345,7 +345,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     /* ─── Loading skeleton ─── */
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-[#133249] p-5 lg:p-8 space-y-5 animate-pulse">
+            <div className="min-h-screen bg-transparent p-5 lg:p-8 space-y-5 animate-pulse">
                 <div className="h-14 lg:h-16 bg-white/10 rounded-xl" />
                 <div className="h-36 lg:h-44 bg-white/10 rounded-xl" />
                 <div className="h-56 lg:h-72 bg-white/10 rounded-xl" />
@@ -357,7 +357,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     /* ─── Error state ─── */
     if (error || !request) {
         return (
-            <div className="min-h-screen bg-[#133249] flex flex-col items-center justify-center p-8 gap-5">
+            <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-8 gap-5">
                 <span className="text-6xl">😞</span>
                 <p className="text-white font-bold text-2xl text-center">
                     {error || "Không tìm thấy yêu cầu"}
@@ -416,7 +416,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     const canCancelRequest = ["Pending", "PENDING", "pending", "Submitted", "SUBMITTED"].includes(request.status);
 
     return (
-        <div className="min-h-screen bg-[#133249] text-white">
+        <div className="min-h-screen bg-transparent text-white">
             {/* Header */}
             <header className="sticky top-0 z-40 bg-[#0f2a3f]/95 backdrop-blur-md border-b border-white/10 px-5 lg:px-8 py-4 lg:py-5 flex items-center gap-4">
                 <button
@@ -444,7 +444,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
             <main className="p-5 lg:p-8 space-y-5 lg:space-y-6 max-w-5xl mx-auto pb-24 lg:pb-28">
                 {/* Progress Steps with Timeline Info */}
                 {currentStep >= 0 && (
-                    <div className="bg-black/20 border border-white/10 rounded-xl p-5 lg:p-6">
+                    <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl p-5 lg:p-6">
                         <p className="text-gray-400 text-sm font-bold mb-5 uppercase tracking-wider">
                             Tiến trình xử lý
                         </p>
@@ -511,7 +511,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                 )}
 
                 {/* Basic info card */}
-                <div className="bg-black/20 border border-white/10 rounded-xl divide-y divide-white/5">
+                <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl divide-y divide-white/10">
                     <div className="px-5 lg:px-6 py-4">
                         <p className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-2">
                             Thông tin yêu cầu
@@ -573,7 +573,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
 
                 {/* Description */}
                 {request.description && (
-                    <div className="bg-black/20 border border-white/10 rounded-xl p-5 lg:p-6 space-y-3">
+                    <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl p-5 lg:p-6 space-y-3">
                         <p className="text-gray-400 text-sm font-bold uppercase tracking-wider">
                             Mô tả tình huống
                         </p>
@@ -585,7 +585,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
 
                 {/* Location + Map */}
                 {(locationText || (mapLat !== null && mapLon !== null)) && (
-                    <div className="bg-black/20 border border-white/10 rounded-xl p-5 lg:p-6 space-y-4">
+                    <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl p-5 lg:p-6 space-y-4">
                         <p className="text-gray-400 text-sm font-bold uppercase tracking-wider">
                             📍 Vị trí
                         </p>
@@ -605,7 +605,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                                 <p className="text-gray-400 text-xs font-mono">
                                     Tọa độ: {mapLat.toFixed(6)}, {mapLon.toFixed(6)}
                                 </p>
-                                <div className="h-64 lg:h-[420px] rounded-xl overflow-hidden border border-white/10">
+                                <div className="h-64 lg:h-[420px] rounded-xl overflow-hidden border border-white/20">
                                     <OpenMap
                                         latitude={mapLat}
                                         longitude={mapLon}
@@ -619,7 +619,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
 
                 {/* Images */}
                 {images.length > 0 && (
-                    <div className="bg-black/20 border border-white/10 rounded-xl p-5 lg:p-6 space-y-4">
+                    <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl p-5 lg:p-6 space-y-4">
                         <p className="text-gray-400 text-sm font-bold uppercase tracking-wider">
                             📸 Hình ảnh hiện trường ({images.length})
                         </p>
@@ -629,7 +629,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                                     key={i}
                                     type="button"
                                     onClick={() => openLightbox(i)}
-                                    className="relative aspect-square rounded-lg overflow-hidden border border-white/10 hover:border-[#FF7700]/60 transition-all group focus:outline-none focus:ring-2 focus:ring-[#FF7700]"
+                                    className="relative aspect-square rounded-lg overflow-hidden border border-white/20 hover:border-[#FF7700]/60 transition-all group focus:outline-none focus:ring-2 focus:ring-[#FF7700]"
                                     aria-label={`Xem ảnh ${i + 1}`}
                                 >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -27,7 +27,7 @@ export default function ProfileHeader({
     <div className="flex flex-col lg:flex-row items-start gap-6">
       {/* Avatar */}
       <div className="relative flex-shrink-0">
-        <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-full bg-[#0f2f44] border-2 border-white/15 flex items-center justify-center">
+        <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-full bg-[#0f2f44]/70 border-2 border-white/20 flex items-center justify-center">
           {isLoading ? (
             <span className="w-full h-full rounded-full bg-white/10 animate-pulse block" />
           ) : (
@@ -66,13 +66,13 @@ export default function ProfileHeader({
           ) : (
             <>
               {phone && (
-                <span className="inline-flex items-center gap-2 text-white font-medium text-sm bg-slate-800/40 border border-slate-700/50 px-4 py-2 rounded-full">
+                <span className="inline-flex items-center gap-2 text-white font-medium text-sm bg-[#0f2f44]/70 border border-white/20 px-4 py-2 rounded-full">
                   <Phone weight="bold" size={16} />
                   {phone}
                 </span>
               )}
               {email && (
-                <span className="inline-flex items-center gap-2 text-white font-medium text-sm bg-slate-800/40 border border-slate-700/50 px-4 py-2 rounded-full">
+                <span className="inline-flex items-center gap-2 text-white font-medium text-sm bg-[#0f2f44]/70 border border-white/20 px-4 py-2 rounded-full">
                   <EnvelopeSimple weight="bold" size={16} />
                   {email}
                 </span>

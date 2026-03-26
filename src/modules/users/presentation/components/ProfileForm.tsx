@@ -51,7 +51,7 @@ export default function ProfileForm({
   return (
     <div className="py-8 border-b border-white/10">
       <h3 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
-        <span className="text-2xl bg-white/10 text-[#FFD1A0] p-2 rounded-xl">
+        <span className="text-2xl bg-[#0f2f44]/70 border border-white/20 text-[#FFD1A0] p-2 rounded-xl">
           <MapPin weight="bold" size={24} />
         </span>
         Thông tin cá nhân
@@ -74,8 +74,8 @@ export default function ProfileForm({
               disabled={!isEditMode || isSaving}
               readOnly={!isEditMode}
               className={`w-full px-4 py-3 rounded-lg border transition-all ${isEditMode
-                  ? "bg-[#0f2f44]/80 border-white/20 text-white focus:border-[#FF7700] focus:ring-2 focus:ring-[#FF7700]/25"
-                  : "bg-transparent border-0 border-b-2 border-white/15 text-white cursor-default"
+                ? "bg-[#0f2f44]/70 border-white/20 text-white focus:border-[#FF7700] focus:ring-2 focus:ring-[#FF7700]/25"
+                : "bg-transparent border-0 border-b-2 border-white/15 text-white cursor-default"
                 } focus:outline-none`}
             />
           </div>
@@ -95,8 +95,8 @@ export default function ProfileForm({
               disabled={!isEditMode || isSaving}
               readOnly={!isEditMode}
               className={`w-full px-4 py-3 rounded-lg border transition-all ${isEditMode
-                  ? "bg-[#0f2f44]/80 border-white/20 text-white focus:border-[#FF7700] focus:ring-2 focus:ring-[#FF7700]/25"
-                  : "bg-transparent border-0 border-b-2 border-white/15 text-white cursor-default"
+                ? "bg-[#0f2f44]/70 border-white/20 text-white focus:border-[#FF7700] focus:ring-2 focus:ring-[#FF7700]/25"
+                : "bg-transparent border-0 border-b-2 border-white/15 text-white cursor-default"
                 } focus:outline-none`}
             />
           </div>
@@ -116,8 +116,8 @@ export default function ProfileForm({
               disabled={!isEditMode || isSaving}
               readOnly={!isEditMode}
               className={`w-full px-4 py-3 rounded-lg border transition-all ${isEditMode
-                  ? "bg-[#0f2f44]/80 border-white/20 text-white focus:border-[#FF7700] focus:ring-2 focus:ring-[#FF7700]/25"
-                  : "bg-transparent border-0 border-b-2 border-white/15 text-white cursor-default"
+                ? "bg-[#0f2f44]/70 border-white/20 text-white focus:border-[#FF7700] focus:ring-2 focus:ring-[#FF7700]/25"
+                : "bg-transparent border-0 border-b-2 border-white/15 text-white cursor-default"
                 } focus:outline-none`}
             />
           </div>
@@ -153,7 +153,7 @@ export default function ProfileForm({
                 }
                 disabled={isSaving}
                 rows={3}
-                className="w-full px-4 py-3 rounded-lg border border-white/20 bg-[#0f2f44]/80 text-white focus:border-[#FF7700] focus:ring-2 focus:ring-[#FF7700]/25 focus:outline-none transition-all resize-none"
+                className="w-full px-4 py-3 rounded-lg border border-white/20 bg-[#0f2f44]/70 text-white focus:border-[#FF7700] focus:ring-2 focus:ring-[#FF7700]/25 focus:outline-none transition-all resize-none"
               />
             ) : (
               <textarea
@@ -173,7 +173,7 @@ export default function ProfileForm({
             <button
               onClick={onCancel}
               disabled={isSaving}
-              className="px-6 py-3 bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/60 text-white/90 font-bold rounded-full transition-all disabled:opacity-50"
+              className="px-6 py-3 bg-[#0f2f44]/70 border border-white/20 hover:bg-[#1a3f57]/80 text-white/90 font-bold rounded-full transition-all disabled:opacity-50"
             >
               Hủy bỏ
             </button>

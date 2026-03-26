@@ -234,9 +234,9 @@ export default function CitizenHistoryPage() {
   );
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col min-h-[100dvh]">
       {/* Fixed Header Banner */}
-      <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
+      <header className="sticky top-0 z-50 p-6 border-b border-white/20 bg-gradient-to-br from-[var(--color-accent)]/18 to-[#0b2233]/72 backdrop-blur-md">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
@@ -250,7 +250,7 @@ export default function CitizenHistoryPage() {
             <button
               onClick={() => fetchRequests(1)}
               disabled={isLoading}
-              className="p-2 lg:p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 lg:p-3 bg-white/18 hover:bg-white/28 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Làm mới"
             >
               <FiRefreshCw className={`text-xl ${isLoading ? "animate-spin" : ""}`} />
@@ -259,14 +259,14 @@ export default function CitizenHistoryPage() {
         </div>
       </header>
 
-      <main className="pb-24 lg:pb-0 overflow-auto">
+      <main className="flex-1 pb-24 lg:pb-0 overflow-y-auto">
         {/* Background Pattern - Removed as it is now in layout */}
 
         <div className="relative p-4 lg:p-8 space-y-6 max-w-7xl mx-auto">
           {/* Filters */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+          <div className="bg-[#0f2f44]/70 border border-white/20 rounded-2xl p-4">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-gray-400 text-sm font-bold mr-2">
+              <span className="text-white/80 text-sm font-bold mr-2">
                 <span className="inline-flex items-center gap-1.5"><FiFilter /> Lọc:</span>
               </span>
               {[
@@ -343,7 +343,7 @@ export default function CitizenHistoryPage() {
           {/* Requests List */}
           <div className="space-y-3">
             {isLoading ?
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center">
+              <div className="bg-[#0f2f44]/70 border border-white/20 rounded-2xl p-12 text-center">
                 <div className="w-16 h-16 border-4 border-[#FF7700] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                 <h3 className="text-xl font-bold text-white mb-2">
                   Đang tải...
@@ -368,7 +368,7 @@ export default function CitizenHistoryPage() {
                   </button>
                 </div>
                 : filteredRequests.length === 0 ?
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center">
+                  <div className="bg-[#0f2f44]/70 border border-white/20 rounded-2xl p-12 text-center">
                     <div className="mb-4 flex justify-center">
                       {requests.length === 0 ? (
                         <FiInbox className="text-6xl text-gray-400" />
@@ -399,7 +399,7 @@ export default function CitizenHistoryPage() {
                   : filteredRequests.map((request) => (
                     <div
                       key={request.id}
-                      className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-5 hover:bg-white/10 hover:border-white/20 transition-all"
+                      className="bg-[#0f2f44]/70 border border-white/20 rounded-2xl p-4 lg:p-5 hover:bg-[#1a3f57]/80 hover:border-white/30 transition-all"
                     >
                       <div className="space-y-3">
                         <div>
@@ -588,7 +588,7 @@ export default function CitizenHistoryPage() {
 
           {/* Pagination Controls */}
           {requests.length > 0 && (
-            <div className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-2xl p-4">
+            <div className="flex items-center justify-center gap-2 bg-[#0f2f44]/70 border border-white/20 rounded-2xl p-4">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
@@ -626,7 +626,7 @@ export default function CitizenHistoryPage() {
         {/* Cancel Confirmation Modal */}
         {cancelConfirmId && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] p-4">
-            <div className="bg-[#1a3a52] rounded-xl p-6 max-w-sm w-full border border-white/20">
+            <div className="bg-[#0f2f44]/70 rounded-xl p-6 max-w-sm w-full border border-white/20">
               <h3 className="text-white font-bold text-lg mb-3">
                 Xác nhận hủy yêu cầu
               </h3>

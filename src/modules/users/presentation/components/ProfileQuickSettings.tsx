@@ -48,9 +48,9 @@ export default function ProfileQuickSettings({
   const displaySettings = settings.length > 0 ? settings : defaultSettings;
 
   return (
-    <div className="py-8 border-b border-white/10">
+    <div className="py-8 border-b border-white/20">
       <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-        <span className="text-2xl bg-white/10 text-[#FFD1A0] p-2 rounded-xl">
+        <span className="text-2xl bg-[#0f2f44]/70 border border-white/20 text-[#FFD1A0] p-2 rounded-xl">
           <GearSix weight="bold" size={24} />
         </span>
         Cài đặt nhanh
@@ -61,7 +61,7 @@ export default function ProfileQuickSettings({
           <Link
             key={index}
             href={setting.href}
-            className="flex items-center gap-5 p-4 lg:p-5 rounded-xl bg-slate-800/40 hover:bg-slate-800/60 border border-slate-700/50 hover:border-[#FF7700]/45 transition-all duration-200 group"
+            className="flex items-center gap-5 p-4 lg:p-5 rounded-xl bg-[#0f2f44]/70 hover:bg-[#1a3f57]/80 border border-white/20 hover:border-[#FF7700]/45 transition-all duration-200 group"
           >
             <div className="text-white/70 group-hover:text-[#FFD1A0] transition-colors flex-shrink-0">
               {setting.icon}

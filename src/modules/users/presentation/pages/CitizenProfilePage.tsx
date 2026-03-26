@@ -120,26 +120,26 @@ export default function CitizenProfilePage() {
   };
 
   return (
-    <div className="bg-[#133249] min-h-screen">
-      <div className="flex flex-col relative">
+    <div className="bg-transparent min-h-[100dvh]">
+      <div className="flex flex-col relative min-h-[100dvh]">
         {/* Header */}
-        <header className="sticky top-0 z-50 p-4 lg:p-6 border-b border-white/10 bg-gradient-to-br from-[#1a4a6b]/40 to-transparent backdrop-blur-md">
+        <header className="sticky top-0 z-50 p-4 lg:p-6 border-b border-white/20 bg-gradient-to-br from-[#1a4a6b]/55 to-[#0b2233]/72 backdrop-blur-md">
           <div className="max-w-5xl mx-auto">
             <h1 className="text-white text-2xl lg:text-3xl font-extrabold mb-1">
               Hồ sơ cá nhân
             </h1>
-            <p className="text-white/70 text-sm">
+            <p className="text-white/88 text-sm">
               Cập nhật thông tin và cài đặt của bạn
             </p>
           </div>
         </header>
 
-        <main className="pb-24 lg:pb-8 overflow-auto min-h-screen">
+        <main className="flex-1 pb-24 lg:pb-8 overflow-y-auto">
           <div className="max-w-5xl mx-auto p-4 lg:p-8 space-y-6">
 
             {/* Save success toast */}
             {saveSuccess && (
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/30">
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-green-500/18 border border-green-500/45">
                 <CheckCircle weight="fill" className="text-green-400 flex-shrink-0" size={20} />
                 <span className="text-green-400 text-sm font-medium">
                   Cập nhật thông tin thành công!
@@ -149,7 +149,7 @@ export default function CitizenProfilePage() {
 
             {/* Error banner */}
             {error && (
-              <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
+              <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-red-500/18 border border-red-500/45">
                 <div className="flex items-center gap-3">
                   <WarningCircle weight="fill" className="text-red-400 flex-shrink-0" size={20} />
                   <span className="text-red-400 text-sm font-medium">{error}</span>

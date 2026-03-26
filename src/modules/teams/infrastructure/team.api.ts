@@ -45,6 +45,28 @@ export const teamsApi = {
     });
   },
 
+  /** GET /team-applications — list all volunteer applications (Admin only) */
+  getAllTeamApplications: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<ApiResponse> => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    const query = queryParams.toString();
+    const endpoint = query ? `/team-applications?${query}` : "/team-applications";
+
+    return apiClient.get(endpoint, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
+
   /** PATCH /team-applications/:applicationId/withdraw — withdraw my application */
   withdrawTeamApplication: async (applicationId: string): Promise<ApiResponse> => {
     return apiClient.patch(`/team-applications/${applicationId}/withdraw`, undefined, {

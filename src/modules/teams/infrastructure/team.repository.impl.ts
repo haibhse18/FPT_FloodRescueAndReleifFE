@@ -17,6 +17,20 @@ import type {
 import { teamsApi } from "./team.api";
 
 export class TeamRepositoryImpl implements ITeamRepository {
+  // ── Applications ────────────────────────────────────────
+  
+  async getAllTeamApplications(params?: any): Promise<any> {
+    const response = await teamsApi.getAllTeamApplications(params);
+    const result = response as any;
+    return {
+      data: result.data ?? [],
+      total: result.meta?.total ?? result.total ?? 0,
+      page: result.meta?.page ?? result.page ?? 1,
+      limit: result.meta?.limit ?? result.limit ?? 10,
+      totalPages: result.meta?.totalPages ?? result.totalPages ?? 1,
+    };
+  }
+
   // ── CRUD ────────────────────────────────────────────────
 
   async getTeams(filter?: GetTeamsFilter): Promise<PaginatedTeams> {

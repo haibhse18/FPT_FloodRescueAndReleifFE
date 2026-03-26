@@ -7,17 +7,17 @@ import { LogoutUseCase } from "@/modules/auth/application/logout.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
 import { UpdateProfileUseCase } from "@/modules/users/application/updateProfile.usecase";
 import { userRepository } from "@/modules/users/infrastructure/user.repository.impl";
-import ProfileLogoutButtonManager from "../components/ProfileLogoutButtonManager";
-import ProfileQuickSettingsManager from "../components/ProfileQuickSettingsManager";
-import ProfileFormManager from "../components/ProfileFormManager";
-import ProfileHeaderManager from "../components/ProfileHeaderManager";
-
+import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
+import ProfileHeaderAdmin from "../components/ProfileHeaderAdmin";
+import ProfileFormAdmin from "../components/ProfileFormAdmin";
+import ProfileQuickSettingsAdmin from "../components/ProfileQuickSettingsAdmin";
+import ProfileLogoutButtonAdmin from "../components/ProfileLogoutButtonAdmin";
 // Initialize use cases with repositories
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 const logoutUseCase = new LogoutUseCase(authRepository);
 const updateProfileUseCase = new UpdateProfileUseCase(userRepository);
 
-interface ManagerProfileData {
+interface AdminProfileData {
   name: string;
   role: string;
   phone: string;
@@ -25,7 +25,7 @@ interface ManagerProfileData {
   address: string;
 }
 
-export default function ManagerProfilePage() {
+export default function AdminProfilePage() {
   const router = useRouter();
 
   const [isEditMode, setIsEditMode] = useState(false);
@@ -35,26 +35,31 @@ export default function ManagerProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const [profile, setProfile] = useState<ManagerProfileData>({
-    name: "",
-    role: "",
-    phone: "",
-    email: "",
-    address: "",
-  });
-  const [editedProfile, setEditedProfile] = useState<ManagerProfileData>(profile);
 
+ const [profile, setProfile] = useState<AdminProfileData>({
+     name: "",
+     role: "",
+     phone: "",
+     email: "",
+     address: "",
+   });
+   const [editedProfile, setEditedProfile] = useState<AdminProfileData>(profile);
+ 
   const fetchProfile = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const userData = await getCurrentUserUseCase.execute();
+      // Fetch profile and request history in parallel
+      const [userData] = await Promise.allSettled([
+        getCurrentUserUseCase.execute(),
+        requestRepository.getMyRequests(),
+      ]);
 
-      if (userData) {
-        const u = userData;
-        const newProfile: ManagerProfileData = {
+      if (userData.status === "fulfilled" && userData.value) {
+        const u = userData.value;
+        const newProfile: AdminProfileData = {
           name: u.displayName || u.userName || "Người dùng",
-          role: u.role || "Manager",
+          role:u.role,
           phone: u.phoneNumber || "",
           email: u.email || "",
           address: u.address || "",
@@ -64,12 +69,19 @@ export default function ManagerProfilePage() {
       } else {
         throw new Error("Không tải được thông tin người dùng");
       }
+
     } catch (err) {
       let msg = "Không thể tải thông tin cá nhân";
       if (err instanceof Error) {
-        if (err.message.includes("401") || err.message.includes("đăng nhập")) {
+        if (
+          err.message.includes("401") ||
+          err.message.includes("đăng nhập")
+        ) {
           msg = "Phiên đăng nhập hết hạn — Vui lòng đăng nhập lại";
-        } else if (err.message.includes("network") || err.message.includes("ERR_NETWORK")) {
+        } else if (
+          err.message.includes("network") ||
+          err.message.includes("ERR_NETWORK")
+        ) {
           msg = "Lỗi kết nối mạng — Vui lòng thử lại";
         } else {
           msg = err.message;
@@ -123,10 +135,6 @@ export default function ManagerProfilePage() {
     }
   };
 
-  const getInitials = (name: string) => {
-    return name ? name.charAt(0).toUpperCase() : "?";
-  };
-
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="flex flex-col relative">
@@ -175,7 +183,7 @@ export default function ManagerProfilePage() {
             )}
 
             {/* Profile Header */}
-            <ProfileHeaderManager
+            <ProfileHeaderAdmin
               name={profile.name}
               role={profile.role}
               phone={profile.phone}
@@ -185,7 +193,7 @@ export default function ManagerProfilePage() {
               onEditToggle={() => setIsEditMode(!isEditMode)}
             />
             {/* Profile Form */}
-            <ProfileFormManager
+            <ProfileFormAdmin
               profile={profile}
               editedProfile={editedProfile}
               isLoading={isLoading}
@@ -197,10 +205,10 @@ export default function ManagerProfilePage() {
             />
 
             {/* Quick Settings */}
-            <ProfileQuickSettingsManager />
+            <ProfileQuickSettingsAdmin />
 
             {/* Logout Button */}
-            <ProfileLogoutButtonManager
+            <ProfileLogoutButtonAdmin
               onLogout={handleLogout}
               isLoading={isLoggingOut}
             />

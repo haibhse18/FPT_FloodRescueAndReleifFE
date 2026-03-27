@@ -198,7 +198,7 @@ export default function CitizenHomePage() {
   return (
     <>
       <style>{keyframeStyles}</style>
-      <main className="relative h-[100dvh] overflow-hidden flex flex-col">
+      <main className="relative h-[100dvh] overflow-y-auto lg:overflow-hidden flex flex-col">
         <div
           className="absolute inset-0 bg-center bg-cover bg-no-repeat"
           style={{ backgroundImage: `url(${HOME_BACKGROUND_URL})` }}

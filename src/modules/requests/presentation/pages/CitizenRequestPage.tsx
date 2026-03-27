@@ -1129,9 +1129,9 @@ export default function CitizenRequestPage() {
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 overflow-hidden">
+      <main className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
         <div className="h-full lg:grid lg:grid-cols-12">
-          <section className="lg:col-span-3 overflow-y-auto overscroll-contain pb-20 lg:pb-6 border-r border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0))] request-form-section" style={{ 'scrollbarWidth': 'thin', 'scrollbarColor': 'rgba(255,119,0,0.4) rgba(15,47,68,0.5)' }}>
+          <section className="lg:col-span-3 overflow-visible lg:overflow-y-auto overscroll-contain pb-20 lg:pb-6 border-r border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0))] request-form-section" style={{ 'scrollbarWidth': 'thin', 'scrollbarColor': 'rgba(255,119,0,0.4) rgba(15,47,68,0.5)' }}>
             <div className="p-4 lg:p-3.5 space-y-4 max-w-[600px] mx-auto">
               <div className="space-y-4 pb-2">
                 <p className="text-[#FFD6A6] text-xs leading-relaxed">
@@ -1444,6 +1444,53 @@ export default function CitizenRequestPage() {
                     requestType === "Rescue" ? "GỬI YÊU CẦU CỨU HỘ" : "GỬI YÊU CẦU CỨU TRỢ"
                   )}
                 </button>
+              </div>
+
+              <div className="lg:hidden rounded-2xl border border-white/20 bg-[#0f2f44]/70 p-3 space-y-3 shadow-[0_10px_28px_rgba(0,0,0,0.2)]">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-white text-sm font-bold">Mini map vị trí</h3>
+                    <p className="text-white/70 text-[11px]">Chạm hoặc kéo marker để chọn đúng điểm</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsManualSelectionMode(!isManualSelectionMode)}
+                    className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-all duration-200 ${isManualSelectionMode
+                      ? "border-[#FF7700] bg-[#FF7700]/20 text-[#FFD1A0]"
+                      : "border-white/20 bg-[#0f2f44]/70 text-white"
+                      }`}
+                  >
+                    {isManualSelectionMode ? "✓ Thủ công" : "Thủ công"}
+                  </button>
+                </div>
+
+                <div className="h-[220px] rounded-xl overflow-hidden border border-white/20">
+                  <OpenMap
+                    latitude={coordinates?.lat}
+                    longitude={coordinates?.lon}
+                    address={currentLocation}
+                    isSelectionMode={isManualSelectionMode}
+                    onLocationSelect={handleManualLocationSelect}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-white/85 text-xs truncate">{currentLocation}</p>
+                  <button
+                    type="button"
+                    onClick={getCurrentLocation}
+                    disabled={isLoadingLocation}
+                    className="shrink-0 rounded-lg border border-[#FF7700]/45 bg-[#FF7700]/15 px-2.5 py-1.5 text-[11px] font-semibold text-[#FFD1A0] hover:bg-[#FF7700]/25 disabled:opacity-60 transition-colors"
+                  >
+                    {isLoadingLocation ? "Đang định vị..." : "GPS"}
+                  </button>
+                </div>
+
+                {coordinates && (
+                  <p className="text-white/65 text-[11px] font-mono">
+                    {coordinates.lat.toFixed(6)}, {coordinates.lon.toFixed(6)}
+                  </p>
+                )}
               </div>
             </div>
           </section>

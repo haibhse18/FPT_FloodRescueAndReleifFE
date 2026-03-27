@@ -706,7 +706,7 @@ export default function MissionDetailPage() {
         isOpen={showAddTeamsModal}
         onClose={() => setShowAddTeamsModal(false)}
         onAdd={handleAddTeams}
-        teams={teams}
+        teams={teams} 
       />
 
       {/* Abort Confirmation */}

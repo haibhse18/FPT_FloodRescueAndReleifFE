@@ -11,20 +11,21 @@ export const adminApi = {
             );
 
             return response.data;
-            // { data: Vehicle[], meta: { page, totalPages, limit, total } }
-
         } catch (error) {
             console.error("[AdminAPI] Error fetching users:", error);
             return { data: [], meta: { page: 1, totalPages: 1 } };
         }
     },
 
-    updateUserRole: async (userId: string, role: UserRole[]): Promise<void> => {
+    updateUserRole: async (userId: string, role: string): Promise<void> => {
         await axiosInstance.patch(`/users/${userId}/role`, { role });
     },
 
     deleteUser: async (userId: string): Promise<void> => {
         await axiosInstance.delete(`/users/${userId}`);
+    },
+    updateUserStatus: async (id: string, status: string) => {
+        await axiosInstance.patch(`/users/${id}/status`, { status });
     },
 
     createUser: async (data: {

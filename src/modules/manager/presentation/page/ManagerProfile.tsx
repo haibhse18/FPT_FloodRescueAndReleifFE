@@ -7,24 +7,22 @@ import { LogoutUseCase } from "@/modules/auth/application/logout.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
 import { UpdateProfileUseCase } from "@/modules/users/application/updateProfile.usecase";
 import { userRepository } from "@/modules/users/infrastructure/user.repository.impl";
-import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
-import {
-  ProfileHeader,
-  ProfileForm,
-  ProfileQuickSettings,
-  ProfileLogoutButton,
-  type CitizenProfile,
-} from "@/modules/users/presentation/components";
+import ProfileLogoutButtonManager from "../components/ProfileLogoutButtonManager";
+import ProfileQuickSettingsManager from "../components/ProfileQuickSettingsManager";
+import ProfileFormManager from "../components/ProfileFormManager";
+import ProfileHeaderManager from "../components/ProfileHeaderManager";
 
 // Initialize use cases with repositories
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 const logoutUseCase = new LogoutUseCase(authRepository);
 const updateProfileUseCase = new UpdateProfileUseCase(userRepository);
 
-interface RequestStats {
-  total: number;
-  completed: number;
-  inProgress: number;
+interface ManagerProfileData {
+  name: string;
+  role: string;
+  phone: string;
+  email: string;
+  address: string;
 }
 
 export default function ManagerProfilePage() {
@@ -36,36 +34,27 @@ export default function ManagerProfilePage() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [stats, setStats] = useState<RequestStats>({
-    total: 0,
-    completed: 0,
-    inProgress: 0,
-  });
 
-  const [profile, setProfile] = useState<CitizenProfile>({
+  const [profile, setProfile] = useState<ManagerProfileData>({
     name: "",
-    role:"",
+    role: "",
     phone: "",
     email: "",
     address: "",
   });
-  const [editedProfile, setEditedProfile] = useState<CitizenProfile>(profile);
+  const [editedProfile, setEditedProfile] = useState<ManagerProfileData>(profile);
 
   const fetchProfile = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch profile and request history in parallel
-      const [userData] = await Promise.allSettled([
-        getCurrentUserUseCase.execute(),
-        requestRepository.getMyRequests(),
-      ]);
+      const userData = await getCurrentUserUseCase.execute();
 
-      if (userData.status === "fulfilled" && userData.value) {
-        const u = userData.value;
-        const newProfile: CitizenProfile = {
+      if (userData) {
+        const u = userData;
+        const newProfile: ManagerProfileData = {
           name: u.displayName || u.userName || "Người dùng",
-          role:u.role,
+          role: u.role || "Manager",
           phone: u.phoneNumber || "",
           email: u.email || "",
           address: u.address || "",
@@ -75,19 +64,12 @@ export default function ManagerProfilePage() {
       } else {
         throw new Error("Không tải được thông tin người dùng");
       }
-
     } catch (err) {
       let msg = "Không thể tải thông tin cá nhân";
       if (err instanceof Error) {
-        if (
-          err.message.includes("401") ||
-          err.message.includes("đăng nhập")
-        ) {
+        if (err.message.includes("401") || err.message.includes("đăng nhập")) {
           msg = "Phiên đăng nhập hết hạn — Vui lòng đăng nhập lại";
-        } else if (
-          err.message.includes("network") ||
-          err.message.includes("ERR_NETWORK")
-        ) {
+        } else if (err.message.includes("network") || err.message.includes("ERR_NETWORK")) {
           msg = "Lỗi kết nối mạng — Vui lòng thử lại";
         } else {
           msg = err.message;
@@ -141,6 +123,10 @@ export default function ManagerProfilePage() {
     }
   };
 
+  const getInitials = (name: string) => {
+    return name ? name.charAt(0).toUpperCase() : "?";
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="flex flex-col relative">
@@ -189,7 +175,7 @@ export default function ManagerProfilePage() {
             )}
 
             {/* Profile Header */}
-            <ProfileHeader
+            <ProfileHeaderManager
               name={profile.name}
               role={profile.role}
               phone={profile.phone}
@@ -199,7 +185,7 @@ export default function ManagerProfilePage() {
               onEditToggle={() => setIsEditMode(!isEditMode)}
             />
             {/* Profile Form */}
-            <ProfileForm
+            <ProfileFormManager
               profile={profile}
               editedProfile={editedProfile}
               isLoading={isLoading}
@@ -211,10 +197,10 @@ export default function ManagerProfilePage() {
             />
 
             {/* Quick Settings */}
-            <ProfileQuickSettings />
+            <ProfileQuickSettingsManager />
 
             {/* Logout Button */}
-            <ProfileLogoutButton
+            <ProfileLogoutButtonManager
               onLogout={handleLogout}
               isLoading={isLoggingOut}
             />

@@ -46,8 +46,8 @@ export default function OpenMap({
     const map = new maplibregl.Map({
       container: mapContainer.current,
       style: `https://maptiles.openmap.vn/styles/day-v1/style.json?apikey=${apiKey}`,
-      center: [105.85, 21.02],
-      zoom: 5,
+      center: [106.99343, 16.67546],
+      zoom: 4.5,
     });
 
     map.addControl(new maplibregl.NavigationControl(), "top-right");

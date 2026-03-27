@@ -4,13 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 import { Input } from "@/shared/ui/components/Input";
 import { Button } from "@/shared/ui/components/Button";
-import { Card } from "@/shared/ui/components/Card";
-import { Alert } from "@/shared/ui/components/Alert";
 import { useRouter } from "next/dist/client/components/navigation";
 import { RegisterUseCase } from "@/modules/auth/application/register.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
 import { registerSchema } from "@/shared/schemas/validation";
-import { MapPin } from "lucide-react";
+import { Footer } from "@/shared/ui/components/Footer";
+
 // Initialize use case with repository
 const registerUseCase = new RegisterUseCase(authRepository);
 
@@ -83,188 +82,217 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+        <div className="min-h-screen bg-[#f0f7ff] flex flex-col font-sans selection:bg-[#51A9FF]/20">
             {/* HEADER */}
-            <header className="w-full bg-slate-50 flex items-center h-[72px] px-6 lg:px-10">
-                <div className="flex-1 flex items-center text-blue-800 font-bold text-lg">
-                    <span className="text-[#0b4d96]">FPT Flood Rescue & Relief</span>
-                </div>
-                <nav className="hidden md:flex flex-1 justify-center items-center gap-10 text-sm text-slate-600">
-                    <Link href="/" className="hover:text-blue-600">Trang chủ</Link>
-                    <Link href="/" className="hover:text-blue-600">Hoạt động</Link>
-                    <Link href="/" className="hover:text-blue-600">Ủng hộ</Link>
-                    <Link href="/" className="hover:text-blue-600">Liên hệ</Link>
-                </nav>
-                <div className="flex-1 flex justify-end items-center gap-6">
-                    <Link href="/register" className="bg-[#0b4d96] hover:bg-blue-800 text-white px-5 py-2.5 rounded-md text-sm font-medium transition-all shadow-sm">
-                        Đăng ký 
+            <header className="w-full bg-white/80 backdrop-blur-md flex items-center h-[80px] px-6 lg:px-10 border-b border-slate-200/50 sticky top-0 z-50">
+                <div className="flex-1 flex items-center">
+                    <Link href="/" className="flex items-center gap-2 transition-transform hover:scale-105">
+                        <img 
+                            src="/images/project-logo.png" 
+                            alt="FPT Rescue & Relief Logo" 
+                            className="h-10 w-auto object-contain"
+                        />
+                        <div className="flex flex-col leading-none">
+                            <span className="text-lg font-black tracking-tighter text-[#133249] uppercase italic">FPT Rescue & Relief</span>
+                            <span className="text-[10px] font-bold text-[#51A9FF] tracking-[0.2em] uppercase">Emergency Response</span>
+                        </div>
                     </Link>
-                    <Link href="/login" className="hidden sm:block text-sm font-medium text-[#0b4d96] hover:text-blue-800 border-b border-transparent hover:border-blue-800">
+                </div>
+                
+                <nav className="hidden lg:flex flex-1 justify-center items-center gap-8 text-sm text-slate-600 font-bold uppercase tracking-widest">
+                    <Link href="/" className="hover:text-[#133249] transition-colors">Trang chủ</Link>
+                    <Link href="/#hoat-dong" className="hover:text-[#133249] transition-colors">Hoạt động</Link>
+                    <Link href="/" className="hover:text-[#133249] transition-colors">Liên hệ</Link>
+                </nav>
+
+                <div className="flex-1 flex justify-end items-center gap-4">
+                    <Link href="/login" className="hidden sm:block text-xs font-black text-[#133249] uppercase tracking-widest hover:text-[#51A9FF] transition-colors">
                         Đăng nhập
                     </Link>
+                    <Button variant="primary" size="sm" href="/register" className="font-black !bg-[#51A9FF] !text-white hover:!bg-[#3a8ee6] shadow-[0_4px_15px_rgba(81,169,255,0.4)] rounded-xl px-7 py-2.5 text-[10px] uppercase tracking-widest border-none transition-all hover:scale-105">
+                        Đăng ký
+                    </Button>
                 </div>
             </header>
 
             {/* Main Content Box */}
-            <main className="flex-1 flex items-center justify-center p-4 py-8">
-                <div className="w-full max-w-[1050px] h-[650px] bg-white rounded-xl shadow-lg border border-slate-100 flex overflow-hidden">
+            <main className="flex-1 flex items-center justify-center p-4 py-8 relative overflow-hidden bg-[#f0f7ff]">
+                {/* Decorative elements */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-full pointer-events-none opacity-20">
+                    <div className="absolute top-20 left-10 w-96 h-96 bg-[#51A9FF] rounded-full blur-[120px]"></div>
+                    <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#133249] rounded-full blur-[120px]"></div>
+                </div>
+
+                <div className="w-full max-w-[1100px] min-h-[700px] bg-white/70 backdrop-blur-2xl rounded-[3.5rem] shadow-[0_30px_80px_rgba(0,0,0,0.08)] border border-white/50 flex overflow-hidden relative z-10">
                     
                     {/* Left Form Side */}
-                    <div className="w-full lg:w-[45%] p-8 lg:p-12 flex flex-col justify-center">
-                        <div className="mb-8">
-                            <p className="text-[#0b4d96] text-[10px] font-bold tracking-[0.15em] uppercase mb-2">Tham gia cùng chúng tôi</p>
-                            <h1 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">Tạo Tài Khoản</h1>
-                            <p className="text-sm text-slate-500 leading-relaxed">
-                                Đăng ký để cập nhật thông tin cứu trợ và tham gia các hoạt động tình nguyện nhanh nhất.
+                    <div className="w-full lg:w-[48%] p-8 lg:p-14 flex flex-col justify-center">
+                        <div className="mb-10 text-left">
+                            <div className="inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black text-white bg-[#51A9FF] mb-6 shadow-md uppercase tracking-wider">
+                                <span className="w-1.5 h-1.5 rounded-full bg-white mr-2"></span>
+                                Tham gia Đội Phản Ứng Nhanh
+                            </div>
+                            <h1 className="text-3xl lg:text-4xl font-black text-[#133249] mb-4 tracking-tighter">Tạo Tài Khoản.</h1>
+                            <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-[400px]">
+                                Đăng ký để cùng chúng tôi xây dựng mạng lưới cứu hộ thông minh và hiệu quả hơn.
                             </p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[10px] font-bold text-slate-700 uppercase mb-1">Tên đăng nhập</label>
-                                    <input
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="block text-[10px] font-black text-[#133249] uppercase tracking-[0.15em] ml-1">Tên đăng nhập</label>
+                                    <Input
                                         id="userName"
                                         name="userName"
                                         type="text"
                                         value={formData.userName}
                                         onChange={handleChange}
                                         placeholder="username123"
-                                        className="w-full bg-slate-100 rounded-lg px-4 py-2.5 outline-none focus:ring-1 focus:ring-blue-500 text-sm transition-all"
                                         required
+                                        className="rounded-xl border-slate-100 bg-slate-50/50 focus:bg-white h-11"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-[10px] font-bold text-slate-700 uppercase mb-1">Tên hiển thị</label>
-                                    <input
+                                <div className="space-y-1.5">
+                                    <label className="block text-[10px] font-black text-[#133249] uppercase tracking-[0.15em] ml-1">Tên hiển thị</label>
+                                    <Input
                                         id="displayName"
                                         name="displayName"
                                         type="text"
                                         value={formData.displayName}
                                         onChange={handleChange}
                                         placeholder="Nguyễn Văn A"
-                                        className="w-full bg-slate-100 rounded-lg px-4 py-2.5 outline-none focus:ring-1 focus:ring-blue-500 text-sm transition-all"
                                         required
+                                        className="rounded-xl border-slate-100 bg-slate-50/50 focus:bg-white h-11"
                                     />
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-[10px] font-bold text-slate-700 uppercase mb-1">Email</label>
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    placeholder="example@fpt.edu.vn"
-                                    className="w-full bg-slate-100 rounded-lg px-4 py-2.5 outline-none focus:ring-1 focus:ring-blue-500 text-sm transition-all"
-                                    required
-                                />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="block text-[10px] font-black text-[#133249] uppercase tracking-[0.15em] ml-1">Email</label>
+                                    <Input
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        placeholder="example@fpt.edu.vn"
+                                        required
+                                        className="rounded-xl border-slate-100 bg-slate-50/50 focus:bg-white h-11"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="block text-[10px] font-black text-[#133249] uppercase tracking-[0.15em] ml-1">Số điện thoại</label>
+                                    <Input
+                                        id="phoneNumber"
+                                        name="phoneNumber"
+                                        type="tel"
+                                        value={formData.phoneNumber}
+                                        onChange={handleChange}
+                                        placeholder="09xx xxx xxx"
+                                        className="rounded-xl border-slate-100 bg-slate-50/50 focus:bg-white h-11"
+                                    />
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-[10px] font-bold text-slate-700 uppercase mb-1">Số điện thoại</label>
-                                <input
-                                    id="phoneNumber"
-                                    name="phoneNumber"
-                                    type="tel"
-                                    value={formData.phoneNumber}
-                                    onChange={handleChange}
-                                    placeholder="09xx xxx xxx"
-                                    className="w-full bg-slate-100 rounded-lg px-4 py-2.5 outline-none focus:ring-1 focus:ring-blue-500 text-sm transition-all"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[10px] font-bold text-slate-700 uppercase mb-1">Mật khẩu</label>
-                                    <input
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="block text-[10px] font-black text-[#133249] uppercase tracking-[0.15em] ml-1">Mật khẩu</label>
+                                    <Input
                                         id="password"
                                         name="password"
                                         type="password"
                                         value={formData.password}
                                         onChange={handleChange}
                                         placeholder="••••••••"
-                                        className="w-full bg-slate-100 rounded-lg px-4 py-2.5 outline-none focus:ring-1 focus:ring-blue-500 text-sm tracking-widest transition-all"
                                         required
+                                        className="rounded-xl border-slate-100 bg-slate-50/50 focus:bg-white h-11 tracking-widest"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-[10px] font-bold text-slate-700 uppercase mb-1">Xác nhận</label>
-                                    <input
+                                <div className="space-y-1.5">
+                                    <label className="block text-[10px] font-black text-[#133249] uppercase tracking-[0.15em] ml-1">Xác nhận</label>
+                                    <Input
                                         id="confirmPassword"
                                         name="confirmPassword"
-                                        type="confirmPassword"
+                                        type="password"
                                         value={formData.confirmPassword}
                                         onChange={handleChange}
                                         placeholder="••••••••"
-                                        className="w-full bg-slate-100 rounded-lg px-4 py-2.5 outline-none focus:ring-1 focus:ring-blue-500 text-sm tracking-widest transition-all"
                                         required
+                                        className="rounded-xl border-slate-100 bg-slate-50/50 focus:bg-white h-11 tracking-widest"
                                     />
                                 </div>
                             </div>
 
-                            <div className="flex items-start gap-2 pt-2">
-                                <input 
-                                    type="checkbox" 
-                                    id="terms" 
-                                    checked={agreedToTerms}
-                                    onChange={(e) => setAgreedToTerms(e.target.checked)}
-                                    className="mt-0.5 w-3.5 h-3.5 rounded text-[#0b4d96] focus:ring-[#0b4d96] border-slate-300"
-                                />
-                                <label htmlFor="terms" className="text-xs text-slate-600 cursor-pointer">
+                            <div className="flex items-start gap-3 pt-2">
+                                <div className="relative flex items-center h-5">
+                                    <input 
+                                        type="checkbox" 
+                                        id="terms" 
+                                        checked={agreedToTerms}
+                                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                                        className="w-4 h-4 rounded-md text-[#51A9FF] focus:ring-[#51A9FF] border-slate-300 transition-colors"
+                                    />
+                                </div>
+                                <label htmlFor="terms" className="text-[11px] font-medium text-slate-500 leading-normal cursor-pointer">
                                     Tôi đồng ý với{" "}
-                                    <Link href="/terms" className="text-[#0b4d96] font-semibold hover:underline">Điều khoản dịch vụ</Link>
+                                    <Link href="/terms" className="text-[#51A9FF] font-black hover:text-[#133249] transition-colors mb-1">Điều khoản dịch vụ</Link>
                                     {" "}và{" "}
-                                    <Link href="/privacy" className="text-[#0b4d96] font-semibold hover:underline">Chính sách bảo mật</Link>
+                                    <Link href="/privacy" className="text-[#51A9FF] font-black hover:text-[#133249] transition-colors">Chính sách bảo mật</Link>
                                 </label>
                             </div>
 
                             {error && (
-                                <p className="text-red-500 text-xs mt-1">{error}</p>
+                                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></div>
+                                    <p className="text-red-600 text-[12px] font-bold">{error}</p>
+                                </div>
                             )}
 
-                            <div className="pt-2">
-                                <button
+                            <div className="pt-4">
+                                <Button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full bg-[#0b4d96] hover:bg-blue-800 text-white text-sm font-semibold py-3 rounded-lg transition-colors shadow-md"
+                                    fullWidth
+                                    size="lg"
+                                    className="rounded-2xl py-6 font-black uppercase tracking-[0.2em] !bg-[#51A9FF] hover:!bg-[#3a8ee6] !text-white shadow-[0_10px_25px_rgba(81,169,255,0.4)] border-none transition-all hover:scale-[1.02]"
                                 >
                                     {loading ? "Đang xử lý..." : "TẠO TÀI KHOẢN"}
-                                </button>
+                                </Button>
                             </div>
 
-                            <div className="text-center pt-3">
-                                <span className="text-xs text-slate-500">Bạn đã có tài khoản? </span>
-                                <Link href="/login" className="text-xs font-semibold text-[#0b4d96] hover:underline">Đăng nhập ngay</Link>
+                            <div className="text-center pt-4">
+                                <span className="text-[13px] font-medium text-slate-500">Bạn đã có tài khoản? </span>
+                                <Link href="/login" className="text-[13px] font-black text-[#51A9FF] hover:text-[#133249] transition-colors underline underline-offset-4">
+                                    Đăng nhập ngay
+                                </Link>
                             </div>
                         </form>
                     </div>
 
                     {/* Right Image Side */}
-                    <div className="hidden lg:block w-[55%] relative bg-[#06336e]">
-                        <div className="absolute inset-0 opacity-40 mix-blend-overlay bg-[url('https://images2.thanhnien.vn/528068263637045248/2025/4/1/dsc4197-1743491750006190081890.jpg')] bg-cover bg-center"></div>
-                        <div className="absolute inset-0 bg-blue-900/30"></div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#021d42] via-transparent to-transparent"></div>
+                    <div className="hidden lg:block w-[52%] relative bg-[#133249] p-16 flex flex-col justify-end overflow-hidden">
+                        <div className="absolute inset-0 opacity-40 mix-blend-overlay bg-[url('https://images2.thanhnien.vn/528068263637045248/2025/4/1/dsc4197-1743491750006190081890.jpg')] bg-cover bg-center transition-transform duration-[10000ms] hover:scale-110"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#133249] via-[#133249]/40 to-transparent"></div>
 
                         {/* Bottom Text Area */}
-                        <div className="absolute bottom-12 left-12 right-12 z-10">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="w-8 h-[2px] bg-white"></div>
-                                <span className="text-white text-[11px] font-bold tracking-[0.2em] uppercase">Sứ mệnh cộng đồng</span>
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-10 h-[3px] bg-[#51A9FF]"></div>
+                                <span className="text-white text-[10px] font-black tracking-[0.3em] uppercase">Sứ mệnh cộng đồng</span>
                             </div>
-                            <h2 className="text-white text-[2.5rem] font-bold leading-tight mb-10">
-                                "Không một ai bị bỏ lại phía sau trong thiên tai."
+                            <h2 className="text-white text-[3rem] font-black leading-[1.1] mb-12 tracking-tighter italic">
+                                "Không một ai bị bỏ lại phía sau."
                             </h2>
-                            <div className="flex gap-14">
-                                <div>
-                                    <div className="text-white text-3xl font-bold mb-1">50k+</div>
-                                    <div className="text-white/80 text-[10px] font-medium uppercase tracking-widest">Hộ gia đình được hỗ trợ</div>
+                            <div className="grid grid-cols-2 gap-10">
+                                <div className="group">
+                                    <div className="text-[#51A9FF] text-4xl font-black mb-1 group-hover:scale-110 transition-transform origin-left">50k+</div>
+                                    <div className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Hộ dân được bảo vệ</div>
                                 </div>
-                                <div>
-                                    <div className="text-white text-3xl font-bold mb-1">1.2k</div>
-                                    <div className="text-white/80 text-[10px] font-medium uppercase tracking-widest">Tình nguyện viên</div>
+                                <div className="group">
+                                    <div className="text-[#51A9FF] text-4xl font-black mb-1 group-hover:scale-110 transition-transform origin-left">1.2k</div>
+                                    <div className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Tình nguyện viên trực chiến</div>
                                 </div>
                             </div>
                         </div>
@@ -273,17 +301,7 @@ export default function RegisterPage() {
             </main>
 
             {/* Footer */}
-            <footer className="w-full bg-transparent py-4 px-6 lg:px-10 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500">
-                <div className="mb-4 sm:mb-0 flex items-center gap-2">
-                    <span className="font-bold text-[#0b4d96] text-sm">FPT Flood Rescue & Relief</span>
-                    <span className="text-slate-400">© 2024 FPT Flood Rescue & Relief. All rights reserved.</span>
-                </div>
-                <div className="flex gap-6">
-                    <Link href="#" className="hover:text-slate-800 transition-colors">Chính sách bảo mật</Link>
-                    <Link href="#" className="hover:text-slate-800 transition-colors">Điều khoản sử dụng</Link>
-                    <Link href="#" className="hover:text-slate-800 transition-colors">Liên hệ cứu trợ</Link>
-                </div>
-            </footer>
+            <Footer variant="light" className="bg-white border-t border-slate-100" />
         </div>
     );       
 }

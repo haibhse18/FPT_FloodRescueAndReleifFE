@@ -3,14 +3,15 @@ import { Facebook, Twitter, Linkedin, Youtube } from 'lucide-react';
 
 export interface FooterProps {
   variant?: 'light' | 'dark';
+  className?: string;
 }
 
-export function Footer({ variant = 'dark' }: FooterProps) {
+export function Footer({ variant = 'dark', className = '' }: FooterProps) {
   const bgColor = variant === 'dark' ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-surface)]';
   const textColor = variant === 'dark' ? 'text-[var(--color-text-inverse)]' : 'text-[var(--color-text-primary)]';
   
   return (
-    <footer className={`${bgColor} ${textColor} py-8 px-6`}>
+    <footer className={`${bgColor} ${textColor} py-8 px-6 ${className}`}>
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">

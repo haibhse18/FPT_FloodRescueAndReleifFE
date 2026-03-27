@@ -1174,11 +1174,11 @@ export default function CitizenRequestPage() {
                       onChange={(e) => {
                         const selected = e.target.value;
                         setSelectedQuickAction(selected);
-                        setRescueRequest((prev) => ({
-                          ...prev,
+                        setRescueRequest({
+                          ...rescueRequest,
                           dangerType: selected,
-                          description: prev.description || defaultDescriptionMap[selected] || prev.description,
-                        }));
+                          description: defaultDescriptionMap[selected] || "",
+                        });
                       }}
                       className="w-full h-10 rounded-lg border border-[#89b8d4]/45 bg-[#0f2f44]/95 px-3 text-[#f3f9ff] text-sm focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-[#9ec8e0]/70"
                     >

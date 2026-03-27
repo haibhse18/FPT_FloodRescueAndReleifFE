@@ -1,27 +1,22 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { Navigation } from "@/shared/ui/components/Navigation";
+import { Footer } from "@/shared/ui/components/Footer";
+import { Button } from "@/shared/ui/components/Button";
 import {
-  ArrowRight, PhoneCall, MapPin, Droplet, Package,
-  Building, Phone, Heart, ChevronRight, CheckCircle2,
-  AlertCircle, Shield, LucideIcon,
-  Instagram,
-  Facebook
+  Shield,
+  Activity,
+  ArrowRight,
+  Package,
+  Heart,
+  Users,
+  Zap,
+  Cpu,
+  Map as MapIcon,
+  Bell,
+  Layout,
 } from "lucide-react";
-import dynamic from "next/dynamic";
-
-const OpenMap = dynamic(
-  () => import("@/modules/map/presentation/components/OpenMap"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-full bg-white/5 border border-white/10 rounded-xl flex items-center justify-center">
-        <p className="text-gray-400">Đang tải bản đồ...</p>
-      </div>
-    ),
-  },
-);
-
 
 export default function Home() {
   const [active, setActive] = useState("");
@@ -36,258 +31,260 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-blue-200">
-      
-      {/* HEADER */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 h-[72px] flex items-center">
-        <div className="max-w-[1400px] w-full mx-auto px-6 lg:px-10 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-blue-800 font-bold text-lg">
-            <Heart className="w-6 h-6 fill-blue-600 text-blue-600" />
-            <span>FPT Flood Rescue & Relief</span>
-          </div>
-          
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-            <a href="/" className={`py-6 ${active === "" ? "text-blue-600 border-b-2 border-blue-600" : "hover:text-blue-600"}`}>
-              Trang chủ
-            </a>
-            <a href="#hoat_dong" className={`py-6 ${active === "#hoat_dong" ? "text-blue-600 border-b-2 border-blue-600" : "hover:text-blue-600"}`}>
-              Hoạt động
-            </a>
-            <a href="#lien_he" className={`py-6 ${active === "#lien_he" ? "text-blue-600 border-b-2 border-blue-600" : "hover:text-blue-600"}`}>
-              Liên hệ
-            </a>
-          </nav>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="hidden sm:block text-sm font-medium text-slate-600 hover:text-blue-600">
-              Đăng nhập
-            </Link>
-            <Link href="/register" className="bg-blue-700 hover:bg-blue-800 text-white px-5 py-2.5 rounded-md text-sm font-semibold transition-all">
-              Đăng ký
-            </Link>
-          </div>
-        </div>
-      </header>
+    <main className="min-h-screen flex flex-col bg-[#f0f7ff] text-slate-900 font-sans selection:bg-primary/20">
 
-      {/* HERO SECTION */}
-      <section className="relative pt-[72px] min-h-[600px] lg:h-[800px] flex items-center overflow-hidden bg-white">
-        <div className="absolute inset-0 z-0 flex justify-end">
-          <div className="w-full lg:w-2/3 h-full relative">
-            <img 
-              src="https://images.unsplash.com/photo-1547683905-f686c993aae5?q=80&w=2000" 
-              alt="Rescue workers" 
-              className="w-full h-full object-cover object-right opacity-30 mix-blend-multiply"
-            />
-            {/* Gradient mask to blend image into the white left side */}
-            <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent"></div>
-          </div>
-        </div>
-        
-        <div className="relative z-10 max-w-[1400px] w-full mx-auto px-6 lg:px-10">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 bg-red-50 border border-red-100 px-3 py-1.5 rounded-full text-red-600 text-xs font-bold uppercase tracking-wider mb-6">
-              <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
-              Tình trạng khẩn cấp: Miền Trung
+      {/* Navigation Layer */}
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <Navigation
+          logo={
+            <div className="flex items-center gap-2 font-bold text-2xl tracking-tighter transition-transform hover:scale-105 text-[#133249]">
+              <div className="bg-[#133249] p-1.5 rounded-sm shadow-sm">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <span className="uppercase italic">FPT Flood</span>
+              <span className="font-light text-[#133249]/70">& Relief</span>
             </div>
-            
-            <h1 className="text-5xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6">
-              Sát cánh cùng <br/>
-              <span className="text-blue-700">Đồng bào trong lũ dữ</span>
+          }
+          variant="light"
+          actions={
+            <>
+              <Button variant="primary" size="sm" href="/register" className="font-black bg-[#133249] text-black hover:bg-[#1a4563] shadow-lg rounded-xl px-7 py-2.5 text-xs uppercase tracking-widest border-none">
+                Đăng ký
+              </Button>
+              <Button variant="outline" size="sm" href="/login" className="font-black border-2 border-[#133249] text-[#133249] hover:bg-[#133249] hover:text-white rounded-xl px-7 py-2.5 text-xs uppercase tracking-widest transition-all">
+                Đăng nhập
+              </Button>
+            </>
+          }
+        />
+      </div>
+
+      {/* Cinematic Hero Section */}
+      <section className="relative min-h-[90vh] flex items-center overflow-hidden pt-[80px]">
+        {/* Solemn Background Image & Overlays */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://cdn.nhandan.vn/images/867ea768657a7655eff9045b05592d1bfc368399f6efb1948af0d0ac16b2bc7ca780101c5d0bea1627de200cb12ee176a08994d06e48dce2505ee36281722caf9693b5cf5f6e86bbc1d7c48a5d9e414bce3f433e9da648e0ceb749d8fe0ca549/z7109955258270-a682e3d55eecb0c38ff38c84a99ca043-8274.jpg"
+            alt="Flood relief background Vietnam"
+            className="w-full h-full object-cover opacity-80"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-50/95 via-blue-50/40 to-transparent"></div>
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-6 w-full">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center rounded-full px-4 py-1.5 text-xs font-bold text-white bg-red-500/90 mb-8 animate-in fade-in slide-in-from-left-4 duration-700 shadow-lg">
+              <span className="w-2 h-2 rounded-full bg-white mr-2 animate-pulse"></span>
+              TÌNH TRẠNG KHẨN CẤP: MIỀN TRUNG
+            </div>
+
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-8 leading-[1.1] text-[#133249] animate-in fade-in slide-in-from-left-6 duration-1000 delay-200">
+              Sát cánh cùng <br />
+              <span className="text-primary">Đồng bào trong lũ dữ</span>
             </h1>
-            
-            <p className="text-lg text-slate-600 mb-10 leading-relaxed max-w-xl">
+
+            <p className="text-lg md:text-xl text-slate-700 mb-10 leading-relaxed font-medium animate-in fade-in slide-in-from-left-6 duration-1000 delay-300">
               Hệ thống điều phối cứu trợ thông minh của FPT, kết nối nhanh nhất nguồn lực cứu trợ tới những khu vực đang bị cô lập.
             </p>
-            
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <Link href="/register" className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white px-6 py-3.5 rounded-md font-semibold transition-all shadow-lg shadow-blue-700/20">
-                Đăng ký tình nguyện
+
+            <div className="flex flex-col sm:flex-row items-center gap-5 animate-in fade-in slide-in-from-left-6 duration-1000 delay-500">
+              <Button size="lg" className="rounded-xl px-10 py-5 text-sm bg-[#133249] hover:bg-[#1a4563] text-black shadow-2xl shadow-blue-900/20 transition-all hover:scale-105 font-black uppercase tracking-widest flex items-center gap-3 border-none" href="/register">
+                Đăng ký
                 <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link href="/sos" className="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 px-6 py-3.5 rounded-md font-semibold transition-all">
-                <PhoneCall className="w-5 h-5" />
-                Gọi cứu trợ khẩn cấp
-              </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="rounded-xl px-10 py-5 text-sm border-2 border-[#133249] bg-white text-[#133249] hover:bg-[#133249] hover:text-white transition-all hover:scale-105 font-black uppercase tracking-widest flex items-center gap-3 shadow-xl shadow-slate-200"
+                href="/login"
+              >
+                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                Gửi yêu cầu khẩn cấp
+              </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* MAP & REALTIME SECTION */}
-      <section id ="hoat_dong" className="py-20 bg-slate-50 border-t border-slate-200 scroll-mt-[80px]">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
-          <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <p className="text-blue-600 text-sm font-bold uppercase tracking-wider mb-2">Bản đồ thực tế</p>
-              <h2 className="text-3xl lg:text-4xl font-bold text-slate-900">
-                Cập nhật tình hình <span className="text-blue-700">Thời gian thực</span>
+      {/* Real-time Features Section */}
+      <section id="hoat-dong" className="py-24 bg-white/60 backdrop-blur-md relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-6">
+            <div className="max-w-2xl">
+              <p className="text-primary font-black text-sm uppercase tracking-[0.3em] mb-4">TÍNH NĂNG ƯU VIỆT</p>
+              <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-[#133249] leading-none mb-6">
+                Giải pháp <span className="text-primary italic">Toàn diện</span> cho Cứu hộ
               </h2>
-            </div>
-            <div className="flex items-center gap-6 text-sm font-medium text-slate-600">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span> Ngập nặng
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-700"></span> Cần nhu yếu phẩm
-              </div>
+              <p className="text-slate-500 text-lg font-medium leading-relaxed">
+                Hệ thống tích hợp mọi công cụ cần thiết để đẩy nhanh tốc độ cứu trợ và tối ưu hóa nguồn lực trong mọi điều kiện thời tiết.
+              </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Map Placeholder */}
-            <div className="lg:col-span-2 relative h-[500px] bg-slate-200 rounded-2xl overflow-hidden border border-slate-300 shadow-inner">
-              <img 
-              src="/img/Map_Lu_Lut.png" 
-              alt="Map Lu Lut" 
-              className="w-full h-full object-cover object-right "
-            />
-              {/* Map floating card */}
-              <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white/50 w-64">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">Điểm nóng cứu trợ</p>
-                <h4 className="font-bold text-slate-900 text-lg">Phú Lộc, Thành Phố Huế</h4>
-              </div>
-            </div>
-
-            {/* Sidebar Stats */}
-            <div className="flex flex-col gap-6">
-              {/* Water level card */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
-                    <Droplet className="w-6 h-6" />
-                  </div>
-                  <span className="bg-red-50 text-red-600 text-xs font-bold px-2 py-1 rounded">BÁO ĐỘNG 3</span>
-                </div>
-                <h3 className="font-bold text-slate-900 text-lg mb-1">Mực nước biển </h3>
-                <p className="text-slate-500 text-sm mb-4">Cập nhật: 5 phút trước</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                title: "Yêu cầu Cứu hộ Nhanh chóng",
+                desc: "Gửi yêu cầu cứu hộ chỉ trong vài giây với thông tin vị trí chính xác và mức độ khẩn cấp.",
+                icon: <Zap className="w-8 h-8" />,
+                color: "bg-amber-500",
+                shadow: "shadow-amber-200/50",
+                delay: "delay-100"
+              },
+              {
+                title: "Điều phối Nhiệm vụ Thông minh",
+                desc: "Phân công và theo dõi nhiệm vụ cứu hộ tập trung, đảm bảo không khu vực nào bị bỏ sót.",
+                icon: <Cpu className="w-8 h-8" />,
+                color: "bg-blue-600",
+                shadow: "shadow-blue-200/50",
+                delay: "delay-200"
+              },
+              {
+                title: "Quản lý Đội Cứu hộ & Vật tư",
+                desc: "Tổ chức đội ngũ và nguồn lực hiệu quả, kiểm soát kho vận và luồng hàng cứu trợ thời gian thực.",
+                icon: <Package className="w-8 h-8" />,
+                color: "bg-indigo-600",
+                shadow: "shadow-indigo-200/50",
+                delay: "delay-300"
+              },
+              {
+                title: "Bản đồ Thời gian Thực",
+                desc: "Theo dõi vị trí và tiến độ trực tiếp trên bản đồ số, cập nhật liên tục tình hình ngập lụt.",
+                icon: <MapIcon className="w-8 h-8" />,
+                color: "bg-emerald-500",
+                shadow: "shadow-emerald-200/50",
+                delay: "delay-400"
+              },
+              {
+                title: "Thông báo & Cập nhật Tức thì",
+                desc: "Kết nối mọi bên trong hoạt động cứu hộ qua hệ thống sms và thông báo đẩy tự động.",
+                icon: <Bell className="w-8 h-8" />,
+                color: "bg-rose-500",
+                shadow: "shadow-rose-200/50",
+                delay: "delay-500"
+              },
+              {
+                title: "Giao diện Thân thiện",
+                desc: "Dễ sử dụng ngay cả trong tình huống khẩn cấp, thiết kế tối ưu cho mọi thiết bị di động.",
+                icon: <Layout className="w-8 h-8" />,
+                color: "bg-cyan-500",
+                shadow: "shadow-cyan-200/50",
+                delay: "delay-600"
+              }
+            ].map((feature, idx) => (
+              <div 
+                key={idx} 
+                className={`group p-10 rounded-[2.5rem] bg-white border border-slate-100 shadow-[0_15px_40px_rgba(0,0,0,0.04)] transition-all duration-500 hover:-translate-y-4 hover:shadow-[0_40px_80px_rgba(0,0,0,0.08)] hover:border-primary/20 relative overflow-hidden`}
+              >
+                {/* Decorative background blur */}
+                <div className={`absolute -right-8 -top-8 w-32 h-32 ${feature.color} opacity-[0.03] rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700`}></div>
                 
-                <div className="w-full bg-slate-100 rounded-full h-2.5 mb-2">
-                  <div className="bg-blue-700 h-2.5 rounded-full w-[85%]"></div>
-                </div>
-                <div className="flex justify-between text-xs font-medium text-slate-500">
-                  <span>0.0m</span>
-                  <span>4.5m</span>
-                </div>
-              </div>
-
-              {/* Needs Card */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex-1">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-amber-50 text-amber-700 rounded-lg">
-                    <Package className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-bold text-slate-900 text-lg">Nhu cầu cấp thiết</h3>
+                <div className={`w-16 h-16 ${feature.color} rounded-2xl flex items-center justify-center text-white mb-10 shadow-lg ${feature.shadow} transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6`}>
+                  {feature.icon}
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center py-3 border-b border-slate-50">
-                    <span className="text-slate-600">Áo phao cứu hộ</span>
-                    <span className="font-bold text-blue-700">1,500 cái</span>
-                  </div>
-                  <div className="flex justify-between items-center py-3 border-b border-slate-50">
-                    <span className="text-slate-600">Lương khô & Nước</span>
-                    <span className="font-bold text-blue-700">3,000 suất</span>
-                  </div>
-                  <div className="flex justify-between items-center py-3">
-                    <span className="text-slate-600">Thuốc y tế cơ bản</span>
-                    <span className="font-bold text-blue-700">500 túi</span>
-                  </div>
+                <h3 className="text-2xl font-black text-[#133249] mb-4 tracking-tight leading-none group-hover:text-primary transition-colors">
+                  {feature.title}
+                </h3>
+                
+                <p className="text-slate-500 font-medium leading-relaxed text-base">
+                  {feature.desc}
+                </p>
+                
+                <div className="mt-10 flex items-center gap-2 text-primary text-xs font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0">
+                  Khám phá ngay
+                  <ArrowRight className="w-4 h-4" />
                 </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
-      {/* NEWS SECTION */}
-      <section id= "lien_he" className="py-20 bg-slate-50 scroll-mt-[80px]">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
-          <div className="flex justify-between items-end mb-10">
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900">
-              Nhật ký <span className="text-blue-700">Cứu trợ</span>
+
+      {/* Rescue Log Section */}
+      <section className="py-24 bg-white/60 relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-center justify-between mb-16">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-[#133249]">
+              Nhật ký <span className="text-primary italic">Cứu trợ</span>
             </h2>
-            <Link href="/" className="text-blue-600 font-medium hover:underline flex items-center gap-1">
-              Xem tất cả <ChevronRight className="w-4 h-4" />
-            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-
-            {/* News 1 */}
-            <div className="group cursor-pointer">
-              <div className="relative h-60 rounded-2xl overflow-hidden mb-5 bg-slate-200 flex items-center justify-center">
-                <img src="https://image.voh.com.vn/voh/image/2024/10/30/cuu-tro-ung-ho-dong-bao-lu-lut-bao-082619.jpg" alt="News 2" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-xs font-bold px-3 py-1.5 rounded-full text-slate-800">
-                  10:17, 20/11/2025 
+            {[
+              {
+                img: "https://media.vov.vn/sites/default/files/styles/large_watermark/public/2024-10/cong_an_huyen_le_thuy_ho_tro_nguoi_dan_trong_lu.jpg",
+                tag: "TẠI QUẢNG BÌNH",
+                title: "Tiếp cận xã Tân Ninh bằng xuồng máy",
+                desc: "Đoàn cứu trợ FPT đã tiếp cận được những hộ dân cuối cùng bị cô lập hoàn toàn tại xã Tân Ninh, huyện Quảng Ninh.",
+                time: "20 phút trước"
+              },
+              {
+                img: "https://danviet.ex-cdn.com/files/f1/296231569849192448/2024/9/10/z5815381724409fd59230abfc769e996903c2cff1b7c54-17259415614311852644499.jpeg",
+                tag: "TẠI ĐÀ NẴNG",
+                title: "Tổng kho Đà Nẵng xuất kích 10 xe nhu yếu phẩm",
+                desc: "10 chuyến xe tải chứa 5,000 suất ăn nhanh và nước sạch đang di chuyển dọc quốc lộ 1A hướng ra các vùng tâm lũ.",
+                time: "1 giờ trước"
+              },
+              {
+                img: "https://media.vietnamplus.vn/images/7e482ce660fa258aaa7bebc4c2bfe04d89d01a96ed855b7206cb635c5a884d64ff658d6787173211134a8ca957f95447/ttxvn-mua-lu.jpg",
+                tag: "KHẨN CẤP",
+                title: "Hỗ trợ y tế khẩn cấp cho người cao tuổi",
+                desc: "Đội phản ứng nhanh cứu trợ y tế đã đưa một cụ bà 75 tuổi tại xã Duy Xuyên, Quảng Nam đến khu vực trạm xá dã chiến.",
+                time: "Hôm qua"
+              }
+            ].map((card, idx) => (
+              <div key={idx} className="group cursor-pointer">
+                <div className="relative h-64 rounded-3xl overflow-hidden mb-6 shadow-lg border border-slate-100">
+                  <img src={card.img} alt={card.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 text-[10px] font-black text-white uppercase tracking-widest">
+                    {card.time}
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+                    <span className="px-3 py-1 bg-primary text-white text-[9px] font-black rounded-lg uppercase tracking-widest">
+                      {card.tag}
+                    </span>
+                  </div>
                 </div>
+                <h3 className="text-xl font-black text-[#133249] mb-4 group-hover:text-primary transition-colors leading-tight">{card.title}</h3>
+                <p className="text-slate-500 text-sm leading-relaxed line-clamp-2 font-medium">{card.desc}</p>
               </div>
-              <a href ="https://baochinhphu.vn/tren-1387-ty-dong-dang-ky-ung-ho-dong-bao-vung-lu-qua-ban-van-dong-cuu-tro-trung-uong-102251120093927104.htm" className="font-bold text-xl text-slate-900 mb-3 group-hover:text-blue-700 transition-colors">
-                Hơn 1.387 tỷ đồng đăng ký ủng hộ đồng bào vùng lũ qua Ban Vận động cứu trợ Trung ương
-              </a>
-              <p className="text-slate-600 text-sm line-clamp-3">
-               Tính đến thời điểm này, đã có 1,387,1 tỷ đồng và hiện vật đăng ký qua Ban Vận động cứu trợ Trung ương - Ủy ban Trung ương MTTQ Việt Nam nhằm chung tay ủng hộ đồng bào các tỉnh khắc phục hậu quả do mưa lũ gây ra.
-              </p>
-            </div>
-
-            {/* News 2 */}
-            <div className="group cursor-pointer">
-              <div className="relative h-60 rounded-2xl overflow-hidden mb-5 bg-[#1b5e58] flex items-center justify-center">
-                <img src="https://cdannd1.bocongan.gov.vn/api/Resources/Images/2024/9/11/image-20240911083814-208-37-58.jpeg" alt="News 1" className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-xs font-bold px-3 py-1.5 rounded-full text-slate-800">
-                  11:38, 11/09/2024
-                </div>
-              </div>
-              <a href ="https://cdannd1.bocongan.gov.vn/news/blog/5200/hoc-vien-nha-truong-ho-tro-cung-nhan-dan-chong-lu-lut-do-bao-yagi" className="font-bold text-xl text-slate-900 mb-3 group-hover:text-blue-700 transition-colors">
-                Học viên Nhà trường hỗ trợ cùng nhân dân chống lũ lụt do bão Yagi
-              </a>
-              <p className="text-slate-600 text-sm line-clamp-3">
-               Học viên Khóa K54S thực tập tại địa bàn các tỉnh phía Bắc nước ta đang cùng bà con nhân dân ra sức phòng, chống các thiệt hại hết sức nghiêm trọng do hoàn lưu bão Yagi gây ra.
-               </p>
-            </div>
-            {/* News 3 */}
-            <div className="group cursor-pointer">
-              <div className="relative h-60 rounded-2xl overflow-hidden mb-5 bg-[#1a1a1a] flex items-center justify-center">
-                <img src="https://kenh14cdn.com/203336854389633024/2024/9/10/tp-11-2209-1725927028250-17259270283241320880834.jpg" alt="News 1" className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-xs font-bold px-3 py-1.5 rounded-full text-slate-800">
-                  07:24, 10/09/2024
-                </div>
-              </div>
-              <a href="https://kenh14.vn/xuyen-dem-cuu-ho-nguoi-dan-o-vung-lu-lut-thai-nguyen-215240910071442265.chn" className="font-bold text-xl text-slate-900 mb-3 group-hover:text-blue-700 transition-colors">
-                   Xuyên đêm cứu hộ người dân ở vùng lũ lụt Thái Nguyên
-              </a>
-              <p className="text-slate-600 text-sm line-clamp-3">
-                Gần 0h ngày 10/9, lực lượng chức năng vẫn đi xuồng vào các vùng ngập lụt ở thành phố Thái Nguyên (tỉnh Thái Nguyên) để cứu hộ những người đang mắc kẹt.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
-      {/* FOOTER */}
-      <footer className="py-8 border-t border-slate-200 bg-white">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <div className="text-blue-700 font-bold text-lg mb-1 flex items-center gap-2">
-              <Heart className="w-5 h-5 fill-blue-600" />
-              FPT Flood Rescue & Relief
-            </div>
-            <p className="text-slate-400 text-xs">© {new Date().getFullYear()} FPT Flood Rescue & Relief. All rights reserved.</p>
-          </div>
 
-          <div className="flex gap-6 text-sm font-medium text-slate-500">
-            <Link href="/" className="hover:text-slate-800 transition-colors">Chính sách bảo mật</Link>
-            <Link href="/" className="hover:text-slate-800 transition-colors">Điều khoản sử dụng</Link>
-            <Link href="/" className="hover:text-slate-800 transition-colors">Liên hệ hỗ trợ</Link>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <a href="#" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-blue-100 hover:text-blue-600 transition-colors">
-              <Facebook className="w-4 h-4" />
-            </a>
-            <a href="#" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-blue-100 hover:text-blue-600 transition-colors">
-              <Instagram className="w-4 h-4" />
-            </a>
-          </div>
+      {/* Call to Action Final */}
+      <section className="py-32 relative overflow-hidden bg-[#133249]">
+        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "40px 40px" }}></div>
+        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
+           <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center mx-auto mb-10 border border-white/20">
+             <Heart className="w-10 h-10 text-primary animate-pulse" />
+           </div>
+           <h2 className="text-5xl md:text-7xl font-black mb-8 text-white tracking-tighter uppercase leading-[1.1]">
+             Sát Cánh <br />Vượt Bão Giông
+           </h2>
+           <p className="text-blue-100 text-xl mb-12 max-w-2xl mx-auto font-medium leading-relaxed opacity-80">
+             Đăng ký làm Tình nguyện viên ngay hôm nay hoặc gửi yêu cầu hỗ trợ nếu bạn đang trong vùng nguy hiểm.
+           </p>
+           <div className="flex flex-col sm:flex-row gap-6 justify-center">
+             <Button size="lg" className="rounded-xl px-14 py-6 text-sm bg-primary text-white hover:bg-primary/90 transition-all hover:scale-105 font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/40 border-none" href="/register">
+              Đăng ký ngay
+               <ArrowRight className="w-5 h-5 ml-2" />
+             </Button>
+             <Button
+               variant="outline"
+               size="lg"
+               className="rounded-xl px-14 py-6 text-sm border-2 border-white text-white hover:bg-white hover:text-[#133249] transition-all hover:scale-105 font-black uppercase tracking-[0.2em]"
+               href="/login"
+             >
+               Cổng Đăng Nhập
+             </Button>
+           </div>
         </div>
-      </footer>
+      </section>
 
+      <Footer variant="light" />
     </main>
   );
 }

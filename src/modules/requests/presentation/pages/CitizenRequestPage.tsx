@@ -1129,9 +1129,9 @@ export default function CitizenRequestPage() {
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain">
+      <main className="flex-1 min-h-0 overflow-hidden">
         <div className="h-full lg:grid lg:grid-cols-12">
-          <section className="lg:col-span-3 overflow-y-auto overscroll-contain pb-20 lg:pb-4 border-r border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0))]">
+          <section className="lg:col-span-3 overflow-y-auto overscroll-contain pb-20 lg:pb-6 border-r border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0))] request-form-section" style={{ 'scrollbarWidth': 'thin', 'scrollbarColor': 'rgba(255,119,0,0.4) rgba(15,47,68,0.5)' }}>
             <div className="p-4 lg:p-3.5 space-y-4 max-w-[600px] mx-auto">
               <div className="space-y-4 pb-2">
                 <p className="text-[#FFD6A6] text-xs leading-relaxed">
@@ -1448,7 +1448,7 @@ export default function CitizenRequestPage() {
             </div>
           </section>
 
-          <aside className="hidden lg:block lg:col-span-9 p-4">
+          <aside className="hidden lg:block lg:col-span-9 p-4 overflow-hidden">
             <div className="h-full rounded-2xl border border-white/20 bg-[#0f2f44]/70 p-3.5 flex flex-col gap-3 shadow-[0_10px_36px_rgba(0,0,0,0.2)]">
               <div className="flex items-center justify-between">
                 <div>
@@ -1484,7 +1484,6 @@ export default function CitizenRequestPage() {
                   address={currentLocation}
                   isSelectionMode={isManualSelectionMode}
                   onLocationSelect={handleManualLocationSelect}
-                  height={desktopMapHeight}
                 />
               </div>
 

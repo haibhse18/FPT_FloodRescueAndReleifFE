@@ -198,7 +198,7 @@ export default function CitizenHomePage() {
   return (
     <>
       <style>{keyframeStyles}</style>
-      <main className="relative min-h-screen pb-24 lg:pb-10 overflow-auto">
+      <main className="relative h-[100dvh] overflow-hidden flex flex-col">
         <div
           className="absolute inset-0 bg-center bg-cover bg-no-repeat"
           style={{ backgroundImage: `url(${HOME_BACKGROUND_URL})` }}
@@ -228,12 +228,12 @@ export default function CitizenHomePage() {
           </Link>
         </header>
 
-        <div className="relative z-10 p-4 lg:p-8 min-h-screen">
-          <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-            <div className="lg:col-span-7 w-full">
-              <section className="rounded-lg border border-white/20 bg-[#0f2f44]/70 p-3 lg:p-4 space-y-3 lg:space-y-4">
+        <div className="relative z-10 flex-1 min-h-0 p-3 lg:p-5 pb-20 lg:pb-5 flex flex-col lg:justify-center">
+          <div className="w-full lg:max-h-[82dvh] max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-5 items-stretch">
+            <div className="lg:col-span-7 w-full min-h-0">
+              <section className="h-full lg:min-h-[68dvh] rounded-xl border border-white/20 bg-[#0f2f44]/70 p-3 lg:p-4 flex flex-col overflow-hidden">
                 <div className="flex flex-col items-center text-center">
-                  <h1 className="text-[#FF7700] font-bold text-xl lg:text-2xl tracking-tight mb-3">
+                  <h1 className="text-[#FF7700] font-bold text-xl lg:text-2xl tracking-tight mb-2">
                     {isCheckingActiveRequest
                       ? "Đang kiểm tra"
                       : activeRequest
@@ -249,15 +249,15 @@ export default function CitizenHomePage() {
                   </p>
                 </div>
 
-                <div className="flex justify-center">
+                <div className="flex-1 min-h-0 flex justify-center items-center py-1.5 lg:py-2.5">
                   {isCheckingActiveRequest ? (
-                    <div className="w-44 h-44 lg:w-52 lg:h-52 rounded-full border-2 border-white/30 bg-white/15 flex items-center justify-center">
+                    <div className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-full border-2 border-white/30 bg-white/15 flex items-center justify-center">
                       <span className="inline-block w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                     </div>
                   ) : activeRequest ? (
                     <Link
                       href={`/history/${activeRequest.id}`}
-                      className="w-44 h-44 lg:w-52 lg:h-52 rounded-full border-2 border-[#FF7700]/60 bg-[#FF7700] hover:bg-[#e66a00] flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 hover:scale-95"
+                      className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-full border-2 border-[#FF7700]/60 bg-[#FF7700] hover:bg-[#e66a00] flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 hover:scale-95"
                       style={{ animation: "flare 2s ease-in-out infinite" }}
                       aria-label="Theo dõi yêu cầu cứu hộ đang xử lý"
                     >
@@ -268,7 +268,7 @@ export default function CitizenHomePage() {
                   ) : (
                     <Link
                       href="/request"
-                      className="w-44 h-44 lg:w-52 lg:h-52 rounded-full border-2 border-red-400/60 bg-[#FF3535] hover:bg-red-600 flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-red-500/50 hover:scale-95"
+                      className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-full border-2 border-red-400/60 bg-[#FF3535] hover:bg-red-600 flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-red-500/50 hover:scale-95"
                       style={{ animation: "flare-red 2s ease-in-out infinite" }}
                       aria-label="Gửi yêu cầu cứu hộ/cứu trợ"
                     >
@@ -279,12 +279,12 @@ export default function CitizenHomePage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 w-full">
+                <div className="grid grid-cols-2 gap-3 w-full mt-auto">
                   {quickActions.map((action) => (
                     <Link
                       key={action.id}
                       href={action.href}
-                      className="w-full px-3 py-4 rounded-lg border border-white/15 bg-[#0f2f44]/70 hover:bg-[#1a3a52]/80 transition-all flex flex-col items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 group"
+                      className="w-full px-3 py-3 rounded-lg border border-white/15 bg-[#0f2f44]/70 hover:bg-[#1a3a52]/80 transition-all flex flex-col items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 group"
                       aria-label={`${action.title}: ${action.subtitle}`}
                       title={`${action.title} - ${action.subtitle}`}
                     >
@@ -305,9 +305,9 @@ export default function CitizenHomePage() {
               </section>
             </div>
 
-            <aside className="lg:col-span-5 w-full">
-              <section className="rounded-lg border border-white/20 bg-[#0f2f44]/70 p-3 lg:p-4">
-                <div className="flex items-center justify-between gap-3 mb-3">
+            <aside className="lg:col-span-5 w-full min-h-0">
+              <section className="h-full lg:min-h-[68dvh] rounded-xl border border-white/20 bg-[#0f2f44]/70 p-3 lg:p-4 flex flex-col min-h-0">
+                <div className="flex items-center justify-between gap-3 mb-2">
                   <h2 className="text-white font-semibold text-sm lg:text-base inline-flex items-center gap-2">
                     <MapPin weight="fill" size={18} className="text-[#FF7700]" />
                     Vị trí GPS của bạn
@@ -322,16 +322,15 @@ export default function CitizenHomePage() {
                   </button>
                 </div>
 
-                <div className="rounded-lg overflow-hidden border border-white/20">
+                <div className="rounded-lg overflow-hidden border border-white/20 flex-1 min-h-0">
                   {gpsCoords ? (
                     <OpenMap
                       latitude={gpsCoords.lat}
                       longitude={gpsCoords.lon}
                       address={gpsAddress}
-                      height={300}
                     />
                   ) : (
-                    <div className="h-[300px] bg-[#0f2f44]/80 flex items-center justify-center px-4 text-center">
+                    <div className="h-full bg-[#0f2f44]/80 flex items-center justify-center px-4 text-center">
                       <p className="text-white/75 text-sm">
                         {gpsStatus === "loading" && "Đang lấy vị trí GPS..."}
                         {gpsStatus === "unsupported" && "Thiết bị không hỗ trợ định vị GPS."}
@@ -342,7 +341,7 @@ export default function CitizenHomePage() {
                   )}
                 </div>
 
-                <div className="mt-3 rounded-lg border border-white/20 bg-[#0f2f44]/70 p-3 space-y-1.5">
+                <div className="mt-2 rounded-lg border border-white/20 bg-[#0f2f44]/70 p-3 space-y-1.5">
                   <p className="text-white/90 text-xs lg:text-sm font-medium line-clamp-2">
                     {gpsAddress}
                   </p>

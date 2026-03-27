@@ -177,7 +177,7 @@ export default function OpenMap({
       ref={mapContainer}
       style={{
         width: "100%",
-        height: `${height}px`,
+        height: "100%",
         borderRadius: "12px",
         overflow: "hidden",
       }}

@@ -11,9 +11,10 @@ interface Step {
 
 const STEPS: Step[] = [
   { id: 1, vietnameseLabel: "Tiếp nhận", status: ["ASSIGNED"] },
-  { id: 2, vietnameseLabel: "Đường đi", status: ["EN_ROUTE"] },
-  { id: 3, vietnameseLabel: "Tiến độ", status: ["ON_SITE"] },
-  { id: 4, vietnameseLabel: "Tổng kết", status: ["COMPLETED", "PARTIAL", "FAILED", "WITHDRAWN", "CANCELLED"] },
+  { id: 2, vietnameseLabel: "Nhận vật tư", status: ["CLAIMING_SUPPLIES"] },
+  { id: 3, vietnameseLabel: "Đường đi", status: ["EN_ROUTE"] },
+  { id: 4, vietnameseLabel: "Tiến độ", status: ["ON_SITE"] },
+  { id: 5, vietnameseLabel: "Tổng kết", status: ["COMPLETED", "PARTIAL", "FAILED", "WITHDRAWN", "CANCELLED"] },
 ];
 
 interface MissionProgressStepperProps {

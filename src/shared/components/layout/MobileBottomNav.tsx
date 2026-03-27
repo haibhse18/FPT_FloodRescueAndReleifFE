@@ -3,6 +3,11 @@
 import { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  PiBellBold,
+  PiClockCounterClockwiseBold,
+  PiHouseLineBold,
+} from "react-icons/pi";
 
 interface NavItem {
   icon: ReactNode;
@@ -17,9 +22,9 @@ interface MobileBottomNavProps {
 }
 
 const DEFAULT_ITEMS: NavItem[] = [
-  { icon: "🏠", label: "Trang chủ", href: "/home" },
-  { icon: "📜", label: "Lịch sử", href: "/history" },
-  { icon: "🔔", label: "Thông báo", href: "/notifications" },
+  { icon: <PiHouseLineBold />, label: "Trang chủ", href: "/home" },
+  { icon: <PiClockCounterClockwiseBold />, label: "Lịch sử", href: "/history" },
+  { icon: <PiBellBold />, label: "Thông báo", href: "/notifications" },
 ];
 
 export default function MobileBottomNav({

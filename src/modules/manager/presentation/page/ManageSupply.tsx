@@ -8,6 +8,7 @@ import type { Supply, SupplyStatus } from "@/modules/supplies/domain/supply.enti
 
 import { supplyRepository } from "@/modules/supplies/infrastructure/supply.repository.impl";
 import { GetSuppliesUseCase } from "@/modules/supplies/application/getSupplies.usecase";
+import { Upload } from "lucide-react";
 // the page was originally for equipments; repurposed to show supplies
 
 const STATUS_MAP: Record<SupplyStatus, { label: string; color: string }> = {
@@ -134,7 +135,7 @@ const handleImportExcel = async () => {
 
           <button
             onClick={handleSearch}
-            className="px-6 py-3 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-sm transition-colors"
+            className="px-6 py-3 rounded-full bg-[#1890ff] hover:bg-[#CFE5FF]/80 text-white font-bold shadow-sm transition-colors"
           >
             Tìm kiếm
           </button>
@@ -143,8 +144,9 @@ const handleImportExcel = async () => {
         {/* RIGHT - Import Excel */}
         <div className="flex items-center gap-3 w-full md:w-auto">
 
-          <label className="cursor-pointer px-5 py-3 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-bold transition-colors">
-            📁 Chọn file
+          <label className="cursor-pointer flex items-center gap-2 px-5 py-3 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-semibold transition-colors shadow-sm">
+          <Upload className="w-5 h-5" />
+          <span>Chọn file</span>
             <input
               type="file"
               accept=".xlsx,.xls"
@@ -193,7 +195,7 @@ const handleImportExcel = async () => {
     onClick={() => setPage(page - 1)}
     className="px-5 py-2 rounded-full bg-white border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 font-medium shadow-sm"
   >
-    Prev
+    Prev 
   </button>
 
   {Array.from({ length: totalPages }, (_, i) => (
@@ -202,7 +204,7 @@ const handleImportExcel = async () => {
       onClick={() => setPage(i + 1)}
       className={`w-10 h-10 rounded-full font-bold shadow-sm flex items-center justify-center transition-colors ${
         page === i + 1
-          ? "bg-emerald-700 text-white"
+          ? "bg-[#1A3263] text-white"
           : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
       }`}
     >

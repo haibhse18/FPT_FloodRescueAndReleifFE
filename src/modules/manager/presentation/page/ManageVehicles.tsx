@@ -9,6 +9,7 @@ import { vehicleRepository } from "@/modules/vehicles";
 import { set } from "zod";
 import { GetVehiclesUseCase } from "@/modules/vehicles/application/getVehicles.usecase";
 import { VehicleStatus } from "@/modules/vehicles/domain/vehicles.enity";
+import { Upload } from "lucide-react";
 
 const STATUS_MAP: Record<VehicleStatus, { label: string; color: string }> = {
   ACTIVE:         { label: "Sẵn sàng",        color: "border border-emerald-400 text-emerald-400 bg-emerald-400/10 rounded-full px-2 py-0.5" },
@@ -37,9 +38,21 @@ export default function VehiclePage() {
   setLoading(true);
 
   try {
-     const query =
-  `?page=${pageNumber}&limit=10` +
-  (searchKeyword ? `&licensePlate=${encodeURIComponent(searchKeyword)}` : "");
+    let mappedType = searchKeyword;
+    if (searchKeyword) {
+      const kw = searchKeyword.toLowerCase();
+      if (kw.includes("cứu thương") || kw.includes("ambulance")) mappedType = "AMBULANCE";
+      else if (kw.includes("xuồng") || kw.includes("thuyền") || kw.includes("boat")) mappedType = "RESCUE_BOAT";
+      else if (kw.includes("cứu hỏa") || kw.includes("fire")) mappedType = "FIRE_TRUCK";
+      else if (kw.includes("bán tải") || kw.includes("van")) mappedType = "VAN";
+      else if (kw.includes("tải") || kw.includes("truck")) mappedType = "TRUCK";
+      else if (kw.includes("mô tô") || kw.includes("xe máy") || kw.includes("motor")) mappedType = "MOTORCYCLE";
+      else if (kw.includes("khác") || kw.includes("other")) mappedType = "OTHERS";
+    }
+
+    const query =
+      `?page=${pageNumber}&limit=10` +
+      (searchKeyword ? `&licensePlate=${encodeURIComponent(searchKeyword)}|&type=${encodeURIComponent(mappedType)}|&brand=${encodeURIComponent(searchKeyword)}` : "");
 
     const res = await vehicleApi.getVehicles(query);
 
@@ -109,14 +122,6 @@ export default function VehiclePage() {
                 : row.status;
             }
     },
-    {
-  key: "assignedTo",
-  header: "Đội",
-  render: (row: Vehicle) =>
-    typeof row.assignedTo === "object"
-      ? row.assignedTo?.name
-      : row.assignedTo || "-"
-}
   ];
 
 const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,7 +174,7 @@ const handleImportExcel = async () => {
 
           <button
             onClick={handleSearch}
-            className="px-6 py-3 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-sm transition-colors"
+            className="px-6 py-3 rounded-full bg-[#1890ff] hover:bg-[#CFE5FF]/80 text-white font-bold shadow-sm transition-colors"
           >
             Tìm kiếm
           </button>
@@ -178,8 +183,9 @@ const handleImportExcel = async () => {
         {/* RIGHT - Import Excel */}
         <div className="flex items-center gap-3 w-full md:w-auto">
 
-          <label className="cursor-pointer px-5 py-3 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-bold transition-colors">
-            📁 Chọn file
+         <label className="cursor-pointer flex items-center gap-2 px-5 py-3 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-semibold transition-colors shadow-sm">
+          <Upload className="w-5 h-5" />
+          <span>Chọn file</span>
             <input
               type="file"
               accept=".xlsx,.xls"
@@ -237,7 +243,7 @@ const handleImportExcel = async () => {
       onClick={() => setPage(i + 1)}
       className={`w-10 h-10 rounded-full font-bold shadow-sm flex items-center justify-center transition-colors ${
         page === i + 1
-          ? "bg-emerald-700 text-white"
+          ? "bg-[#1A3263] text-white"
           : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
       }`}
     >

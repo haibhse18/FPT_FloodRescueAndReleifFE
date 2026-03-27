@@ -3,6 +3,7 @@
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import NotificationBell from "@/modules/notifications/presentation/components/NotificationBell";
 
@@ -37,8 +38,7 @@ const SAFE_HOVER_ZONE_PX = 10;
 
 /* ─── Shared helper: text-area class (clips to w-0 when collapsed) ─── */
 const textAreaCls = (visible: boolean) =>
-  `overflow-hidden whitespace-nowrap transition-all duration-200 ${
-    visible ? "flex-1 opacity-100" : "w-0 opacity-0"
+  `overflow-hidden whitespace-nowrap transition-all duration-200 ${visible ? "flex-1 opacity-100" : "w-0 opacity-0"
   }`;
 
 /* ================================================================== *
@@ -121,16 +121,23 @@ function SidebarHeader({
   return (
     <div className="shrink-0 px-2 py-3 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent">
       <div className="flex items-center">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-dark)] flex items-center justify-center text-2xl shadow-lg ring-1 ring-white/10 flex-shrink-0">
-          🛟
+        <div className="w-12 h-12 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center shadow-lg ring-1 ring-white/10 flex-shrink-0 overflow-hidden">
+          <Image
+            src="/images/project-logo.png"
+            alt="FPT Flood Rescue Logo"
+            width={48}
+            height={48}
+            className="w-full h-full object-contain"
+            priority
+          />
         </div>
 
         <div className={textAreaCls(visible)}>
           <div className="pl-3 min-w-0">
-            <h1 className="text-lg font-black text-white tracking-tight uppercase leading-tight truncate">
+            <h1 className="text-sm font-black text-white tracking-tight uppercase leading-tight truncate">
               {title}
             </h1>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-tight truncate">
+            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest leading-tight truncate">
               {subtitle}
             </p>
           </div>
@@ -156,7 +163,7 @@ function SidebarNotificationSection({
     <>
       <div className="shrink-0 px-3 py-1.5 flex items-center justify-between gap-1.5">
         <NotificationBell />
-        
+
         {isExpanded && (
           <button
             type="button"
@@ -193,18 +200,16 @@ function SidebarNavItem({
       <Link
         href={item.href}
         aria-label={item.label}
-        className={`relative flex items-center rounded-xl py-3 font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#0f2a3f] ${
-          isActive
+        className={`relative flex items-center rounded-xl py-3 font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#0f2a3f] ${isActive
             ? "bg-[var(--color-primary)] text-white shadow-lg shadow-[var(--color-primary)]/20"
             : "text-gray-400 hover:bg-white/5 hover:text-white"
-        }`}
+          }`}
       >
         {/* Fixed-width icon area — always centered in collapsed width */}
         <div className="w-12 flex items-center justify-center flex-shrink-0">
           <span
-            className={`text-lg transition-transform duration-150 ${
-              isActive ? "scale-110" : "group-hover/item:scale-110"
-            }`}
+            className={`text-lg transition-transform duration-150 ${isActive ? "scale-110" : "group-hover/item:scale-110"
+              }`}
           >
             {item.icon}
           </span>
@@ -220,13 +225,11 @@ function SidebarNavItem({
         {/* Badge */}
         {item.badge != null && item.badge > 0 && (
           <span
-            className={`text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-sm transition-all duration-150 ${
-              isExpanded ? "mr-3" : "absolute top-1 right-1"
-            } ${
-              isActive
+            className={`text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-sm transition-all duration-150 ${isExpanded ? "mr-3" : "absolute top-1 right-1"
+              } ${isActive
                 ? "bg-white text-[var(--color-primary)] scale-110"
                 : "bg-red-500 text-white group-hover/item:scale-110"
-            }`}
+              }`}
           >
             {item.badge > 99 ? "99+" : item.badge}
           </span>

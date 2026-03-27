@@ -203,6 +203,15 @@ export default function CitizenVolunteerRegistrationPage() {
     return (
         <div className="pb-24 lg:pb-8 overflow-auto">
             <div className="relative p-4 lg:p-8 space-y-6 max-w-5xl mx-auto">
+                <div className="flex justify-start">
+                    <Link
+                        href="/home"
+                        className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-semibold transition-all"
+                    >
+                        ← Quay về trang chủ
+                    </Link>
+                </div>
+
                 <section className="bg-white/5 border border-white/10 rounded-2xl p-6 lg:p-8">
                     <div className="flex flex-col gap-2 mb-6">
                         <h1 className="text-white text-2xl lg:text-3xl font-extrabold tracking-tight uppercase">
@@ -283,13 +292,6 @@ export default function CitizenVolunteerRegistrationPage() {
                             >
                                 {isSubmitting ? "ĐANG GỬI..." : "GỬI ĐƠN TÌNH NGUYỆN"}
                             </button>
-
-                            <Link
-                                href="/home"
-                                className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-semibold transition-all"
-                            >
-                                Quay về trang chủ
-                            </Link>
                         </div>
                     </form>
                 </section>

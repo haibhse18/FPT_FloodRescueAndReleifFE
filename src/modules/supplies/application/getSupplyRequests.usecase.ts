@@ -7,7 +7,7 @@ import { ISupplyRepository } from '../domain/supply.repository';
 import { SupplyRequest } from '../domain/supply.entity';
 
 export class GetSupplyRequestsUseCase {
-    constructor(private readonly supplyRepository: ISupplyRepository) {}
+    constructor(private readonly supplyRepository: ISupplyRepository) { }
 
     /**
      * Execute get supply requests
@@ -16,8 +16,8 @@ export class GetSupplyRequestsUseCase {
     async execute(): Promise<SupplyRequest[]> {
         try {
             const requests = await this.supplyRepository.getSupplyRequests();
-            
-            if (!requests || !Array.isArray(requests)) { 
+
+            if (!requests || !Array.isArray(requests)) {
                 throw new Error('Dữ liệu yêu cầu không hợp lệ');
             }
 

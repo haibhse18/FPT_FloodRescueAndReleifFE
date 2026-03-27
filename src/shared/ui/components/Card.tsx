@@ -2,16 +2,16 @@ import React from 'react';
 
 export interface CardProps {
   children: React.ReactNode;
-  variant?: 'default' | 'accent' | 'dark' | 'glass';
+  variant?: 'default' | 'accent' | 'dark' | 'glass' | 'dark-blur';
   padding?: 'none' | 'sm' | 'md' | 'lg';
   className?: string;
   onClick?: () => void;
   hover?: boolean;
 }
 
-export function Card({ 
-  children, 
-  variant = 'default', 
+export function Card({
+  children,
+  variant = 'default',
   padding = 'md',
   className = '',
   onClick,
@@ -21,9 +21,10 @@ export function Card({
     default: 'bg-white border border-[var(--color-border)]',
     accent: 'bg-[var(--color-accent)] text-[var(--color-text-primary)]',
     dark: 'bg-[var(--color-primary)] text-[var(--color-text-inverse)]',
-    glass: 'bg-white/5 border border-white/10 backdrop-blur-sm'
+    glass: 'bg-white/5 border border-white/10 backdrop-blur-sm',
+    'dark-blur': 'bg-[#16384f]/70 border border-white/15 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.2)] backdrop-blur-sm'
   };
-  
+
   const paddings = {
     none: 'p-0',
     sm: 'p-4',
@@ -33,10 +34,12 @@ export function Card({
 
   const hoverStyles = hover ? 'hover:bg-white/10 hover:scale-[1.02] transition-all duration-200 cursor-pointer' : '';
   const clickStyles = onClick ? 'cursor-pointer' : '';
-  
+  const baseRadius = variant === 'dark-blur' ? '' : 'rounded-xl';
+  const baseShadow = variant === 'dark-blur' ? '' : 'shadow-md';
+
   return (
-    <div 
-      className={`rounded-xl shadow-md ${variants[variant]} ${paddings[padding]} ${hoverStyles} ${clickStyles} ${className}`}
+    <div
+      className={`${baseRadius} ${baseShadow} ${variants[variant]} ${paddings[padding]} ${hoverStyles} ${clickStyles} ${className}`}
       onClick={onClick}
     >
       {children}
@@ -53,7 +56,7 @@ export interface InfoCardProps {
 
 export function InfoCard({ icon, title, description, variant = 'default' }: InfoCardProps) {
   const iconBg = variant === 'accent' ? 'bg-white' : 'bg-[var(--color-accent)]';
-  
+
   return (
     <Card variant={variant} padding="lg">
       <div className="flex items-start gap-4">
@@ -84,10 +87,10 @@ export interface ActionCardProps {
 
 export function ActionCard({ icon, title, description, onClick, className = '' }: ActionCardProps) {
   return (
-    <Card 
-      variant="glass" 
-      padding="md" 
-      hover 
+    <Card
+      variant="glass"
+      padding="md"
+      hover
       onClick={onClick}
       className={className}
     >

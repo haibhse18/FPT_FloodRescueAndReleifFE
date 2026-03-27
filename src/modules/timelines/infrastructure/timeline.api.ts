@@ -64,6 +64,20 @@ export const timelineApi = {
     );
   },
 
+  /** POST /timelines/{id}/confirm-supply-claim — team confirms supply claim and moves to EN_ROUTE */
+  confirmSupplyClaim: async (
+    timelineId: string,
+    note?: string,
+  ): Promise<ApiResponse> => {
+    return apiClient.post(
+      `/timelines/${timelineId}/confirm-supply-claim`,
+      { note },
+      {
+        headers: authSession.getAuthHeaders(),
+      },
+    );
+  },
+
   /** PATCH /timelines/{id}/arrive — team arrives on site */
   arriveTimeline: async (timelineId: string): Promise<ApiResponse> => {
     return apiClient.patch(

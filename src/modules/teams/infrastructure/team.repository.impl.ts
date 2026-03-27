@@ -17,6 +17,20 @@ import type {
 import { teamsApi } from "./team.api";
 
 export class TeamRepositoryImpl implements ITeamRepository {
+  // ── Applications ────────────────────────────────────────
+  
+  async getAllTeamApplications(params?: any): Promise<any> {
+    const response = await teamsApi.getAllTeamApplications(params);
+    const result = response as any;
+    return {
+      data: result.data ?? [],
+      total: result.meta?.total ?? result.total ?? 0,
+      page: result.meta?.page ?? result.page ?? 1,
+      limit: result.meta?.limit ?? result.limit ?? 10,
+      totalPages: result.meta?.totalPages ?? result.totalPages ?? 1,
+    };
+  }
+
   // ── CRUD ────────────────────────────────────────────────
 
   async getTeams(filter?: GetTeamsFilter): Promise<PaginatedTeams> {
@@ -81,6 +95,17 @@ export class TeamRepositoryImpl implements ITeamRepository {
     const result = response as any;
     // Could be { data: [...] } or direct array
     return result.data || result || [];
+  }
+
+  //-Approve/Reject volunteer by Admin
+  async approve(applicationId: string): Promise<Team> {
+    const response = await teamsApi.approve(applicationId);
+    return (response as any).data ?? response;
+  }
+
+  async reject(applicationId: string, reason: string): Promise<Team> {
+    const response = await teamsApi.reject(applicationId, reason);
+    return (response as any).data ?? response;
   }
 }
 

@@ -19,7 +19,9 @@ export default function ManagerLayout({
       <div className="min-h-screen flex flex-col lg:flex-row bg-[#F3F4F4] text-black-800">
         {/* Sidebar */}
         <ManagerSidebar />
-        <div className="flex-1 flex flex-col lg:ml-[var(--sidebar-width)] transition-[margin-left] duration-300 relative">
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col lg:ml-64 relative">
           {/* Background Pattern */}
           <div
             className="absolute inset-0 opacity-5 pointer-events-none"

@@ -72,7 +72,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
           "Rescue Team": "/missions",
           "Rescue Coordinator": "/dashboard",
           Manager: "/manager-profile",
-          Admin: "/admin/users",
+          Admin: "/admin-profile",
         };
         router.replace(roleRedirects[role] || "/");
       }

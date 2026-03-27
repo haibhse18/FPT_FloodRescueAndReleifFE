@@ -20,19 +20,19 @@ export interface MissionRequest {
   missionId: string;
   requestId: string;
   status: MissionRequestStatus;
-  
+
   // Thông tin Snapshot từ Request gốc để dễ track quá trình
   requestPeopleSnapshot?: number;
   prioritySnapshot?: string;
-  
+
   // Tiến độ thực hiện
   peopleRescued: number;
   fulfillmentPercent: number;
-  
+
   note?: string;
   createdAt: string;
   updatedAt: string;
-  
+
   // Populated fields (optional, depend on API response)
   requestDetails?: any; // Có thể liên kết với Request entity sau
 }

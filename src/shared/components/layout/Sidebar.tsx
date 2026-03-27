@@ -201,8 +201,8 @@ function SidebarNavItem({
         href={item.href}
         aria-label={item.label}
         className={`relative flex items-center rounded-xl py-3 font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#0f2a3f] ${isActive
-            ? "bg-[var(--color-primary)] text-white shadow-lg shadow-[var(--color-primary)]/20"
-            : "text-gray-400 hover:bg-white/5 hover:text-white"
+          ? "bg-[var(--color-primary)] text-white shadow-lg shadow-[var(--color-primary)]/20"
+          : "text-gray-400 hover:bg-white/5 hover:text-white"
           }`}
       >
         {/* Fixed-width icon area — always centered in collapsed width */}
@@ -264,10 +264,13 @@ function SidebarFooter({
 }) {
   const visible = isExpanded && showTexts;
 
+  // Route to profile page based on user role
+  const profileRoute = user.role === "Rescue Team" ? "/team-profile" : "/profile";
+
   return (
     <div className="shrink-0 px-2 py-2 bg-gradient-to-br from-white/5 to-transparent">
       <Link
-        href="/profile"
+        href={profileRoute}
         aria-label={`Hồ sơ: ${user.name}`}
         className="group flex items-center rounded-xl bg-white/5 hover:bg-white/10 transition-all active:scale-95 border border-white/5 hover:border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-[#0f2a3f] py-2"
       >

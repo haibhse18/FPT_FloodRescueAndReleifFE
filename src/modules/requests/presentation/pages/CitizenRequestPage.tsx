@@ -1429,11 +1429,11 @@ export default function CitizenRequestPage() {
                 </div>
               )}
 
-              <div className="sticky bottom-0 bg-gradient-to-t from-[#0b2233]/92 via-[#0b2233]/78 to-transparent pt-3 pb-2 border-t border-white/10">
+              <div className="pt-3 pb-2">
                 <button
                   onClick={requestType === "Rescue" ? handleRescueSubmit : handleReliefSubmit}
                   disabled={isSubmitting || submitDisabled}
-                  className="w-full min-h-12 bg-[#FF7700] hover:bg-[#FF8800] active:bg-[#FF6600] text-white font-extrabold text-base py-3 rounded-xl shadow-[0_8px_24px_rgba(255,119,0,0.32)] active:shadow-[0_4px_12px_rgba(255,119,0,0.24)] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full min-h-[3rem] bg-[#FF7700] hover:bg-[#FF8800] active:bg-[#FF6600] text-white font-extrabold text-base py-3 rounded-xl shadow-[0_8px_24px_rgba(255,119,0,0.32)] active:shadow-[0_4px_12px_rgba(255,119,0,0.24)] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <>

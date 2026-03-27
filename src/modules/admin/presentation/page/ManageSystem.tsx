@@ -273,9 +273,21 @@ export default function AdminSystemPage() {
   const fetchVehicles = async (page: number, keyword: string) => {
     setLoadingVehicles(true);
     try {
+      let mappedType = keyword;
+      if (keyword) {
+        const kw = keyword.toLowerCase();
+        if (kw.includes("cứu thương") || kw.includes("ambulance")) mappedType = "AMBULANCE";
+        else if (kw.includes("xuồng") || kw.includes("thuyền") || kw.includes("boat")) mappedType = "RESCUE_BOAT";
+        else if (kw.includes("cứu hỏa") || kw.includes("fire")) mappedType = "FIRE_TRUCK";
+        else if (kw.includes("bán tải") || kw.includes("van")) mappedType = "VAN";
+        else if (kw.includes("tải") || kw.includes("truck")) mappedType = "TRUCK";
+        else if (kw.includes("mô tô") || kw.includes("xe máy") || kw.includes("motor")) mappedType = "MOTORCYCLE";
+        else if (kw.includes("khác") || kw.includes("other")) mappedType = "OTHERS";
+      }
+
       const query =
         `?page=${page}&limit=10` +
-        (keyword ? `&licensePlate=${encodeURIComponent(keyword)}|&type=${encodeURIComponent(keyword)}|&brand=${encodeURIComponent(keyword)}` : "");
+        (keyword ? `&licensePlate=${encodeURIComponent(keyword)}|&type=${encodeURIComponent(mappedType)}|&brand=${encodeURIComponent(keyword)}` : "");
       const res = await vehicleApi.getVehicles(query);
 
       setVehicles(res.data || []);
@@ -302,7 +314,7 @@ export default function AdminSystemPage() {
         render: (row: Vehicle) => row.licensePlate ?? "-"
       },
       {
-        key: "vehicle",
+        key: "brand",
         header: "Xe",
         render: (row: Vehicle) => `${row.brand ?? ""} ${row.model ?? ""}`
       },
@@ -575,9 +587,11 @@ useEffect(() => {
             <input
               value={vehicleKeyword}
               onChange={(e) => setVehicleKeyword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && fetchVehicles(1, vehicleKeyword)}
               style={inputStyle}
               placeholder="Tìm biển số..."
             />
+            
             <Pagination page={vehiclePage} totalPages={vehicleTotalPages} setPage={setVehiclePage} />
           </div>
 
@@ -632,172 +646,136 @@ useEffect(() => {
             <input
               value={supplyKeyword}
               onChange={(e) => setSupplyKeyword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && fetchSupplies(1, supplyKeyword)}
               style={inputStyle}
               placeholder="Tìm vật tư..."
             />
+            
             <Pagination page={supplyPage} totalPages={supplyTotalPages} setPage={setSupplyPage} />
           </div>
         {/*Table*/}
-           {loadingSupplies ? (
-        <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-600 mx-auto"></div>
-        </div>
-      ) : supplies.length === 0 ? (
-        <div className="text-center py-20 text-gray-500 font-medium bg-white rounded-3xl shadow-sm border border-gray-100">
-          <p>Không tìm thấy vật tư nào</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 text-gray-900"
-          style={{
-            flex: 1,
-            overflow: "auto",
-          }}
-        >
-          <Table columns={columnsSupplies} data={supplies} striped={true} hoverable={true} />
+          {loadingSupplies ? (
+            <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-600 mx-auto"></div>
+            </div>
+          ) : supplies.length === 0 ? (
+            <div className="text-center py-20 text-gray-500 font-medium bg-white rounded-3xl shadow-sm border border-gray-100">
+              <p>Không tìm thấy vật tư nào</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 text-gray-900"
+              style={{
+                flex: 1,
+                overflow: "auto",
+              }}
+            >
+              <Table columns={columnsSupplies} data={supplies} striped={true} hoverable={true} />
+            </div>
+          )}
         </div>
       )}
-        </div>
-      )}
-
       {/* ─── WAREHOUSE ─── */}
       {activeTab === "Kho" && (
-  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-    {/* Stat */}
-    <div style={{ display: "flex", gap: "16px" }}>
-      <StatCard title="Tổng Kho" value={warehouseTotal} accentColor="#fa8c16" />
-    </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Stat */}
+          <div style={{ display: "flex", gap: "16px" }}>
+            <StatCard title="Tổng Kho" value={warehouseTotal} accentColor="#fa8c16" />
+          </div>
 
-    {/* Search + Pagination */}
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        background: "#fff",
-        borderRadius: "8px",
-        padding: "12px 16px",
-        border: "1px solid #f0f0f0",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-      }}
-    >
-      <input
-        value={warehouseKeyword}
-        onChange={(e) => setWarehouseKeyword(e.target.value)}
-        style={inputStyle}
-        placeholder="Tìm kho..."
-      />
-      <Pagination
-        page={warehousePage}
-        totalPages={warehouseTotalPages}
-        setPage={setWarehousePage}
-      />
-    </div>
-
-    {/* MAIN GRID */}
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 380px",
-        gap: "16px",
-        alignItems: "stretch", // 👈 fix chiều cao
-      }}
-    >
-      {/* TABLE */}
-      {loadingWarehouses ? (
-        <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-600 mx-auto"></div>
-        </div>
-      ) : warehouses.length === 0 ? (
-        <div className="text-center py-20 text-gray-500 font-medium bg-white rounded-3xl shadow-sm border border-gray-100">
-          Không tìm thấy kho nào
-        </div>
-      ) : (
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden text-gray-900">
-          <Table columns={columnsWarehouse} data={warehouses} striped hoverable />
-        </div>
-      )}
-
-      {/* MAP PANEL */}
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: "8px",
-          border: "1px solid #f0f0f0",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          display: "flex",
-          flexDirection: "column",
-          height: "100%", // 👈 quan trọng
-        }}
-      >
-        {/* MAP */}
-        <div style={{ height: "300px", flexShrink: 0 }}>
-          <OpenMap
-            warehouses={warehouses.map((w) => ({
-              id: w._id,
-              name: w.name,
-              longitude: w.location.coordinates[0],
-              latitude: w.location.coordinates[1],
-            }))}
+          {/* Search + Pagination */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            background: "#fff",
+            borderRadius: "8px",
+            padding: "12px 16px",
+            border: "1px solid #f0f0f0",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          }}
+        >
+          <input
+            value={warehouseKeyword}
+            onChange={(e) => setWarehouseKeyword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && fetchWarehouses(1, warehouseKeyword)}
+            style={inputStyle}
+            placeholder="Tìm kho..."
+          />
+          
+          <Pagination
+            page={warehousePage}
+            totalPages={warehouseTotalPages}
+            setPage={setWarehousePage}
           />
         </div>
 
-        {/* LIST dưới map */}
-       <div
-        style={{
-          height: "400px", 
-          overflowY: "auto",
-          borderTop: "1px solid #f0f0f0",
-          padding: "12px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
+    {/* MAIN GRID */}
+      <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 380px",
+            gap: "16px",
+            alignItems: "stretch", // 👈 fix chiều cao
+          }}
+      >
+      {/* TABLE */}
+        {loadingWarehouses ? (
+          <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-600 mx-auto"></div>
+          </div>
+        ) : warehouses.length === 0 ? (
+          <div className="text-center py-20 text-gray-500 font-medium bg-white rounded-3xl shadow-sm border border-gray-100">
+            Không tìm thấy kho nào
+          </div>
+        ) : (
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden text-gray-900">
+            <Table columns={columnsWarehouse} data={warehouses} striped hoverable />
+          </div>
+        )}
+
+      {/* MAP PANEL */}
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: "8px",
+            border: "1px solid #f0f0f0",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            display: "flex",
+            flexDirection: "column",
+            height: "100%", 
           }}
         >
-          {warehouses.length === 0 ? (
-            <p style={{ fontSize: "13px", color: "#8c8c8c" }}>
-              Không có dữ liệu bản đồ
-            </p>
-          ) : (
-            warehouses.map((wh) => (
-              <div
-                key={wh._id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "10px 12px",
-                  borderRadius: "6px",
-                  background: "#fafafa",
-                  border: "1px solid #f0f0f0",
-                  cursor: "pointer",
-                  transition: "0.2s",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "#e6f7ff")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "#fafafa")
-                }
-              >
-                <span
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    background: "#1890ff",
-                  }}
-                />
-                <span style={{ fontSize: "13px", fontWeight: 600 }}>
-                  {wh.name}
-                </span>
+        {/* MAP */}
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+            <div className="h-[450px]">
+              <OpenMap warehouses={warehouses.map((wh) => ({
+                id: wh._id!, name: wh.name,
+                longitude: wh.location.coordinates[0],
+                latitude:  wh.location.coordinates[1],
+              }))} />
+            </div>
+            <div className="border-t border-gray-100 p-6">
+              <p className="text-sm text-gray-900 font-bold mb-4">
+                Danh sách kho ({warehouses.length})
+              </p>
+                <div className="space-y-3 max-h-44 overflow-y-auto custom-scrollbar">
+                  {warehouses.length === 0
+                    ? <p className="text-sm font-medium text-gray-400">Không có kho nào</p>
+                    : warehouses.map((wh) => (
+                        <div key={wh._id}
+                          className="flex items-center gap-3 bg-gray-50 hover:bg-emerald-50 border border-gray-100 px-4 py-3 rounded-2xl transition-colors">
+                          <div className="w-3 h-3 bg-emerald-500 rounded-full flex-shrink-0" />
+                          <span className="text-sm font-bold text-gray-900">{wh.name}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
               </div>
-            ))
-          )}
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 }

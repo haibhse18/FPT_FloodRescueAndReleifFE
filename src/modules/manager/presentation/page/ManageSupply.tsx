@@ -135,7 +135,7 @@ const handleImportExcel = async () => {
 
           <button
             onClick={handleSearch}
-            className="px-6 py-3 rounded-full bg-[#1A3263] hover:bg-[#1A3263]/80 text-white font-bold shadow-sm transition-colors"
+            className="px-6 py-3 rounded-full bg-[#1890ff] hover:bg-[#CFE5FF]/80 text-white font-bold shadow-sm transition-colors"
           >
             Tìm kiếm
           </button>

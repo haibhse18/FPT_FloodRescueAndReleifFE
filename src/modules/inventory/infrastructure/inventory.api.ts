@@ -16,7 +16,7 @@ export const inventoryApi = {
     getItems: async (query?: string): Promise<{ data: InventoryItem[], meta: { page: number, totalPages: number } }> => {
         try {
             const response = await axiosInstance.get<ApiResponse<InventoryItem[]>>(
-                `/inventory/list` + (query || '')
+                `/inventory/` + (query || '')
             );
             const data = response.data?.data;
             if (!Array.isArray(data)) {

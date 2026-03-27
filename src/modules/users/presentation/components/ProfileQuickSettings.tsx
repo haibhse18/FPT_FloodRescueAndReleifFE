@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Card } from "@/shared/ui/components";
-import { BadgeQuestionMark, BellIcon, LockKeyhole, MapPin, Settings } from "lucide-react";
+import { Bell, MapPin, Lock, Question, GearSix } from "phosphor-react";
+import type { ReactNode } from "react";
 
 interface QuickSetting {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   description: string;
   href: string;
@@ -20,25 +20,25 @@ export default function ProfileQuickSettings({
 }: ProfileQuickSettingsProps) {
   const defaultSettings: QuickSetting[] = [
     {
-      icon: <BellIcon className="w-6 h-6" />,
+      icon: <Bell weight="bold" size={24} />,
       label: "Cài đặt thông báo",
       description: "Quản lý thông báo cứu hộ",
       href: "#",
     },
     {
-      icon: <MapPin className="w-6 h-6" />,
+      icon: <MapPin weight="bold" size={24} />,
       label: "Vị trí mặc định",
       description: "Cập nhật vị trí thường xuyên",
       href: "#",
     },
     {
-      icon: <LockKeyhole className="w-6 h-6" />,
+      icon: <Lock weight="bold" size={24} />,
       label: "Bảo mật",
       description: "Đổi mật khẩu, xác thực 2 lớp",
       href: "#",
     },
     {
-      icon: <BadgeQuestionMark className="w-6 h-6" />,
+      icon: <Question weight="bold" size={24} />,
       label: "Trợ giúp & Hỗ trợ",
       description: "Hướng dẫn sử dụng cứu hộ",
       href: "#",
@@ -48,27 +48,34 @@ export default function ProfileQuickSettings({
   const displaySettings = settings.length > 0 ? settings : defaultSettings;
 
   return (
-    <Card className="mb-6 bg-white border border-gray-100 rounded-3xl p-6 lg:p-8 shadow-sm">
-      <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+    <div className="py-8 border-b border-white/20">
+      <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+        <span className="text-2xl bg-[#0f2f44]/70 border border-white/20 text-[#FFD1A0] p-2 rounded-xl">
+          <GearSix weight="bold" size={24} />
+        </span>
         Cài đặt nhanh
       </h3>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {displaySettings.map((setting, index) => (
           <Link
             key={index}
             href={setting.href}
-            className="flex items-center gap-5 p-5 rounded-2xl bg-white hover:bg-gray-50 border border-gray-100 hover:border-[#4C7AAC] transition-all duration-200 shadow-sm group"
+            className="flex items-center gap-5 p-4 lg:p-5 rounded-xl bg-[#0f2f44]/70 hover:bg-[#1a3f57]/80 border border-white/20 hover:border-[#FF7700]/45 transition-all duration-200 group"
           >
-            <div className="text-3xl group-hover:scale-110 transition-transform">{setting.icon}</div>
-            <div className="flex-1">
-              <p className="text-gray-900 font-bold mb-1">{setting.label}</p>
-              <p className="text-sm font-medium text-gray-500">{setting.description}</p>
+            <div className="text-white/70 group-hover:text-[#FFD1A0] transition-colors flex-shrink-0">
+              {setting.icon}
             </div>
-            <span className="text-2xl text-gray-400 group-hover:text-[#4C7AAC] font-bold transition-colors">›</span>
+            <div className="flex-1">
+              <p className="text-white font-bold mb-1">{setting.label}</p>
+              <p className="text-sm font-medium text-white/70">{setting.description}</p>
+            </div>
+            <span className="text-white/45 group-hover:text-[#FFD1A0] font-bold transition-colors flex-shrink-0">
+              ›
+            </span>
           </Link>
         ))}
       </div>
-    </Card>
+    </div>
   );
 }

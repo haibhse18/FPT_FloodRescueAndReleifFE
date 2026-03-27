@@ -38,9 +38,21 @@ export default function VehiclePage() {
   setLoading(true);
 
   try {
-     const query =
-  `?page=${pageNumber}&limit=10` +
-  (searchKeyword ? `&licensePlate=${encodeURIComponent(searchKeyword)}|&type=${encodeURIComponent(searchKeyword)}|&brand=${encodeURIComponent(searchKeyword)}` : "");
+    let mappedType = searchKeyword;
+    if (searchKeyword) {
+      const kw = searchKeyword.toLowerCase();
+      if (kw.includes("cứu thương") || kw.includes("ambulance")) mappedType = "AMBULANCE";
+      else if (kw.includes("xuồng") || kw.includes("thuyền") || kw.includes("boat")) mappedType = "RESCUE_BOAT";
+      else if (kw.includes("cứu hỏa") || kw.includes("fire")) mappedType = "FIRE_TRUCK";
+      else if (kw.includes("bán tải") || kw.includes("van")) mappedType = "VAN";
+      else if (kw.includes("tải") || kw.includes("truck")) mappedType = "TRUCK";
+      else if (kw.includes("mô tô") || kw.includes("xe máy") || kw.includes("motor")) mappedType = "MOTORCYCLE";
+      else if (kw.includes("khác") || kw.includes("other")) mappedType = "OTHERS";
+    }
+
+    const query =
+      `?page=${pageNumber}&limit=10` +
+      (searchKeyword ? `&licensePlate=${encodeURIComponent(searchKeyword)}|&type=${encodeURIComponent(mappedType)}|&brand=${encodeURIComponent(searchKeyword)}` : "");
 
     const res = await vehicleApi.getVehicles(query);
 
@@ -162,7 +174,7 @@ const handleImportExcel = async () => {
 
           <button
             onClick={handleSearch}
-            className="px-6 py-3 rounded-full bg-[#1A3263] hover:bg-[#1A3263]/80 text-white font-bold shadow-sm transition-colors"
+            className="px-6 py-3 rounded-full bg-[#1890ff] hover:bg-[#CFE5FF]/80 text-white font-bold shadow-sm transition-colors"
           >
             Tìm kiếm
           </button>

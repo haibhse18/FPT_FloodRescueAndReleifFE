@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Sidebar, { NavItem } from "@/shared/components/layout/Sidebar";
+import SidebarAdmin, { NavItem } from "./SidebarAdmin";
 import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
 import {
@@ -49,7 +49,7 @@ export default function AdminSidebar() {
   ];
 
   return (
-    <Sidebar
+    <SidebarAdmin
       navItems={navItems}
       user={user}
     />

@@ -15,6 +15,9 @@ import type {
 } from "./team.entity";
 
 export interface ITeamRepository {
+  // ── Applications ────────────────────────────────────────
+  getAllTeamApplications(params?: any): Promise<any>;
+
   // ── CRUD ────────────────────────────────────────────────
   getTeams(filter?: GetTeamsFilter): Promise<PaginatedTeams>;
   getTeamById(teamId: string): Promise<Team>;

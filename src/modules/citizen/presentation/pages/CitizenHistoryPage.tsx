@@ -1,8 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Fragment, useState, useEffect } from "react";
 import Link from "next/link";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
+import {
+  FiAlertTriangle,
+  FiCheckCircle,
+  FiClock,
+  FiEye,
+  FiFileText,
+  FiFilter,
+  FiInbox,
+  FiList,
+  FiMapPin,
+  FiPlus,
+  FiRefreshCw,
+  FiSearch,
+  FiSlash,
+  FiUsers,
+  FiX,
+} from "react-icons/fi";
 
 interface Request {
   id: string;
@@ -206,7 +223,7 @@ export default function CitizenHistoryPage() {
       );
       setCancelConfirmId(null);
     } catch (err: any) {
-      alert(`❌ ${err?.response?.data?.message || err.message || "Không thể hủy yêu cầu"}`);
+      alert(`${err?.response?.data?.message || err.message || "Không thể hủy yêu cầu"}`);
     } finally {
       setCancelingId(null);
     }
@@ -216,43 +233,10 @@ export default function CitizenHistoryPage() {
     (req) => filter === "all" || req.status === filter,
   );
 
-  const stats = [
-    {
-      label: "Tổng cộng",
-      value: requests.length.toString(),
-      icon: "📊",
-      color: "from-blue-500/20 to-cyan-500/10 border-blue-500/30",
-      filterKey: "all" as const,
-    },
-    {
-      label: "Hoàn thành",
-      value: requests.filter((r) => r.status === "completed").length.toString(),
-      icon: "✅",
-      color: "from-green-500/20 to-emerald-500/10 border-green-500/30",
-      filterKey: "completed" as const,
-    },
-    {
-      label: "Đang xử lý",
-      value: requests
-        .filter((r) => r.status === "in_progress")
-        .length.toString(),
-      icon: "⏳",
-      color: "from-yellow-500/20 to-orange-500/10 border-yellow-500/30",
-      filterKey: "in_progress" as const,
-    },
-    {
-      label: "Chờ xử lý",
-      value: requests.filter((r) => r.status === "pending").length.toString(),
-      icon: "⏱️",
-      color: "from-gray-500/20 to-slate-500/10 border-gray-500/30",
-      filterKey: "pending" as const,
-    },
-  ];
-
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col min-h-[100dvh]">
       {/* Fixed Header Banner */}
-      <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
+      <header className="sticky top-0 z-50 p-6 border-b border-white/20 bg-gradient-to-br from-[var(--color-accent)]/18 to-[#0b2233]/72 backdrop-blur-md">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
@@ -266,70 +250,89 @@ export default function CitizenHistoryPage() {
             <button
               onClick={() => fetchRequests(1)}
               disabled={isLoading}
-              className="p-2 lg:p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 lg:p-3 bg-white/18 hover:bg-white/28 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Làm mới"
             >
-              <span
-                className={`text-xl ${isLoading ? "animate-spin inline-block" : ""}`}
-              >
-                🔄
-              </span>
+              <FiRefreshCw className={`text-xl ${isLoading ? "animate-spin" : ""}`} />
             </button>
           </div>
         </div>
       </header>
 
-      <main className="pb-24 lg:pb-0 overflow-auto">
+      <main className="flex-1 pb-24 lg:pb-0 overflow-y-auto">
         {/* Background Pattern - Removed as it is now in layout */}
 
         <div className="relative p-4 lg:p-8 space-y-6 max-w-7xl mx-auto">
-          {/* Stats Grid — clickable to filter */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-            {stats.map((stat, index) => (
-              <button
-                key={index}
-                onClick={() => setFilter(stat.filterKey)}
-                className={`bg-gradient-to-br ${stat.color} border rounded-2xl p-4 lg:p-5 text-center hover:scale-105 transition-transform cursor-pointer ${filter === stat.filterKey
-                  ? "ring-2 ring-[#FF7700] ring-offset-2 ring-offset-[#133249]"
-                  : ""
-                  }`}
-              >
-                <div className="text-3xl lg:text-4xl mb-2">{stat.icon}</div>
-                <div className="text-2xl lg:text-3xl font-bold text-white mb-1">
-                  {stat.value}
-                </div>
-                <div className="text-xs lg:text-sm text-gray-400">
-                  {stat.label}
-                </div>
-              </button>
-            ))}
-          </div>
-
           {/* Filters */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+          <div className="bg-[#0f2f44]/70 border border-white/20 rounded-2xl p-4">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-gray-400 text-sm font-bold mr-2">
-                🔍 Lọc:
+              <span className="text-white/80 text-sm font-bold mr-2">
+                <span className="inline-flex items-center gap-1.5"><FiFilter /> Lọc:</span>
               </span>
               {[
-                { value: "all", label: "Tất cả", icon: "📋", count: requests.length },
-                { value: "pending", label: "Chờ xử lý", icon: "⏱️", count: requests.filter((r) => r.status === "pending").length },
-                { value: "in_progress", label: "Đang xử lý", icon: "⏳", count: requests.filter((r) => r.status === "in_progress").length },
-                { value: "completed", label: "Hoàn thành", icon: "✅", count: requests.filter((r) => r.status === "completed").length },
-                { value: "cancelled", label: "Đã hủy", icon: "🚫", count: requests.filter((r) => r.status === "cancelled").length },
+                {
+                  value: "all",
+                  label: "Tất cả",
+                  icon: <FiList />,
+                  count: requests.length,
+                  activeClass: "bg-slate-500/30 text-slate-100 border border-slate-400/40 shadow-lg shadow-slate-900/20",
+                  inactiveClass: "bg-slate-500/10 text-slate-300 border border-slate-500/20 hover:bg-slate-500/20 hover:text-slate-100",
+                  badgeActiveClass: "bg-slate-200/20 text-slate-100",
+                  badgeInactiveClass: "bg-slate-500/20 text-slate-300",
+                },
+                {
+                  value: "pending",
+                  label: "Chờ xử lý",
+                  icon: <FiClock />,
+                  count: requests.filter((r) => r.status === "pending").length,
+                  activeClass: "bg-amber-500/30 text-amber-100 border border-amber-400/40 shadow-lg shadow-amber-900/20",
+                  inactiveClass: "bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-100",
+                  badgeActiveClass: "bg-amber-200/20 text-amber-100",
+                  badgeInactiveClass: "bg-amber-500/20 text-amber-200",
+                },
+                {
+                  value: "in_progress",
+                  label: "Đang xử lý",
+                  icon: <FiRefreshCw />,
+                  count: requests.filter((r) => r.status === "in_progress").length,
+                  activeClass: "bg-sky-500/30 text-sky-100 border border-sky-400/40 shadow-lg shadow-sky-900/20",
+                  inactiveClass: "bg-sky-500/10 text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 hover:text-sky-100",
+                  badgeActiveClass: "bg-sky-200/20 text-sky-100",
+                  badgeInactiveClass: "bg-sky-500/20 text-sky-200",
+                },
+                {
+                  value: "completed",
+                  label: "Hoàn thành",
+                  icon: <FiCheckCircle />,
+                  count: requests.filter((r) => r.status === "completed").length,
+                  activeClass: "bg-emerald-500/30 text-emerald-100 border border-emerald-400/40 shadow-lg shadow-emerald-900/20",
+                  inactiveClass: "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 hover:text-emerald-100",
+                  badgeActiveClass: "bg-emerald-200/20 text-emerald-100",
+                  badgeInactiveClass: "bg-emerald-500/20 text-emerald-200",
+                },
+                {
+                  value: "cancelled",
+                  label: "Đã hủy",
+                  icon: <FiSlash />,
+                  count: requests.filter((r) => r.status === "cancelled").length,
+                  activeClass: "bg-rose-500/30 text-rose-100 border border-rose-400/40 shadow-lg shadow-rose-900/20",
+                  inactiveClass: "bg-rose-500/10 text-rose-300 border border-rose-500/20 hover:bg-rose-500/20 hover:text-rose-100",
+                  badgeActiveClass: "bg-rose-200/20 text-rose-100",
+                  badgeInactiveClass: "bg-rose-500/20 text-rose-200",
+                },
               ].map((btn) => (
                 <button
                   key={btn.value}
                   onClick={() => setFilter(btn.value as typeof filter)}
                   className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === btn.value ?
-                    "bg-[#FF7700] text-white shadow-lg shadow-[#FF7700]/20"
-                    : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                    btn.activeClass
+                    : btn.inactiveClass
                     }`}
                 >
                   <span>{btn.icon}</span>
                   <span>{btn.label}</span>
                   <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${filter === btn.value ? "bg-white/20" : "bg-white/10"
-                    }`}>
+                    } ${filter === btn.value ? btn.badgeActiveClass : btn.badgeInactiveClass}`}>
                     {btn.count}
                   </span>
                 </button>
@@ -340,7 +343,7 @@ export default function CitizenHistoryPage() {
           {/* Requests List */}
           <div className="space-y-3">
             {isLoading ?
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center">
+              <div className="bg-[#0f2f44]/70 border border-white/20 rounded-2xl p-12 text-center">
                 <div className="w-16 h-16 border-4 border-[#FF7700] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                 <h3 className="text-xl font-bold text-white mb-2">
                   Đang tải...
@@ -349,7 +352,9 @@ export default function CitizenHistoryPage() {
               </div>
               : error ?
                 <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-12 text-center">
-                  <div className="text-6xl mb-4">⚠️</div>
+                  <div className="mb-4 flex justify-center">
+                    <FiAlertTriangle className="text-6xl text-red-400" />
+                  </div>
                   <h3 className="text-xl font-bold text-red-400 mb-2">
                     Đã xảy ra lỗi
                   </h3>
@@ -358,14 +363,18 @@ export default function CitizenHistoryPage() {
                     onClick={() => fetchRequests(1)}
                     className="inline-flex items-center gap-2 px-6 py-3 bg-[#FF7700] hover:bg-[#FF8800] rounded-xl text-white font-bold transition-all"
                   >
-                    <span>🔄</span>
+                    <FiRefreshCw />
                     <span>Thử lại</span>
                   </button>
                 </div>
                 : filteredRequests.length === 0 ?
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center">
-                    <div className="text-6xl mb-4">
-                      {requests.length === 0 ? "📭" : "🔭"}
+                  <div className="bg-[#0f2f44]/70 border border-white/20 rounded-2xl p-12 text-center">
+                    <div className="mb-4 flex justify-center">
+                      {requests.length === 0 ? (
+                        <FiInbox className="text-6xl text-gray-400" />
+                      ) : (
+                        <FiSearch className="text-6xl text-gray-400" />
+                      )}
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">
                       {requests.length === 0 ?
@@ -382,7 +391,7 @@ export default function CitizenHistoryPage() {
                         href="/request"
                         className="inline-flex items-center gap-2 px-6 py-3 bg-[#FF7700] hover:bg-[#FF8800] rounded-xl text-white font-bold transition-all"
                       >
-                        <span>➕</span>
+                        <FiPlus />
                         <span>Tạo yêu cầu mới</span>
                       </Link>
                     )}
@@ -390,10 +399,10 @@ export default function CitizenHistoryPage() {
                   : filteredRequests.map((request) => (
                     <div
                       key={request.id}
-                      className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-5 hover:bg-white/10 hover:border-white/20 transition-all"
+                      className="bg-[#0f2f44]/70 border border-white/20 rounded-2xl p-4 lg:p-5 hover:bg-[#1a3f57]/80 hover:border-white/30 transition-all"
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
+                      <div className="space-y-3">
+                        <div>
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <span className="font-mono text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded">
                               #{(request.id?.length ?? 0) > 8 ? request.id.slice(-8).toUpperCase() : (request.id ?? "N/A")}
@@ -412,10 +421,10 @@ export default function CitizenHistoryPage() {
                                 }`}
                             >
                               {request.priority === "critical" ?
-                                "🚨 KHẨN CẤP"
+                                "KHẨN CẤP"
                                 : request.priority === "high" ?
-                                  "⚠️ CAO"
-                                  : "ℹ️ BÌNH THƯỜNG"}
+                                  "CAO"
+                                  : "BÌNH THƯỜNG"}
                             </span>
                           </div>
                           <h3 className="text-lg font-bold text-white mb-2">
@@ -423,26 +432,26 @@ export default function CitizenHistoryPage() {
                           </h3>
                           <div className="space-y-1 text-sm text-gray-400">
                             <p className="flex items-center gap-2">
-                              <span>📍</span>
+                              <FiMapPin className="flex-shrink-0" />
                               <span>{request.location}</span>
                             </p>
                             <p className="flex items-center gap-2">
-                              <span>👥</span>
+                              <FiUsers className="flex-shrink-0" />
                               <span>{request.peopleCount} người</span>
                             </p>
                             <p className="flex items-center gap-2">
-                              <span>🕐</span>
+                              <FiClock className="flex-shrink-0" />
                               <span>Tạo lúc: {request.createdAt}</span>
                             </p>
                             {request.completedAt && (
                               <p className="flex items-center gap-2 text-green-400">
-                                <span>✅</span>
+                                <FiCheckCircle className="flex-shrink-0" />
                                 <span>Hoàn thành: {request.completedAt}</span>
                               </p>
                             )}
                             {request.description && (
                               <p className="flex items-start gap-2 mt-1">
-                                <span className="flex-shrink-0">📝</span>
+                                <FiFileText className="flex-shrink-0 mt-0.5" />
                                 <span className="line-clamp-2 text-gray-400">
                                   {request.description}
                                 </span>
@@ -450,15 +459,11 @@ export default function CitizenHistoryPage() {
                             )}
                           </div>
                         </div>
-                      </div>
-                      <div className="flex gap-2 mt-4">
                         {/* Mini 4-step status progress */}
-                        <div className="flex-1">
+                        <div className="pt-1">
                           {(() => {
                             const isCancelled =
-                              request.originalStatus === "Rejected" ||
                               request.originalStatus === "REJECTED" ||
-                              request.originalStatus === "Cancelled" ||
                               request.originalStatus === "CANCELLED";
                             const steps = [
                               { label: "Gửi" },
@@ -472,18 +477,18 @@ export default function CitizenHistoryPage() {
                                   : ["Accepted", "VERIFIED"].includes(request.originalStatus) ? 1
                                     : 0;
                             return (
-                              <div className="mb-3">
+                              <div>
                                 {/* Progress bar with steps and labels */}
-                                <div className="flex items-start gap-1">
+                                <div className="flex items-center">
                                   {steps.map((step, i) => {
                                     const done = !isCancelled && i < stepIndex;
                                     const active = !isCancelled && i === stepIndex;
                                     const cancelled = isCancelled;
                                     const activeCompleted =
                                       active && stepIndex === steps.length - 1;
+
                                     return (
-                                      <div key={i} className="flex flex-col items-center flex-1">
-                                        {/* Circle step */}
+                                      <Fragment key={i}>
                                         <div
                                           className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 transition-all ${cancelled
                                             ? "bg-red-500/30 text-red-300 border border-red-500/50"
@@ -496,45 +501,63 @@ export default function CitizenHistoryPage() {
                                                   : "bg-white/10 text-gray-300 border border-white/20"
                                             }`}
                                         >
-                                          {cancelled ? "✕" : (done || activeCompleted) ? "✓" : i + 1}
+                                          {cancelled ? (
+                                            <FiX className="text-xs" />
+                                          ) : done || activeCompleted ? (
+                                            <FiCheckCircle className="text-xs" />
+                                          ) : (
+                                            i + 1
+                                          )}
                                         </div>
-                                        {/* Connector line */}
-                                        <div
-                                          className={`w-full h-0.5 mt-1 transition-all ${cancelled
-                                            ? "bg-red-500/30"
-                                            : i < stepIndex || activeCompleted
-                                              ? "bg-green-500"
-                                              : i === stepIndex
-                                                ? "bg-[#FF7700]"
-                                                : "bg-white/10"
-                                            }`}
-                                        />
-                                        {/* Step label */}
-                                        <span
-                                          className={`text-xs font-semibold mt-2 text-center leading-tight ${isCancelled
-                                            ? "text-red-400"
-                                            : activeCompleted
-                                              ? "text-green-400"
-                                              : i === stepIndex
-                                                ? "text-[#FF7700] font-bold"
-                                                : i < stepIndex
-                                                  ? "text-green-400"
-                                                  : "text-gray-500"
-                                            }`}
-                                        >
-                                          {step.label}
-                                        </span>
-                                      </div>
+                                        {i < steps.length - 1 && (
+                                          <div
+                                            className={`flex-1 h-0.5 transition-all ${cancelled
+                                              ? "bg-red-500/30"
+                                              : i < stepIndex || activeCompleted
+                                                ? "bg-green-500"
+                                                : i === stepIndex
+                                                  ? "bg-[#FF7700]"
+                                                  : "bg-white/10"
+                                              }`}
+                                          />
+                                        )}
+                                      </Fragment>
+                                    );
+                                  })}
+                                </div>
+
+                                <div className="mt-2 grid grid-cols-4 gap-1">
+                                  {steps.map((step, i) => {
+                                    const activeCompleted =
+                                      !isCancelled && i === stepIndex && stepIndex === steps.length - 1;
+
+                                    return (
+                                      <span
+                                        key={`label-${i}`}
+                                        className={`text-xs font-semibold text-center leading-tight ${isCancelled
+                                          ? "text-red-400"
+                                          : activeCompleted
+                                            ? "text-green-400"
+                                            : i === stepIndex
+                                              ? "text-[#FF7700] font-bold"
+                                              : i < stepIndex
+                                                ? "text-green-400"
+                                                : "text-gray-500"
+                                          }`}
+                                      >
+                                        {step.label}
+                                      </span>
                                     );
                                   })}
                                 </div>
                                 {isCancelled && (
-                                  <p className="text-xs text-red-400 font-bold">
-                                    ✕{" "}
-                                    {request.originalStatus === "Rejected"
-                                      || request.originalStatus === "REJECTED"
-                                      ? "Yêu cầu bị từ chối"
-                                      : "Yêu cầu đã hủy"}
+                                  <p className="mt-2 text-xs text-red-400 font-bold">
+                                    <span className="inline-flex items-center gap-1"><FiX />
+                                      {request.originalStatus === "Rejected"
+                                        || request.originalStatus === "REJECTED"
+                                        ? "Yêu cầu bị từ chối"
+                                        : "Yêu cầu đã hủy"}
+                                    </span>
                                   </p>
                                 )}
                               </div>
@@ -542,19 +565,19 @@ export default function CitizenHistoryPage() {
                           })()}
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 mt-1">
                         <Link
                           href={`/history/${request.id}`}
-                          className="flex-1 px-4 py-2 bg-[#FF7700]/20 hover:bg-[#FF7700]/30 border border-[#FF7700]/30 rounded-xl text-[#FF7700] hover:text-[#FF8800] text-sm font-bold text-center transition-all"
+                          className="flex-1 px-4 py-2 bg-[#FF7700]/20 hover:bg-[#FF7700]/30 border border-[#FF7700]/30 rounded-xl text-[#FF7700] hover:text-[#FF8800] text-sm font-bold text-center transition-all inline-flex items-center justify-center gap-2"
                         >
-                          👁️ Xem chi tiết
+                          <FiEye /> Xem chi tiết
                         </Link>
                         {!(["Completed", "COMPLETED", "PARTIALLY_FULFILLED", "CLOSED", "Cancelled", "CANCELLED", "Rejected", "REJECTED"].includes(request.originalStatus)) && (
                           <button
                             onClick={() => setCancelConfirmId(request.id)}
-                            className="flex-1 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-xl text-red-400 hover:text-red-300 text-sm font-bold transition-all"
+                            className="flex-1 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-xl text-red-400 hover:text-red-300 text-sm font-bold transition-all inline-flex items-center justify-center gap-2"
                           >
-                            🚫 Hủy
+                            <FiSlash /> Hủy
                           </button>
                         )}
                       </div>
@@ -565,7 +588,7 @@ export default function CitizenHistoryPage() {
 
           {/* Pagination Controls */}
           {requests.length > 0 && (
-            <div className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-2xl p-4">
+            <div className="flex items-center justify-center gap-2 bg-[#0f2f44]/70 border border-white/20 rounded-2xl p-4">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
@@ -603,7 +626,7 @@ export default function CitizenHistoryPage() {
         {/* Cancel Confirmation Modal */}
         {cancelConfirmId && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] p-4">
-            <div className="bg-[#1a3a52] rounded-xl p-6 max-w-sm w-full border border-white/20">
+            <div className="bg-[#0f2f44]/70 rounded-xl p-6 max-w-sm w-full border border-white/20">
               <h3 className="text-white font-bold text-lg mb-3">
                 Xác nhận hủy yêu cầu
               </h3>

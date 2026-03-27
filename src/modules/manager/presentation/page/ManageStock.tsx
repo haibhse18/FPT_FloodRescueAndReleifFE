@@ -205,7 +205,7 @@ export default function StockPage() {
         fetchVehicles(vehicleKeyword, vehiclePage);
         fetchVehicleStats();
       } else {
-        fetchSupplyItems(supplyKeyword, supplyPage);
+        fetchSupplyItems(supplyKeyword, supplyPage); 
         fetchSupplyStats();
       }
     } catch { alert("Import thất bại"); }
@@ -288,7 +288,7 @@ export default function StockPage() {
         className="px-5 py-2 rounded-full bg-white border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 shadow-sm font-medium">Prev</button>
       {Array.from({ length: totalPages }, (_, i) => (
         <button key={i} onClick={() => onPage(i + 1)}
-          className={`w-10 h-10 rounded-full font-bold shadow-sm flex items-center justify-center transition-colors ${page === i + 1 ? "bg-[#1A3263] text-white" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}>
+          className={`w-10 h-10 rounded-full font-bold shadow-sm flex items-center justify-center transition-colors ${page === i + 1 ? "bg-[#1890ff] text-white" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}>
           {i + 1}
         </button>
       ))}
@@ -374,9 +374,9 @@ export default function StockPage() {
       {activeTab === "supply" && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-[#1A3263] rounded-3xl p-6 shadow-md relative overflow-hidden group">
+            <div className="bg-[#1890ff] rounded-3xl p-6 shadow-md relative overflow-hidden group">
               <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-              <p className="text-emerald-100 text-sm font-medium mb-2 relative z-10 flex items-center justify-between">Tổng</p>
+              <p className="text-[#EFF1F3] text-sm font-medium mb-2 relative z-10 flex items-center justify-between">Tổng</p>
               <p className="text-4xl font-bold text-white relative z-10">{supplyStats.total}</p>
             </div>
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
@@ -405,7 +405,7 @@ export default function StockPage() {
                 placeholder="Tìm vật tư..."
                 className="w-full md:w-80 px-6 py-3 rounded-full bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
               <button onClick={() => fetchSupplyItems(supplyKeyword, 1)}
-                className="px-6 py-3 bg-[#1A3263] hover:bg-[#1A3263]/80 rounded-full font-bold text-white shadow-sm transition-colors">Tìm kiếm</button>
+                className="px-6 py-3 bg-[#1890ff] hover:bg-[#CFE5FF]/80 rounded-full font-bold text-white shadow-sm transition-colors">Tìm kiếm</button>
             </div>
 
             <ImportBar
@@ -468,9 +468,9 @@ export default function StockPage() {
       {activeTab === "vehicle" && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-[#1A3263] rounded-3xl p-6 shadow-md relative overflow-hidden group">
+            <div className="bg-[#1890ff] rounded-3xl p-6 shadow-md relative overflow-hidden group">
               <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-              <p className="text-emerald-100 text-sm font-medium mb-2 relative z-10 flex items-center justify-between">Tổng</p>
+              <p className="text-[#EFF1F3] text-sm font-medium mb-2 relative z-10 flex items-center justify-between">Tổng</p>
               <p className="text-4xl font-bold text-white relative z-10">{vehicleStats.total}</p>
             </div>
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
@@ -499,7 +499,7 @@ export default function StockPage() {
                 placeholder="Tìm biển số..."
                 className="w-full md:w-80 px-6 py-3 rounded-full bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
               <button onClick={() => fetchVehicles(vehicleKeyword, 1)}
-                className="px-6 py-3 bg-[#1A3263] hover:bg-[#1A3263]/80 rounded-full font-bold text-white shadow-sm transition-colors">Tìm kiếm</button>
+                className="px-6 py-3 bg-[#1890ff] hover:bg-[#CFE5FF]/80 rounded-full font-bold text-white shadow-sm transition-colors">Tìm kiếm</button>
             </div>
 
             <ImportBar

@@ -9,6 +9,11 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "FPT Flood Rescue and Relief",
   description: "Flood Rescue and Relief Management System",
+  icons: {
+    icon: "/images/project-logo.png",
+    shortcut: "/images/project-logo.png",
+    apple: "/images/project-logo.png",
+  },
 };
 
 import { Toaster as SonnerToaster } from "@/shared/ui/components/sonner";

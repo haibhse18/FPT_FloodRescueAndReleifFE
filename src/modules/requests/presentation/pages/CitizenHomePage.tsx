@@ -2,12 +2,25 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+import { Heart, ShieldCheck, MapPin, Crosshair } from "phosphor-react";
 import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
-import NotificationBell from "@/modules/notifications/presentation/components/NotificationBell";
 
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
+
+const OpenMap = dynamic(
+  () => import("@/modules/map/presentation/components/OpenMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[300px] w-full bg-[#0f2f44]/70 border border-white/20 rounded-lg flex items-center justify-center">
+        <p className="text-white/70 text-sm">Đang tải bản đồ...</p>
+      </div>
+    ),
+  },
+);
 
 const ACTIVE_REQUEST_STATUSES = new Set([
   "SUBMITTED",
@@ -18,6 +31,8 @@ const ACTIVE_REQUEST_STATUSES = new Set([
   "ACCEPTED",
 ]);
 
+const HOME_BACKGROUND_URL = "/images/flood-rescue.jpg";
+
 function normalizeStatus(status: unknown): string {
   return String(status ?? "")
     .trim()
@@ -27,17 +42,78 @@ function normalizeStatus(status: unknown): string {
 
 export default function CitizenHomePage() {
   const [userName, setUserName] = useState("Người dùng");
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCheckingActiveRequest, setIsCheckingActiveRequest] = useState(true);
+  const [gpsStatus, setGpsStatus] = useState<
+    "loading" | "ready" | "unsupported" | "denied" | "error"
+  >("loading");
+  const [gpsCoords, setGpsCoords] = useState<{ lat: number; lon: number } | null>(
+    null,
+  );
+  const [gpsAddress, setGpsAddress] = useState("Đang xác định vị trí...");
   const [activeRequest, setActiveRequest] = useState<{
     id: string;
     status: string;
   } | null>(null);
+
+  const requestCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setGpsStatus("unsupported");
+      setGpsAddress("Thiết bị không hỗ trợ GPS.");
+      return;
+    }
+
+    setGpsStatus("loading");
+    setGpsAddress("Đang xác định vị trí...");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        setGpsCoords({ lat, lon });
+        setGpsStatus("ready");
+
+        try {
+          const query = new URLSearchParams({
+            lat: String(lat),
+            lon: String(lon),
+          });
+          const response = await fetch(`/api/reverse-geocode?${query.toString()}`);
+          const data = await response.json();
+
+          if (response.ok && data?.display_name) {
+            setGpsAddress(String(data.display_name));
+          } else {
+            setGpsAddress(`Vị trí hiện tại: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+          }
+        } catch {
+          setGpsAddress(`Vị trí hiện tại: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+        }
+      },
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          setGpsStatus("denied");
+          setGpsAddress("Bạn đã từ chối quyền truy cập vị trí.");
+          return;
+        }
+        setGpsStatus("error");
+        setGpsAddress("Không thể lấy vị trí GPS. Vui lòng thử lại.");
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 30000,
+      },
+    );
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const user = await getCurrentUserUseCase.execute();
         setUserName(user.displayName || "Người dùng");
+        setUserAvatar(user.avatar || null);
       } catch (error) {
         console.error("Error fetching user:", error);
       } finally {
@@ -73,208 +149,212 @@ export default function CitizenHomePage() {
       } catch {
         // Keep SOS in default emergency mode if API fails.
         setActiveRequest(null);
+      } finally {
+        setIsCheckingActiveRequest(false);
       }
     };
 
     fetchUser();
     checkActiveRequest();
+    requestCurrentLocation();
   }, []);
 
   const quickActions = [
     {
       id: "danger",
       title: "Đăng ký tình nguyện",
-      subtitle: "Tham gia hỗ trợ cộng đồng",
+      subtitle: "Tham gia hỗ trợ",
       href: "/volunteer",
-      color:
-        "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500",
+      icon: <Heart weight="bold" size={18} />,
     },
     {
       id: "guide",
       title: "Hướng dẫn an toàn",
       subtitle: "Kỹ năng sinh tồn",
       href: "/guide",
-      color:
-        "bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600",
+      icon: <ShieldCheck weight="bold" size={18} />,
     },
   ];
 
-  const quickActionCardBaseClass =
-    "w-full min-h-[128px] lg:min-h-[156px] rounded-2xl p-6 lg:p-8 border border-white/15 flex items-center justify-center shadow-lg transition-all group";
+  const keyframeStyles = `
+    @keyframes flare {
+      0%, 100% { 
+        box-shadow: 0 0 0 0 rgba(255, 119, 0, 0.4), 0 0 20px rgba(255, 119, 0, 0.2);
+      }
+      50% { 
+        box-shadow: 0 0 0 12px rgba(255, 119, 0, 0), 0 0 30px rgba(255, 119, 0, 0.3);
+      }
+    }
+    @keyframes flare-red {
+      0%, 100% { 
+        box-shadow: 0 0 0 0 rgba(255, 53, 53, 0.4), 0 0 20px rgba(255, 53, 53, 0.2);
+      }
+      50% { 
+        box-shadow: 0 0 0 12px rgba(255, 53, 53, 0), 0 0 30px rgba(255, 53, 53, 0.3);
+      }
+    }
+  `;
 
   return (
     <>
-      {/* Fixed Header Banner */}
-      <header className="sticky top-0 z-50 p-4 lg:p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-1">
-              <h1 className="text-white text-xl lg:text-2xl font-extrabold tracking-tight leading-tight uppercase">
-                Cứu hộ Lũ lụt
-              </h1>
-              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full w-fit">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                <span className="text-xs font-semibold text-white">
-                  Hệ thống trực tuyến
-                </span>
+      <style>{keyframeStyles}</style>
+      <main className="relative min-h-screen pb-24 lg:pb-10 overflow-auto">
+        <div
+          className="absolute inset-0 bg-center bg-cover bg-no-repeat"
+          style={{ backgroundImage: `url(${HOME_BACKGROUND_URL})` }}
+          aria-hidden="true"
+        />
+        <div className="absolute inset-0 bg-[#0b2233]/68" aria-hidden="true" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,119,0,0.2),transparent_45%)]" aria-hidden="true" />
+
+        <header className="lg:hidden relative z-20 border-b border-white/10 bg-[#0f2f44]/90 backdrop-blur-sm px-4 py-3 flex items-center justify-between">
+          <div className="text-white font-semibold text-sm">FPT Rescue & Relief</div>
+          <Link
+            href="/profile"
+            className="w-10 h-10 rounded-full border border-white/20 bg-[#FF7700]/20 flex items-center justify-center hover:bg-[#FF7700]/30 transition-colors overflow-hidden flex-shrink-0"
+            aria-label="Đi tới trang hồ sơ"
+          >
+            {userAvatar ? (
+              <img
+                src={userAvatar}
+                alt={userName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-[#FF7700] to-[#FFD1A0] flex items-center justify-center text-white font-bold text-sm">
+                {userName.charAt(0).toUpperCase()}
               </div>
-            </div>
-            {/* User Greeting and Bell */}
-            <div className="flex items-center gap-2 sm:gap-4">
-              <NotificationBell />
-              <Link
-                href="/profile"
-                className="flex items-center gap-3 rounded-xl px-1 py-1 hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50"
-                aria-label="Mở trang hồ sơ cá nhân"
-              >
-                <div className="text-right hidden sm:block">
-                  <p className="text-xs text-white/60">Xin chào,</p>
-                  <p className="text-sm font-bold text-white truncate max-w-[140px]">
-                    {isLoading ?
-                      <span className="inline-block w-24 h-4 bg-white/20 rounded animate-pulse" />
-                      : userName}
+            )}
+          </Link>
+        </header>
+
+        <div className="relative z-10 p-4 lg:p-8 min-h-screen">
+          <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+            <div className="lg:col-span-7 w-full">
+              <section className="rounded-lg border border-white/20 bg-[#0f2f44]/70 p-3 lg:p-4 space-y-3 lg:space-y-4">
+                <div className="flex flex-col items-center text-center">
+                  <h1 className="text-[#FF7700] font-bold text-xl lg:text-2xl tracking-tight mb-3">
+                    {isCheckingActiveRequest
+                      ? "Đang kiểm tra"
+                      : activeRequest
+                        ? "Yêu cầu đang xử lý!"
+                        : "Cần hỗ trợ ?"}
+                  </h1>
+                  <p className="text-white/75 text-xs lg:text-sm leading-relaxed">
+                    {isCheckingActiveRequest
+                      ? "Hệ thống đang kiểm tra yêu cầu..."
+                      : activeRequest
+                        ? "Bấm vào hình tròn để theo dõi"
+                        : ""}
                   </p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-[#FF7700]/30 border-2 border-[#FF7700]/50 flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
-                  {isLoading ? "?" : userName.charAt(0).toUpperCase()}
-                </div>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
 
-      <main className="pb-24 lg:pb-0 overflow-auto">
-        {/* Background Pattern - Removed as it is now in layout */}
-
-        <div className="relative p-4 lg:p-8 space-y-6 max-w-7xl mx-auto">
-          {/* Hero SOS Section */}
-          <div className="flex flex-col items-center justify-center py-8 lg:py-12">
-            <div className="text-center mb-8">
-              {/* Mobile greeting (hidden on sm+) */}
-              <p className="text-white/60 text-sm mb-1 sm:hidden">
-                Xin chào,{" "}
-                <span className="text-white font-bold">
-                  {isLoading ? "..." : userName}
-                </span>
-              </p>
-              <p className="text-[#FF7700] font-bold text-2xl lg:text-3xl mb-2">
-                {activeRequest ? "YÊU CẦU ĐANG ĐƯỢC XỬ LÝ" : "CẦN HỖ TRỢ NGAY?"}
-              </p>
-              <p className="text-slate-300 text-base lg:text-lg">
-                {activeRequest
-                  ? "Nhấn nút bên dưới để theo dõi yêu cầu cứu hộ gần nhất của bạn"
-                  : "Bấm nút bên dưới để gửi tín hiệu cấp cứu và vị trí của bạn"}
-              </p>
-            </div>
-
-            {/* SOS Button with Ripple Effect */}
-            <div
-              className="relative flex items-center justify-center"
-              role="group"
-              aria-label="Nút cứu hộ khẩn cấp"
-            >
-              {activeRequest ? (
-                <>
-                  <div
-                    className="absolute w-64 h-64 lg:w-80 lg:h-80 rounded-full border border-orange-400/30 animate-ping-slow"
-                    aria-hidden="true"
-                  ></div>
-                  <div
-                    className="absolute w-52 h-52 lg:w-64 lg:h-64 rounded-full border border-orange-400/50 animate-ping"
-                    style={{ animationDuration: "3s", animationDelay: "1s" }}
-                    aria-hidden="true"
-                  ></div>
-
-                  <Link
-                    href={`/history/${activeRequest.id}`}
-                    className="relative w-48 h-48 lg:w-56 lg:h-56 rounded-full bg-[#FF7700] border-4 border-white/80 shadow-[0_0_40px_rgba(255,119,0,0.6)] flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform z-20 hover:bg-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-400/50"
-                    aria-label="Theo dõi yêu cầu cứu hộ đang xử lý"
-                  >
-                    <span className="text-sm lg:text-base font-black tracking-wide text-white text-center leading-tight px-3">
-                      YÊU CẦU
-                      <br />
-                      ĐANG XỬ LÝ
-                    </span>
-                    <span className="text-[11px] font-bold text-white/75 tracking-wide uppercase">
-                      Theo dõi ngay
-                    </span>
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <div
-                    className="absolute w-64 h-64 lg:w-80 lg:h-80 rounded-full border border-red-500/30 animate-ping-slow"
-                    aria-hidden="true"
-                  ></div>
-                  <div
-                    className="absolute w-52 h-52 lg:w-64 lg:h-64 rounded-full border border-red-500/50 animate-ping"
-                    style={{ animationDuration: "3s", animationDelay: "1s" }}
-                    aria-hidden="true"
-                  ></div>
-
-                  <Link
-                    href="/request"
-                    className="sos-pulse relative w-48 h-48 lg:w-56 lg:h-56 rounded-full bg-[#FF3535] border-4 border-white shadow-[0_0_40px_rgba(255,53,53,0.7)] flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform z-20 group cursor-pointer hover:bg-red-600 focus:outline-none focus:ring-4 focus:ring-red-500/50"
-                    aria-label="Gửi yêu cầu"
-                  >
-                    <span className="text-xl lg:text-2xl font-black tracking-wider text-white">
-                      GỬI YÊU CẦU
-                    </span>
-                    <span className="text-sm lg:text-base font-bold tracking-widest text-white/90">
-                      Cứu hộ / Cứu trợ
-                    </span>
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Quick Options Section */}
-          <section
-            className="space-y-4 w-full"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 items-stretch w-full">
-              {quickActions.map((action) => {
-                const content = (
-                  <>
-                    <div className="flex flex-col flex-1 items-center justify-center text-center">
-                      <span className="text-white font-extrabold text-xl lg:text-2xl leading-tight tracking-tight">
-                        {action.title}
-                      </span>
-                      <span className="text-white/90 text-base lg:text-lg font-medium mt-2">
-                        {action.subtitle}
-                      </span>
+                <div className="flex justify-center">
+                  {isCheckingActiveRequest ? (
+                    <div className="w-44 h-44 lg:w-52 lg:h-52 rounded-full border-2 border-white/30 bg-white/15 flex items-center justify-center">
+                      <span className="inline-block w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                     </div>
-                  </>
-                );
-
-                if (!action.href) {
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className={`${action.color} ${quickActionCardBaseClass} cursor-default focus:outline-none`}
-                      aria-label={`${action.title}: ${action.subtitle}`}
+                  ) : activeRequest ? (
+                    <Link
+                      href={`/history/${activeRequest.id}`}
+                      className="w-44 h-44 lg:w-52 lg:h-52 rounded-full border-2 border-[#FF7700]/60 bg-[#FF7700] hover:bg-[#e66a00] flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 hover:scale-95"
+                      style={{ animation: "flare 2s ease-in-out infinite" }}
+                      aria-label="Theo dõi yêu cầu cứu hộ đang xử lý"
                     >
-                      {content}
-                    </button>
-                  );
-                }
+                      <span className="text-white font-bold text-sm lg:text-base text-center px-6">
+                        Theo dõi yêu cầu đang xử lý
+                      </span>
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/request"
+                      className="w-44 h-44 lg:w-52 lg:h-52 rounded-full border-2 border-red-400/60 bg-[#FF3535] hover:bg-red-600 flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-red-500/50 hover:scale-95"
+                      style={{ animation: "flare-red 2s ease-in-out infinite" }}
+                      aria-label="Gửi yêu cầu cứu hộ/cứu trợ"
+                    >
+                      <span className="text-white font-bold text-sm lg:text-base text-center px-6">
+                        Gửi yêu cầu cứu hộ / cứu trợ
+                      </span>
+                    </Link>
+                  )}
+                </div>
 
-                return (
-                  <Link
-                    key={action.id}
-                    href={action.href}
-                    className={`${action.color} ${quickActionCardBaseClass} cursor-pointer hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50`}
-                    aria-label={`${action.title}: ${action.subtitle}`}
-                  >
-                    {content}
-                  </Link>
-                );
-              })}
+                <div className="grid grid-cols-2 gap-4 w-full">
+                  {quickActions.map((action) => (
+                    <Link
+                      key={action.id}
+                      href={action.href}
+                      className="w-full px-3 py-4 rounded-lg border border-white/15 bg-[#0f2f44]/70 hover:bg-[#1a3a52]/80 transition-all flex flex-col items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 group"
+                      aria-label={`${action.title}: ${action.subtitle}`}
+                      title={`${action.title} - ${action.subtitle}`}
+                    >
+                      <span className="w-10 h-10 rounded-lg bg-[#FF7700]/20 text-[#FFD1A0] flex items-center justify-center group-hover:bg-[#FF7700]/30 transition-colors flex-shrink-0">
+                        {action.icon}
+                      </span>
+                      <div className="text-center min-w-0">
+                        <span className="block text-white text-xs lg:text-sm font-semibold leading-tight truncate">
+                          {action.title}
+                        </span>
+                        <span className="block text-white/60 text-[10px] lg:text-xs leading-tight truncate">
+                          {action.subtitle}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
             </div>
-          </section>
+
+            <aside className="lg:col-span-5 w-full">
+              <section className="rounded-lg border border-white/20 bg-[#0f2f44]/70 p-3 lg:p-4">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <h2 className="text-white font-semibold text-sm lg:text-base inline-flex items-center gap-2">
+                    <MapPin weight="fill" size={18} className="text-[#FF7700]" />
+                    Vị trí GPS của bạn
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={requestCurrentLocation}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 text-white transition-colors"
+                  >
+                    <Crosshair size={14} weight="bold" />
+                    Định vị lại
+                  </button>
+                </div>
+
+                <div className="rounded-lg overflow-hidden border border-white/20">
+                  {gpsCoords ? (
+                    <OpenMap
+                      latitude={gpsCoords.lat}
+                      longitude={gpsCoords.lon}
+                      address={gpsAddress}
+                      height={300}
+                    />
+                  ) : (
+                    <div className="h-[300px] bg-[#0f2f44]/80 flex items-center justify-center px-4 text-center">
+                      <p className="text-white/75 text-sm">
+                        {gpsStatus === "loading" && "Đang lấy vị trí GPS..."}
+                        {gpsStatus === "unsupported" && "Thiết bị không hỗ trợ định vị GPS."}
+                        {gpsStatus === "denied" && "Bạn đã từ chối quyền truy cập vị trí."}
+                        {gpsStatus === "error" && "Không thể lấy vị trí hiện tại."}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-3 rounded-lg border border-white/20 bg-[#0f2f44]/70 p-3 space-y-1.5">
+                  <p className="text-white/90 text-xs lg:text-sm font-medium line-clamp-2">
+                    {gpsAddress}
+                  </p>
+                  {gpsCoords && (
+                    <p className="text-white/70 text-[11px] lg:text-xs font-mono">
+                      {gpsCoords.lat.toFixed(6)}, {gpsCoords.lon.toFixed(6)}
+                    </p>
+                  )}
+                </div>
+              </section>
+            </aside>
+          </div>
         </div>
       </main>
     </>

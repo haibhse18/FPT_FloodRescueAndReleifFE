@@ -1,5 +1,7 @@
 "use client";
 
+import { SignOut } from "phosphor-react";
+
 interface ProfileLogoutButtonProps {
   onLogout?: () => void;
   isLoading?: boolean;
@@ -13,7 +15,7 @@ export default function ProfileLogoutButton({
     <button
       onClick={onLogout}
       disabled={isLoading}
-      className="w-full flex items-center justify-center gap-3 py-4 bg-red-500/15 hover:bg-red-500/25 border border-red-400/35 text-red-200 font-bold rounded-full transition-all disabled:opacity-60 shadow-sm"
+      className="w-full flex items-center justify-center gap-3 py-4 bg-red-500/15 hover:bg-red-500/25 border border-red-400/35 text-red-200 font-bold rounded-full transition-all disabled:opacity-60"
     >
       {isLoading ? (
         <>
@@ -22,7 +24,7 @@ export default function ProfileLogoutButton({
         </>
       ) : (
         <>
-          <span className="text-xl">🚪</span>
+          <SignOut weight="bold" size={20} />
           <span>Đăng xuất</span>
         </>
       )}

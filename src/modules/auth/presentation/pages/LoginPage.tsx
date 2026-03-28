@@ -4,14 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 import { Input } from "@/shared/ui/components/Input";
 import { Button } from "@/shared/ui/components/Button";
-import { Card } from "@/shared/ui/components/Card";
-import { Alert } from "@/shared/ui/components/Alert";
 import PasswordInput from "@/shared/components/forms/PasswordInput";
 import GoogleLoginButton from "@/shared/components/forms/GoogleLoginButton";
-import FormDivider from "@/shared/components/forms/FormDivider";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuth.store";
 import { loginSchema } from "@/shared/schemas/validation";
+import { Footer } from "@/shared/ui/components/Footer";
 
 
 export default function LoginPage() {
@@ -67,126 +65,136 @@ export default function LoginPage() {
     }
   };
 
- return (
-        <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-            {/* HEADER */}
-            <header className="w-full bg-slate-50 flex items-center h-[72px] px-6 lg:px-10 border-b border-slate-200/50">
-                <div className="flex-1 flex items-center text-[#0b4d96] font-bold text-xl tracking-tight">
-                    FPT Flood Rescue & Relief
-                </div>
-                <nav className="hidden md:flex flex-1 justify-center items-center gap-8 text-sm text-slate-600 font-medium">
-                    <Link href="/" className="hover:text-slate-900 transition-colors">Trang chủ</Link>
-                    <Link href="/" className="hover:text-slate-900 transition-colors">Hoạt động</Link>
-                    <Link href="/" className="hover:text-slate-900 transition-colors">Ủng hộ</Link>
-                    <Link href="/" className="hover:text-slate-900 transition-colors">Liên hệ</Link>
-                </nav>
-                <div className="flex-1 flex justify-end items-center gap-6">
-                    <Link href="/login" className="hidden sm:block text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
-                        Đăng nhập
-                    </Link>
-                    <Link href="/register" className="bg-[#0b4d96] hover:bg-blue-800 text-white px-5 py-2 rounded-md text-sm font-medium transition-all shadow-sm">
-                        Đăng ký
-                    </Link>
-                </div>
-            </header>
-
-            {/* Main Content Box */}
-            <main className="flex-1 flex flex-col items-center justify-center p-4 py-12">
-                <div className="bg-white rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] p-8 max-w-[440px] w-full relative mb-6">
-                    {/* Header Card */}
-                    <div className="mb-8">
-                        <div className="flex items-center gap-2 mb-3">
-                            <div className="w-8 h-[2px] bg-[#0b4d96]"></div>
-                            <p className="text-[#0b4d96] text-[10px] font-bold tracking-widest uppercase">Hệ thống cứu hộ fpt</p>
-                        </div>
-                        <h1 className="text-2xl font-bold text-slate-900 mb-2">Chào mừng trở lại.</h1>
-                        <p className="text-sm text-slate-500 leading-relaxed">
-                            Đăng nhập để tiếp tục các hoạt động cứu trợ và điều phối khẩn cấp.
-                        </p>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div className="space-y-1.5">
-                            <label htmlFor="email" className="block text-[11px] font-bold text-slate-700 uppercase tracking-widest">Địa chỉ email</label>
-                            <Input
-                              id="email"
-                              name="email"
-                              type="email"
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                              placeholder="example@fpt.com"
-                              required
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <div className="flex justify-between items-center">
-                                <label htmlFor="password" className="block text-[11px] font-bold text-slate-700 uppercase tracking-widest">Mật khẩu</label>
-                                <Link href="/forgot-password" className="text-[11px] font-bold text-[#0b4d96] hover:text-blue-800 uppercase tracking-widest">
-                                    Quên mật khẩu?
-                                </Link>
-                            </div>
-                            <PasswordInput
-                              id="password"
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                              placeholder="••••••••"
-                              required
-                            />
-                        </div>
-
-                        {error && (
-                            <p className="text-red-500 text-sm mt-1">{error}</p>
-                        )}
-
-                        <div className="pt-4">
-                            <Button
-                              type="submit"
-                              variant="primary"
-                              fullWidth
-                              size="lg"
-                              isLoading={loading}
-                              disabled={loading}
-                            >
-                              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-                            </Button>
-                        </div>
-                    </form>
-
-                    {/* Footer Card */}
-                    <div className="mt-8 text-center text-sm text-slate-600">
-                        Bạn chưa có tài khoản?{" "}
-                        <Link href="/register" className="font-bold text-[#0b4d96] hover:text-blue-800 transition-colors">Tạo tài khoản mới</Link>
-                    </div>
-                </div>
-
-                {/* Technical Support Alert */}
-                <div className="max-w-[440px] w-full bg-[#f1f5f9] rounded-xl p-5 flex gap-4">
-                    <div className="flex-shrink-0 pt-0.5">
-                        <svg className="w-5 h-5 text-[#0b4d96]" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2L1 21h22L12 2zm1 16h-2v-2h2v2zm0-4h-2v-4h2v4z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 className="text-[11px] font-bold text-[#0b4d96] uppercase tracking-widest mb-1.5">Hỗ trợ kỹ thuật</h3>
-                        <p className="text-xs text-slate-500 leading-relaxed pr-2">
-                            Nếu bạn gặp sự cố khi truy cập hệ thống trong khu vực bị ảnh hưởng bởi lũ lụt, vui lòng gọi hotline 1900 xxxx.
-                        </p>
-                    </div>
-                </div>
-            </main>
-
-            {/* Footer */}
-            <footer className="w-full bg-transparent py-6 px-6 lg:px-10 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 border-t border-slate-200 mt-auto">
-                <div className="mb-4 md:mb-0 flex items-center gap-2">
-                    <span className="font-bold text-[#0b4d96] text-sm md:mr-2">FPT Flood Rescue & Relief</span>
-                    <span className="text-slate-400">© 2024 FPT Flood Rescue & Relief. All rights reserved.</span>
-                </div>
-                <div className="flex gap-6 sm:gap-8">
-                    <Link href="#" className="hover:text-slate-900 transition-colors">Chính sách bảo mật</Link>
-                    <Link href="#" className="hover:text-slate-900 transition-colors">Điều khoản sử dụng</Link>
-                    <Link href="#" className="hover:text-slate-900 transition-colors">Liên hệ cứu trợ</Link>
-                </div>
-            </footer>
+  return (
+    <div className="min-h-screen bg-[#f0f7ff] flex flex-col font-sans selection:bg-[#51A9FF]/20">
+      {/* HEADER */}
+      <header className="w-full bg-white/80 backdrop-blur-md flex items-center h-[80px] px-6 lg:px-10 border-b border-slate-200/50 sticky top-0 z-50">
+        <div className="flex-1 flex items-center">
+          <Link href="/" className="flex items-center gap-2 transition-transform hover:scale-105">
+            <img 
+              src="/images/project-logo.png" 
+              alt="FPT Rescue & Relief Logo" 
+              className="h-10 w-auto object-contain"
+            />
+            <div className="flex flex-col leading-none">
+              <span className="text-lg font-black tracking-tighter text-[#133249] uppercase italic">FPT Rescue & Relief</span>
+              <span className="text-[10px] font-bold text-[#51A9FF] tracking-[0.2em] uppercase">Emergency Response</span>
+            </div>
+          </Link>
         </div>
-    );
+        
+        <nav className="hidden lg:flex flex-1 justify-center items-center gap-8 text-sm text-slate-600 font-bold uppercase tracking-widest">
+          <Link href="/" className="hover:text-[#133249] transition-colors">Trang chủ</Link>
+          <Link href="/#hoat-dong" className="hover:text-[#133249] transition-colors">Hoạt động</Link>
+          <Link href="/" className="hover:text-[#133249] transition-colors">Liên hệ</Link>
+        </nav>
+
+        <div className="flex-1 flex justify-end items-center gap-4">
+          <Link href="/login" className="hidden sm:block text-xs font-black text-[#133249] uppercase tracking-widest hover:text-[#51A9FF] transition-colors">
+            Đăng nhập
+          </Link>
+          <Button variant="primary" size="sm" href="/register" className="font-black !bg-[#51A9FF] !text-white hover:!bg-[#3a8ee6] shadow-[0_4px_15px_rgba(81,169,255,0.4)] rounded-xl px-7 py-2.5 text-[10px] uppercase tracking-widest border-none transition-all hover:scale-105">
+            Đăng ký
+          </Button>
+        </div>
+      </header>
+
+      {/* Main Content Box */}
+      <main className="flex-1 flex flex-col items-center justify-center p-4 py-16 relative overflow-hidden bg-[#f0f7ff]">
+        {/* Decorative elements */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-full pointer-events-none opacity-20">
+          <div className="absolute top-20 left-10 w-64 h-64 bg-[#51A9FF] rounded-full blur-[100px]"></div>
+          <div className="absolute bottom-20 right-10 w-64 h-64 bg-[#133249] rounded-full blur-[100px]"></div>
+        </div>
+
+        <div className="bg-white/70 backdrop-blur-2xl rounded-[3rem] shadow-[0_30px_70px_rgba(0,0,0,0.06)] border border-white/50 p-12 max-w-[500px] w-full relative z-10">
+          {/* Header Card */}
+          <div className="mb-10 text-center">
+            <div className="inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black text-white bg-red-500 mb-6 shadow-md uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-white mr-2 animate-pulse"></span>
+              Cổng Điều Phối Khẩn Cấp
+            </div>
+            <h1 className="text-3xl font-black text-[#133249] mb-3 tracking-tighter">Chào mừng trở lại.</h1>
+            <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-[300px] mx-auto">
+              Đăng nhập để duy trì kết nối và điều phối các nguồn lực cứu trợ.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label htmlFor="email" className="block text-[10px] font-black text-[#133249] uppercase tracking-[0.2em] ml-1">Địa chỉ email</label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="example@fpt.com"
+                required
+                className="rounded-2xl border-slate-100 bg-slate-50/50 focus:bg-white transition-all h-12"
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center ml-1">
+                <label htmlFor="password" className="block text-[10px] font-black text-[#133249] uppercase tracking-[0.2em]">Mật khẩu</label>
+                <Link href="/forgot-password" title="Quên mật khẩu?" className="text-[10px] font-black text-[#51A9FF] hover:text-[#133249] uppercase tracking-widest transition-colors">
+                  Quên mật khẩu?
+                </Link>
+              </div>
+              <PasswordInput
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                label=""
+                className="rounded-2xl border-slate-100 bg-slate-50/50 focus:bg-white transition-all h-12"
+              />
+            </div>
+
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></div>
+                <p className="text-red-600 text-[13px] font-bold">{error}</p>
+              </div>
+            )}
+
+            <div className="pt-4">
+              <Button
+                type="submit"
+                variant="primary"
+                fullWidth
+                size="lg"
+                isLoading={loading}
+                disabled={loading}
+                className="rounded-2xl py-6 font-black uppercase tracking-[0.2em] !bg-[#51A9FF] hover:!bg-[#3a8ee6] !text-white shadow-[0_10px_25px_rgba(81,169,255,0.4)] border-none transition-all hover:scale-[1.02]"
+              >
+                {loading ? "Đang xác thực..." : "Đăng nhập ngay"}
+              </Button>
+            </div>
+          </form>
+
+          {/* Social Divider */}
+          <div className="my-8 flex items-center gap-4">
+            <div className="h-[1px] flex-1 bg-slate-100"></div>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hoặc tiếp tục với</span>
+            <div className="h-[1px] flex-1 bg-slate-100"></div>
+          </div>
+          
+          <GoogleLoginButton className="rounded-2xl border-slate-100 hover:bg-slate-50 transition-all font-bold text-slate-700" />
+
+          {/* Footer Card */}
+          <div className="mt-10 text-center text-[13px] font-medium text-slate-500">
+            Bạn chưa có tài khoản?{" "}
+            <Link href="/register" className="font-black text-[#51A9FF] hover:text-[#133249] transition-colors underline underline-offset-4">
+              Tạo tài khoản mới
+            </Link>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <Footer variant="light" className="bg-white border-t border-slate-100" />
+    </div>
+  );
 }

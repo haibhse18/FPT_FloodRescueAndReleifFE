@@ -7,7 +7,7 @@ import { UserRole } from "@/modules/auth/domain/user.entity";
 export class UpdateUserRoleUseCase {
     constructor(private readonly adminRepository: IAdminRepository) { }
 
-    async execute(userId: string, role: UserRole[]): Promise<void> {
+    async execute(userId: string, role: string): Promise<void> {
         try {
             await this.adminRepository.updateUserRole(userId, role);
         } catch (error) {

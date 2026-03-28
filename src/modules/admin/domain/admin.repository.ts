@@ -13,7 +13,7 @@ export interface IAdminRepository {
 
     getListUsers(): Promise<{ users: User[], total: number }>;
 
-    updateUserRole(userId: string, role: UserRole[]): Promise<void>;
+    updateUserRole(userId: string, role: string): Promise<void>;
 
     deleteUser(userId: string): Promise<void>;
 }

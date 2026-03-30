@@ -12,7 +12,7 @@ export class AdminRepositoryImpl implements IAdminRepository {
             total: result?.meta?.total ?? 0
         };
     }
-    async updateUserRole(userId: string, role: UserRole[]): Promise<void> {
+    async updateUserRole(userId: string, role: UserRole): Promise<void> {
         await adminApi.updateUserRole(userId, role);
     }
 

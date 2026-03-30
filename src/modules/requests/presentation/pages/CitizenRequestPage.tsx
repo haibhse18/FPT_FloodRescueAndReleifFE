@@ -1376,7 +1376,7 @@ export default function CitizenRequestPage() {
 
                   <div className="rounded-lg border border-white/20 bg-[#0f2f44]/70 p-3 space-y-1.5 text-xs">
                     <p className="text-white/80">Tổng thành viên: <span className="text-white font-semibold">{reliefFamilySize}</span></p>
-                    <p className="text-white/80">Người trưởng thành tự động: <span className="text-[#FFD1A0] font-semibold">{reliefAdultCount}</span></p>
+                    <p className="text-white/80">Người trưởng thành: <span className="text-[#FFD1A0] font-semibold">{reliefAdultCount}</span></p>
                     <p className="text-white/70">Trẻ em: {selectedChildCount} | Người già: {selectedElderlyCount} | Bị thương: {selectedInjuredCount}</p>
                     {reliefDistributionInvalid && (
                       <p className="text-red-300">Tổng các nhóm ưu tiên đang vượt quá số thành viên gia đình.</p>

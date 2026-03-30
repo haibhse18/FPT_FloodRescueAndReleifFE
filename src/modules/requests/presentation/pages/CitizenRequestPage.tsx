@@ -277,6 +277,7 @@ export default function CitizenRequestPage() {
     description: "",
     numberOfPeople: 1,
   });
+  const [rescueContexts, setRescueContexts] = useState<string[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadImageError, setUploadImageError] = useState<string | null>(null);
@@ -308,6 +309,9 @@ export default function CitizenRequestPage() {
   const selectedChildCount = isChildSelected ? reliefChildCount : 0;
   const selectedElderlyCount = isElderlySelected ? reliefElderlyCount : 0;
   const selectedInjuredCount = isInjuredSelected ? reliefInjuredCount : 0;
+  const rescueFamilyContextSummary = rescueContexts.length > 0
+    ? `Tình trạng gia đình: ${rescueContexts.join(", ")}`
+    : "";
 
   const nonAdultCount = selectedChildCount + selectedElderlyCount + selectedInjuredCount;
   const reliefAdultCount = Math.max(0, reliefFamilySize - nonAdultCount);
@@ -635,6 +639,16 @@ export default function CitizenRequestPage() {
     if (context === "Người bị thương") setReliefInjuredCount(suggested);
   };
 
+  const handleRescueContextToggle = (context: string, checked: boolean) => {
+    setRescueContexts((prev) => {
+      if (checked) {
+        if (prev.includes(context)) return prev;
+        return [...prev, context];
+      }
+      return prev.filter((item) => item !== context);
+    });
+  };
+
   const handleReliefContextCountChange = (context: string, rawValue: string) => {
     if (rawValue.trim() === "") {
       if (context === "Trẻ em") setReliefChildCount(0);
@@ -689,7 +703,10 @@ export default function CitizenRequestPage() {
       setReliefMedicineDetails("");
       setReliefNote("");
       setSelectedReliefQuickAction(null);
+      return;
     }
+
+    setRescueContexts([]);
   };
 
   const applyReliefQuickAction = (actionId: string) => {
@@ -749,11 +766,18 @@ export default function CitizenRequestPage() {
       return;
     }
 
-    if (rescueRequest.description.length > MAX_DESCRIPTION) {
+    const rescueDescription = [
+      rescueRequest.description.trim(),
+      rescueFamilyContextSummary,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    if (rescueDescription.length > MAX_DESCRIPTION) {
       toast({
         variant: "destructive",
         title: "Mô tả quá dài",
-        description: `Mô tả tình huống không được vượt quá ${MAX_DESCRIPTION} ký tự (hiện tại: ${rescueRequest.description.length}).`,
+        description: `Mô tả tình huống không được vượt quá ${MAX_DESCRIPTION} ký tự (hiện tại: ${rescueDescription.length}).`,
       });
       return;
     }
@@ -782,7 +806,7 @@ export default function CitizenRequestPage() {
         type: "Rescue",
         incidentType:
           incidentTypeMap[rescueRequest.dangerType] ?? rescueRequest.dangerType,
-        description: rescueRequest.description.trim(),
+        description: rescueDescription,
         peopleCount: rescueRequest.numberOfPeople,
         location: {
           type: "Point",
@@ -813,6 +837,7 @@ export default function CitizenRequestPage() {
         description: "",
         numberOfPeople: 1,
       });
+      setRescueContexts([]);
       setUploadedImages([]);
       setSelectedQuickAction(null);
     } catch (error: unknown) {
@@ -1165,8 +1190,10 @@ export default function CitizenRequestPage() {
                 </div>
               </div>
 
+
               {requestType === "Rescue" && (
                 <div className={`${sectionCardClass} p-4 space-y-3.5 bg-[#0f2f44]/70 border border-white/20 rounded-xl`}>
+                  {/* Tình huống */}
                   <div className="space-y-2.5">
                     <label className="text-sm text-white font-semibold block">Tình huống</label>
                     <select
@@ -1191,26 +1218,7 @@ export default function CitizenRequestPage() {
                     </select>
                   </div>
 
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm text-white font-semibold">Mô tả *</label>
-                      <span className={`text-[11px] font-mono ${descOverLimit ? "text-red-400" : "text-gray-500"}`}>
-                        {descLen}/{MAX_DESCRIPTION}
-                      </span>
-                    </div>
-                    <textarea
-                      value={rescueRequest.description}
-                      onChange={(e) =>
-                        setRescueRequest({
-                          ...rescueRequest,
-                          description: e.target.value,
-                        })
-                      }
-                      className={`w-full min-h-[96px] rounded-lg border bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 ${descOverLimit ? "border-red-500 focus:ring-red-500/50" : "border-white/20 focus:border-[#FF7700] focus:ring-[#FF7700]/50"}`}
-                      placeholder="Mô tả ngắn gọn tình huống..."
-                    />
-                  </div>
-
+                  {/* Số người cần hỗ trợ + Thêm ảnh */}
                   <div className="grid grid-cols-[1fr_auto] items-end gap-3">
                     <div className="space-y-2.5">
                       <label className="text-sm text-white font-semibold">Số người cần hỗ trợ</label>
@@ -1245,8 +1253,102 @@ export default function CitizenRequestPage() {
                     </label>
                   </div>
 
+                  {/* Tình trạng gia đình (checkbox giống Relief) */}
+                  <div className="space-y-2.5">
+                    <label className="text-sm text-white font-semibold block">Tình trạng gia đình</label>
+                    <div className="space-y-2">
+                      {CONTEXT_OPTIONS.map((context) => {
+                        const checked = rescueContexts.includes(context);
+                        return (
+                          <div
+                            key={context}
+                            className={`rounded-lg border px-3 py-2 transition-all duration-200 ${checked
+                              ? "border-[#FF7700] bg-[#FF7700]/15"
+                              : "border-white/20 bg-[#0f2f44]/70"
+                              }`}
+                          >
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) => {
+                                  handleRescueContextToggle(context, e.target.checked);
+                                  setRescueRequest((prev) => {
+                                    // Tự động đồng bộ text vào mô tả
+                                    let desc = prev.description || "";
+                                    const prefix = "Tình trạng gia đình:";
+                                    const lines = desc.split("\n").filter((line) => !line.trim().startsWith(prefix));
+                                    let newContexts = rescueContexts;
+                                    if (e.target.checked && !rescueContexts.includes(context)) {
+                                      newContexts = [...rescueContexts, context];
+                                    } else if (!e.target.checked && rescueContexts.includes(context)) {
+                                      newContexts = rescueContexts.filter((c) => c !== context);
+                                    }
+                                    if (newContexts.length > 0) {
+                                      lines.unshift(`${prefix} ${newContexts.join(", ")}`);
+                                    }
+                                    return { ...prev, description: lines.join("\n").trim() };
+                                  });
+                                }}
+                                className="h-3.5 w-3.5 accent-[#FF7700]"
+                              />
+                              <span className={`text-xs font-semibold ${checked ? "text-[#FFD1A0]" : "text-white"}`}>{context}</span>
+                            </label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[11px] text-white/65">
+                      Khi chọn, thông tin sẽ tự động hiển thị vào đầu ô mô tả.
+                    </p>
+                  </div>
+
+                  {/* Mô tả */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm text-white font-semibold">Mô tả *</label>
+                      <span className={`text-[11px] font-mono ${descOverLimit ? "text-red-400" : "text-gray-500"}`}>
+                        {descLen}/{MAX_DESCRIPTION}
+                      </span>
+                    </div>
+                    <textarea
+                      value={rescueRequest.description}
+                      onChange={(e) => {
+                        // Khi sửa mô tả, vẫn giữ dòng tình trạng gia đình ở đầu nếu có
+                        let desc = e.target.value || "";
+                        const prefix = "Tình trạng gia đình:";
+                        const lines = desc.split("\n").filter((line) => !line.trim().startsWith(prefix));
+                        if (rescueContexts.length > 0) {
+                          lines.unshift(`${prefix} ${rescueContexts.join(", ")}`);
+                        }
+                        setRescueRequest({
+                          ...rescueRequest,
+                          description: lines.join("\n").trim(),
+                        });
+                      }}
+                      className={`w-full min-h-[96px] rounded-lg border bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 ${descOverLimit ? "border-red-500 focus:ring-red-500/50" : "border-white/20 focus:border-[#FF7700] focus:ring-[#FF7700]/50"}`}
+                      placeholder="Mô tả ngắn gọn tình huống..."
+                    />
+                  </div>
+
+                  {/* Hiển thị thumbnail ảnh đã gửi */}
                   {uploadedImages.length > 0 && (
-                    <p className="text-xs text-gray-400">Đã tải {uploadedImages.length} ảnh hiện trường</p>
+                    <div className="space-y-1">
+                      <label className="text-xs text-white font-semibold block">Ảnh đã gửi</label>
+                      <div className="flex flex-wrap gap-2">
+                        {uploadedImages.map((url, idx) => (
+                          <div key={idx} className="w-20 h-20 rounded-lg overflow-hidden border border-white/20 bg-white/5 flex items-center justify-center">
+                            <img
+                              src={url}
+                              alt={`Ảnh hiện trường ${idx + 1}`}
+                              className="object-cover w-full h-full"
+                              loading="lazy"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-400">Đã tải {uploadedImages.length} ảnh hiện trường</p>
+                    </div>
                   )}
 
                   {uploadImageError && (

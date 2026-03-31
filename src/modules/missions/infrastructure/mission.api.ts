@@ -12,7 +12,7 @@ export const missionApi = {
   // CRUD
   // ────────────────────────────────────────────────────────
 
-  /** POST /missions — create mission (status = PLANNED) */
+  /** POST /missions — create mission (status = DRAFT) */
   createMission: async (input: {
     name: string;
     type: string;
@@ -122,7 +122,7 @@ export const missionApi = {
     });
   },
 
-  /** PATCH /missions/{id}/start — PLANNED timelines -> ASSIGNED, DRAFT mission -> PLANNED */
+  /** PATCH /missions/{id}/start — DRAFT mission -> PLANNED, PLANNED timelines -> ASSIGNED, notify teams */
   startMission: async (missionId: string): Promise<ApiResponse> => {
     return apiClient.patch(`/missions/${missionId}/start`, undefined, {
       headers: authSession.getAuthHeaders(),
@@ -134,7 +134,7 @@ export const missionApi = {
     missionRequestId: string,
     payload: {
       peopleRescuedIncrement?: number;
-      suppliesDelivered?: { supplyId: string; quantityDelivered: number }[];
+      suppliesDelivered?: { name: string; deliveredQty: number }[];
     },
   ): Promise<ApiResponse> => {
     return apiClient.post(`/mission-requests/${missionRequestId}/progress`, payload, {

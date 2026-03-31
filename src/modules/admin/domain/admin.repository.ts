@@ -4,8 +4,7 @@
  */
 
 import {
-    User,
-    UserRole
+    User
 
 } from '@/modules/auth/domain/user.entity';
 

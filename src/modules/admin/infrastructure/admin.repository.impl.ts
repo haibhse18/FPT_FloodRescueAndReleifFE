@@ -1,4 +1,3 @@
-import { UserRole } from "@/modules/auth/domain/user.entity";
 import { adminApi } from "./admin.api";
 import { IAdminRepository } from "../domain/admin.repository";
 

@@ -277,6 +277,7 @@ export default function CitizenRequestPage() {
     description: "",
     numberOfPeople: 1,
   });
+  const [rescueContexts, setRescueContexts] = useState<string[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadImageError, setUploadImageError] = useState<string | null>(null);
@@ -308,6 +309,9 @@ export default function CitizenRequestPage() {
   const selectedChildCount = isChildSelected ? reliefChildCount : 0;
   const selectedElderlyCount = isElderlySelected ? reliefElderlyCount : 0;
   const selectedInjuredCount = isInjuredSelected ? reliefInjuredCount : 0;
+  const rescueFamilyContextSummary = rescueContexts.length > 0
+    ? `Tình trạng gia đình: ${rescueContexts.join(", ")}`
+    : "";
 
   const nonAdultCount = selectedChildCount + selectedElderlyCount + selectedInjuredCount;
   const reliefAdultCount = Math.max(0, reliefFamilySize - nonAdultCount);
@@ -635,6 +639,16 @@ export default function CitizenRequestPage() {
     if (context === "Người bị thương") setReliefInjuredCount(suggested);
   };
 
+  const handleRescueContextToggle = (context: string, checked: boolean) => {
+    setRescueContexts((prev) => {
+      if (checked) {
+        if (prev.includes(context)) return prev;
+        return [...prev, context];
+      }
+      return prev.filter((item) => item !== context);
+    });
+  };
+
   const handleReliefContextCountChange = (context: string, rawValue: string) => {
     if (rawValue.trim() === "") {
       if (context === "Trẻ em") setReliefChildCount(0);
@@ -689,7 +703,10 @@ export default function CitizenRequestPage() {
       setReliefMedicineDetails("");
       setReliefNote("");
       setSelectedReliefQuickAction(null);
+      return;
     }
+
+    setRescueContexts([]);
   };
 
   const applyReliefQuickAction = (actionId: string) => {
@@ -749,11 +766,18 @@ export default function CitizenRequestPage() {
       return;
     }
 
-    if (rescueRequest.description.length > MAX_DESCRIPTION) {
+    const rescueDescription = [
+      rescueRequest.description.trim(),
+      rescueFamilyContextSummary,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    if (rescueDescription.length > MAX_DESCRIPTION) {
       toast({
         variant: "destructive",
         title: "Mô tả quá dài",
-        description: `Mô tả tình huống không được vượt quá ${MAX_DESCRIPTION} ký tự (hiện tại: ${rescueRequest.description.length}).`,
+        description: `Mô tả tình huống không được vượt quá ${MAX_DESCRIPTION} ký tự (hiện tại: ${rescueDescription.length}).`,
       });
       return;
     }
@@ -782,7 +806,7 @@ export default function CitizenRequestPage() {
         type: "Rescue",
         incidentType:
           incidentTypeMap[rescueRequest.dangerType] ?? rescueRequest.dangerType,
-        description: rescueRequest.description.trim(),
+        description: rescueDescription,
         peopleCount: rescueRequest.numberOfPeople,
         location: {
           type: "Point",
@@ -813,6 +837,7 @@ export default function CitizenRequestPage() {
         description: "",
         numberOfPeople: 1,
       });
+      setRescueContexts([]);
       setUploadedImages([]);
       setSelectedQuickAction(null);
     } catch (error: unknown) {
@@ -1129,9 +1154,9 @@ export default function CitizenRequestPage() {
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain">
+      <main className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
         <div className="h-full lg:grid lg:grid-cols-12">
-          <section className="lg:col-span-3 overflow-y-auto overscroll-contain pb-20 lg:pb-4 border-r border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0))]">
+          <section className="lg:col-span-3 overflow-visible lg:overflow-y-auto overscroll-contain pb-20 lg:pb-6 border-r border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0))] request-form-section" style={{ 'scrollbarWidth': 'thin', 'scrollbarColor': 'rgba(255,119,0,0.4) rgba(15,47,68,0.5)' }}>
             <div className="p-4 lg:p-3.5 space-y-4 max-w-[600px] mx-auto">
               <div className="space-y-4 pb-2">
                 <p className="text-[#FFD6A6] text-xs leading-relaxed">
@@ -1165,8 +1190,10 @@ export default function CitizenRequestPage() {
                 </div>
               </div>
 
+
               {requestType === "Rescue" && (
                 <div className={`${sectionCardClass} p-4 space-y-3.5 bg-[#0f2f44]/70 border border-white/20 rounded-xl`}>
+                  {/* Tình huống */}
                   <div className="space-y-2.5">
                     <label className="text-sm text-white font-semibold block">Tình huống</label>
                     <select
@@ -1174,11 +1201,11 @@ export default function CitizenRequestPage() {
                       onChange={(e) => {
                         const selected = e.target.value;
                         setSelectedQuickAction(selected);
-                        setRescueRequest((prev) => ({
-                          ...prev,
+                        setRescueRequest({
+                          ...rescueRequest,
                           dangerType: selected,
-                          description: prev.description || defaultDescriptionMap[selected] || prev.description,
-                        }));
+                          description: defaultDescriptionMap[selected] || "",
+                        });
                       }}
                       className="w-full h-10 rounded-lg border border-[#89b8d4]/45 bg-[#0f2f44]/95 px-3 text-[#f3f9ff] text-sm focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-[#9ec8e0]/70"
                     >
@@ -1191,26 +1218,7 @@ export default function CitizenRequestPage() {
                     </select>
                   </div>
 
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm text-white font-semibold">Mô tả *</label>
-                      <span className={`text-[11px] font-mono ${descOverLimit ? "text-red-400" : "text-gray-500"}`}>
-                        {descLen}/{MAX_DESCRIPTION}
-                      </span>
-                    </div>
-                    <textarea
-                      value={rescueRequest.description}
-                      onChange={(e) =>
-                        setRescueRequest({
-                          ...rescueRequest,
-                          description: e.target.value,
-                        })
-                      }
-                      className={`w-full min-h-[96px] rounded-lg border bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 ${descOverLimit ? "border-red-500 focus:ring-red-500/50" : "border-white/20 focus:border-[#FF7700] focus:ring-[#FF7700]/50"}`}
-                      placeholder="Mô tả ngắn gọn tình huống..."
-                    />
-                  </div>
-
+                  {/* Số người cần hỗ trợ + Thêm ảnh */}
                   <div className="grid grid-cols-[1fr_auto] items-end gap-3">
                     <div className="space-y-2.5">
                       <label className="text-sm text-white font-semibold">Số người cần hỗ trợ</label>
@@ -1245,8 +1253,102 @@ export default function CitizenRequestPage() {
                     </label>
                   </div>
 
+                  {/* Tình trạng gia đình (checkbox giống Relief) */}
+                  <div className="space-y-2.5">
+                    <label className="text-sm text-white font-semibold block">Tình trạng gia đình</label>
+                    <div className="space-y-2">
+                      {CONTEXT_OPTIONS.map((context) => {
+                        const checked = rescueContexts.includes(context);
+                        return (
+                          <div
+                            key={context}
+                            className={`rounded-lg border px-3 py-2 transition-all duration-200 ${checked
+                              ? "border-[#FF7700] bg-[#FF7700]/15"
+                              : "border-white/20 bg-[#0f2f44]/70"
+                              }`}
+                          >
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) => {
+                                  handleRescueContextToggle(context, e.target.checked);
+                                  setRescueRequest((prev) => {
+                                    // Tự động đồng bộ text vào mô tả
+                                    let desc = prev.description || "";
+                                    const prefix = "Tình trạng gia đình:";
+                                    const lines = desc.split("\n").filter((line) => !line.trim().startsWith(prefix));
+                                    let newContexts = rescueContexts;
+                                    if (e.target.checked && !rescueContexts.includes(context)) {
+                                      newContexts = [...rescueContexts, context];
+                                    } else if (!e.target.checked && rescueContexts.includes(context)) {
+                                      newContexts = rescueContexts.filter((c) => c !== context);
+                                    }
+                                    if (newContexts.length > 0) {
+                                      lines.unshift(`${prefix} ${newContexts.join(", ")}`);
+                                    }
+                                    return { ...prev, description: lines.join("\n").trim() };
+                                  });
+                                }}
+                                className="h-3.5 w-3.5 accent-[#FF7700]"
+                              />
+                              <span className={`text-xs font-semibold ${checked ? "text-[#FFD1A0]" : "text-white"}`}>{context}</span>
+                            </label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[11px] text-white/65">
+                      Khi chọn, thông tin sẽ tự động hiển thị vào đầu ô mô tả.
+                    </p>
+                  </div>
+
+                  {/* Mô tả */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm text-white font-semibold">Mô tả *</label>
+                      <span className={`text-[11px] font-mono ${descOverLimit ? "text-red-400" : "text-gray-500"}`}>
+                        {descLen}/{MAX_DESCRIPTION}
+                      </span>
+                    </div>
+                    <textarea
+                      value={rescueRequest.description}
+                      onChange={(e) => {
+                        // Khi sửa mô tả, vẫn giữ dòng tình trạng gia đình ở đầu nếu có
+                        let desc = e.target.value || "";
+                        const prefix = "Tình trạng gia đình:";
+                        const lines = desc.split("\n").filter((line) => !line.trim().startsWith(prefix));
+                        if (rescueContexts.length > 0) {
+                          lines.unshift(`${prefix} ${rescueContexts.join(", ")}`);
+                        }
+                        setRescueRequest({
+                          ...rescueRequest,
+                          description: lines.join("\n").trim(),
+                        });
+                      }}
+                      className={`w-full min-h-[96px] rounded-lg border bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 ${descOverLimit ? "border-red-500 focus:ring-red-500/50" : "border-white/20 focus:border-[#FF7700] focus:ring-[#FF7700]/50"}`}
+                      placeholder="Mô tả ngắn gọn tình huống..."
+                    />
+                  </div>
+
+                  {/* Hiển thị thumbnail ảnh đã gửi */}
                   {uploadedImages.length > 0 && (
-                    <p className="text-xs text-gray-400">Đã tải {uploadedImages.length} ảnh hiện trường</p>
+                    <div className="space-y-1">
+                      <label className="text-xs text-white font-semibold block">Ảnh đã gửi</label>
+                      <div className="flex flex-wrap gap-2">
+                        {uploadedImages.map((url, idx) => (
+                          <div key={idx} className="w-20 h-20 rounded-lg overflow-hidden border border-white/20 bg-white/5 flex items-center justify-center">
+                            <img
+                              src={url}
+                              alt={`Ảnh hiện trường ${idx + 1}`}
+                              className="object-cover w-full h-full"
+                              loading="lazy"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-400">Đã tải {uploadedImages.length} ảnh hiện trường</p>
+                    </div>
                   )}
 
                   {uploadImageError && (
@@ -1376,7 +1478,7 @@ export default function CitizenRequestPage() {
 
                   <div className="rounded-lg border border-white/20 bg-[#0f2f44]/70 p-3 space-y-1.5 text-xs">
                     <p className="text-white/80">Tổng thành viên: <span className="text-white font-semibold">{reliefFamilySize}</span></p>
-                    <p className="text-white/80">Người trưởng thành tự động: <span className="text-[#FFD1A0] font-semibold">{reliefAdultCount}</span></p>
+                    <p className="text-white/80">Người trưởng thành: <span className="text-[#FFD1A0] font-semibold">{reliefAdultCount}</span></p>
                     <p className="text-white/70">Trẻ em: {selectedChildCount} | Người già: {selectedElderlyCount} | Bị thương: {selectedInjuredCount}</p>
                     {reliefDistributionInvalid && (
                       <p className="text-red-300">Tổng các nhóm ưu tiên đang vượt quá số thành viên gia đình.</p>
@@ -1429,11 +1531,11 @@ export default function CitizenRequestPage() {
                 </div>
               )}
 
-              <div className="sticky bottom-0 bg-gradient-to-t from-[#0b2233]/92 via-[#0b2233]/78 to-transparent pt-3 pb-2 border-t border-white/10">
+              <div className="pt-3 pb-2">
                 <button
                   onClick={requestType === "Rescue" ? handleRescueSubmit : handleReliefSubmit}
                   disabled={isSubmitting || submitDisabled}
-                  className="w-full min-h-12 bg-[#FF7700] hover:bg-[#FF8800] active:bg-[#FF6600] text-white font-extrabold text-base py-3 rounded-xl shadow-[0_8px_24px_rgba(255,119,0,0.32)] active:shadow-[0_4px_12px_rgba(255,119,0,0.24)] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full min-h-[3rem] bg-[#FF7700] hover:bg-[#FF8800] active:bg-[#FF6600] text-white font-extrabold text-base py-3 rounded-xl shadow-[0_8px_24px_rgba(255,119,0,0.32)] active:shadow-[0_4px_12px_rgba(255,119,0,0.24)] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
@@ -1445,10 +1547,57 @@ export default function CitizenRequestPage() {
                   )}
                 </button>
               </div>
+
+              <div className="lg:hidden rounded-2xl border border-white/20 bg-[#0f2f44]/70 p-3 space-y-3 shadow-[0_10px_28px_rgba(0,0,0,0.2)]">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-white text-sm font-bold">Mini map vị trí</h3>
+                    <p className="text-white/70 text-[11px]">Chạm hoặc kéo marker để chọn đúng điểm</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsManualSelectionMode(!isManualSelectionMode)}
+                    className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-all duration-200 ${isManualSelectionMode
+                      ? "border-[#FF7700] bg-[#FF7700]/20 text-[#FFD1A0]"
+                      : "border-white/20 bg-[#0f2f44]/70 text-white"
+                      }`}
+                  >
+                    {isManualSelectionMode ? "✓ Thủ công" : "Thủ công"}
+                  </button>
+                </div>
+
+                <div className="h-[220px] rounded-xl overflow-hidden border border-white/20">
+                  <OpenMap
+                    latitude={coordinates?.lat}
+                    longitude={coordinates?.lon}
+                    address={currentLocation}
+                    isSelectionMode={isManualSelectionMode}
+                    onLocationSelect={handleManualLocationSelect}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-white/85 text-xs truncate">{currentLocation}</p>
+                  <button
+                    type="button"
+                    onClick={getCurrentLocation}
+                    disabled={isLoadingLocation}
+                    className="shrink-0 rounded-lg border border-[#FF7700]/45 bg-[#FF7700]/15 px-2.5 py-1.5 text-[11px] font-semibold text-[#FFD1A0] hover:bg-[#FF7700]/25 disabled:opacity-60 transition-colors"
+                  >
+                    {isLoadingLocation ? "Đang định vị..." : "GPS"}
+                  </button>
+                </div>
+
+                {coordinates && (
+                  <p className="text-white/65 text-[11px] font-mono">
+                    {coordinates.lat.toFixed(6)}, {coordinates.lon.toFixed(6)}
+                  </p>
+                )}
+              </div>
             </div>
           </section>
 
-          <aside className="hidden lg:block lg:col-span-9 p-4">
+          <aside className="hidden lg:block lg:col-span-9 p-4 overflow-hidden">
             <div className="h-full rounded-2xl border border-white/20 bg-[#0f2f44]/70 p-3.5 flex flex-col gap-3 shadow-[0_10px_36px_rgba(0,0,0,0.2)]">
               <div className="flex items-center justify-between">
                 <div>
@@ -1484,7 +1633,6 @@ export default function CitizenRequestPage() {
                   address={currentLocation}
                   isSelectionMode={isManualSelectionMode}
                   onLocationSelect={handleManualLocationSelect}
-                  height={desktopMapHeight}
                 />
               </div>
 

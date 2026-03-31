@@ -2,7 +2,6 @@
  * Update User Role Use Case - Application layer
  */
 import { IAdminRepository } from "../domain/admin.repository";
-import { UserRole } from "@/modules/auth/domain/user.entity";
 
 export class UpdateUserRoleUseCase {
     constructor(private readonly adminRepository: IAdminRepository) { }

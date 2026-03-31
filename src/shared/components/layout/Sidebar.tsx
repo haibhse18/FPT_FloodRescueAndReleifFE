@@ -123,7 +123,7 @@ function SidebarHeader({
       <div className="flex items-center">
         <div className="w-12 h-12 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center shadow-lg ring-1 ring-white/10 flex-shrink-0 overflow-hidden">
           <Image
-            src="/img/project-logo.png"
+            src="/images/project-logo.png"
             alt="FPT Flood Rescue Logo"
             width={48}
             height={48}

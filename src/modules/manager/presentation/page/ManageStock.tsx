@@ -405,7 +405,8 @@ export default function StockPage() {
                 placeholder="Tìm vật tư..."
                 className="w-full md:w-80 px-6 py-3 rounded-full bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
               <button onClick={() => fetchSupplyItems(supplyKeyword, 1)}
-                className="px-6 py-3 bg-[#1890ff] hover:bg-[#CFE5FF]/80 rounded-full font-bold text-white shadow-sm transition-colors">Tìm kiếm</button>
+                className="px-6 py-3 bg-[#1890ff] hover:bg-[#CFE5FF]/80 rounded-full font-bold text-white shadow-sm transition-colors">Tìm kiếm
+              </button>
             </div>
 
             <ImportBar

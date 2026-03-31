@@ -47,6 +47,11 @@ export class TimelineRepositoryImpl implements ITimelineRepository {
     return ((response as any).data ?? response) as Timeline;
   }
 
+  async confirmSupplyClaim(timelineId: string, note?: string): Promise<Timeline> {
+    const response = await timelineApi.confirmSupplyClaim(timelineId, note);
+    return ((response as any).data ?? response) as Timeline;
+  }
+
   async arriveTimeline(timelineId: string): Promise<Timeline> {
     const response = await timelineApi.arriveTimeline(timelineId);
     return ((response as any).data ?? response) as Timeline;

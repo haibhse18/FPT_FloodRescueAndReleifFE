@@ -8,6 +8,8 @@ import { useSocketInit } from "@/hooks/useSocketInit";
 import { useNotificationStore } from "@/store/useNotification.store";
 import { usePathname } from "next/navigation";
 
+const CITIZEN_BACKGROUND_URL = "/images/flood-rescue.jpg";
+
 /**
  * Layout cho Citizen routes
  * Bọc tất cả các trang trong (citizen) group với AuthGuard
@@ -27,18 +29,23 @@ export default function CitizenLayout({
 
   return (
     <AuthGuard allowedRoles={["Citizen"]}>
-      <div className="min-h-screen bg-[#133249] flex flex-col lg:flex-row">
-        {!isRequestPage && <CitizenSidebar />}
-        <div className={`flex-1 flex flex-col relative ${isRequestPage ? "" : "lg:ml-64"}`}>
-          {/* Background Pattern - Global for Citizen pages */}
-          <div
-            className="absolute inset-0 opacity-10 pointer-events-none z-0"
-            style={{
-              backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)",
-              backgroundSize: "20px 20px",
-            }}
-          ></div>
+      <div
+        className="fixed inset-0 bg-center bg-cover bg-no-repeat pointer-events-none z-0"
+        style={{
+          backgroundImage: `url(${CITIZEN_BACKGROUND_URL})`,
+          backgroundAttachment: "fixed",
+        }}
+        aria-hidden="true"
+      />
+      <div className="fixed inset-0 bg-[#0b2233]/80 pointer-events-none z-0" aria-hidden="true" />
+      <div
+        className="fixed inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,119,0,0.14),transparent_45%)] pointer-events-none z-0"
+        aria-hidden="true"
+      />
 
+      <div className="relative z-10 min-h-screen flex flex-col lg:flex-row">
+        <CitizenSidebar />
+        <div className="flex-1 flex flex-col lg:ml-[var(--sidebar-width)] transition-[margin-left] duration-300 relative">
           {children}
           <Toaster />
 

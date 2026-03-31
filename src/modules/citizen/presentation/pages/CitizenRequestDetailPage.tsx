@@ -197,6 +197,11 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     const [actionLoading, setActionLoading] = useState<"cancel" | null>(null);
     const [actionSuccess, setActionSuccess] = useState<string | null>(null);
     const [detailedAddress, setDetailedAddress] = useState<string | null>(null);
+    const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+    const [noticeModal, setNoticeModal] = useState<{
+        title: string;
+        description: string;
+    } | null>(null);
 
     useEffect(() => {
         fetchDetail();
@@ -219,7 +224,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     // Fetch detailed address when request is loaded
     useEffect(() => {
         if (!request) return;
-        
+
         // Parse coordinates from location
         let lat: number | null = null;
         let lon: number | null = null;
@@ -300,8 +305,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
         }
     };
 
-    const handleCancelRequest = async () => {
-        if (!window.confirm("Bạn có chắc muốn hủy yêu cầu này? Hành động này không thể hoàn tác.")) return;
+    const executeCancelRequest = async () => {
         setActionLoading("cancel");
         try {
             await requestRepository.cancelRequest(id, {
@@ -310,16 +314,38 @@ export default function CitizenRequestDetailPage({ id }: Props) {
             setRequest((prev: any) => ({ ...prev, status: "CANCELLED" }));
             setActionSuccess("✅ Yêu cầu đã được hủy thành công.");
         } catch (err: any) {
-            alert(`❌ ${err?.response?.data?.message || err.message || "Không thể hủy yêu cầu"}`);
+            const rawMessage =
+                err?.response?.data?.message || err?.message || "Không thể hủy yêu cầu";
+            const isVerifiedCancelError =
+                /cannot cancel request in verified status/i.test(String(rawMessage)) ||
+                /only submitted requests can be cancelled/i.test(String(rawMessage));
+
+            setNoticeModal(
+                isVerifiedCancelError
+                    ? {
+                        title: "Không thể hủy yêu cầu",
+                        description:
+                            "Yêu cầu đã được điều phối viên tiếp nhận nên không thể hủy nữa. Vui lòng theo dõi tiến trình xử lý hoặc liên hệ điều phối viên nếu cần hỗ trợ thêm.",
+                    }
+                    : {
+                        title: "Hủy yêu cầu thất bại",
+                        description: String(rawMessage),
+                    },
+            );
         } finally {
             setActionLoading(null);
+            setIsCancelConfirmOpen(false);
         }
+    };
+
+    const handleCancelRequest = () => {
+        setIsCancelConfirmOpen(true);
     };
 
     /* ─── Loading skeleton ─── */
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-[#133249] p-5 lg:p-8 space-y-5 animate-pulse">
+            <div className="min-h-screen bg-transparent p-5 lg:p-8 space-y-5 animate-pulse">
                 <div className="h-14 lg:h-16 bg-white/10 rounded-xl" />
                 <div className="h-36 lg:h-44 bg-white/10 rounded-xl" />
                 <div className="h-56 lg:h-72 bg-white/10 rounded-xl" />
@@ -331,7 +357,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     /* ─── Error state ─── */
     if (error || !request) {
         return (
-            <div className="min-h-screen bg-[#133249] flex flex-col items-center justify-center p-8 gap-5">
+            <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-8 gap-5">
                 <span className="text-6xl">😞</span>
                 <p className="text-white font-bold text-2xl text-center">
                     {error || "Không tìm thấy yêu cầu"}
@@ -387,9 +413,10 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     const mapLon: number | null = parsedLoc?.lon ?? request.longitude ?? null;
     // Prioritize detailed address from reverse geocoding, then backend address
     const locationText: string | null = detailedAddress ?? request.address ?? parsedLoc?.text ?? (mapLat != null ? `${(mapLat as number).toFixed(5)}, ${(mapLon as number).toFixed(5)}` : null);
+    const canCancelRequest = ["Pending", "PENDING", "pending", "Submitted", "SUBMITTED"].includes(request.status);
 
     return (
-        <div className="min-h-screen bg-[#133249] text-white">
+        <div className="min-h-screen bg-transparent text-white">
             {/* Header */}
             <header className="sticky top-0 z-40 bg-[#0f2a3f]/95 backdrop-blur-md border-b border-white/10 px-5 lg:px-8 py-4 lg:py-5 flex items-center gap-4">
                 <button
@@ -417,7 +444,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
             <main className="p-5 lg:p-8 space-y-5 lg:space-y-6 max-w-5xl mx-auto pb-24 lg:pb-28">
                 {/* Progress Steps with Timeline Info */}
                 {currentStep >= 0 && (
-                    <div className="bg-black/20 border border-white/10 rounded-xl p-5 lg:p-6">
+                    <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl p-5 lg:p-6">
                         <p className="text-gray-400 text-sm font-bold mb-5 uppercase tracking-wider">
                             Tiến trình xử lý
                         </p>
@@ -484,7 +511,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                 )}
 
                 {/* Basic info card */}
-                <div className="bg-black/20 border border-white/10 rounded-xl divide-y divide-white/5">
+                <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl divide-y divide-white/10">
                     <div className="px-5 lg:px-6 py-4">
                         <p className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-2">
                             Thông tin yêu cầu
@@ -546,7 +573,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
 
                 {/* Description */}
                 {request.description && (
-                    <div className="bg-black/20 border border-white/10 rounded-xl p-5 lg:p-6 space-y-3">
+                    <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl p-5 lg:p-6 space-y-3">
                         <p className="text-gray-400 text-sm font-bold uppercase tracking-wider">
                             Mô tả tình huống
                         </p>
@@ -558,7 +585,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
 
                 {/* Location + Map */}
                 {(locationText || (mapLat !== null && mapLon !== null)) && (
-                    <div className="bg-black/20 border border-white/10 rounded-xl p-5 lg:p-6 space-y-4">
+                    <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl p-5 lg:p-6 space-y-4">
                         <p className="text-gray-400 text-sm font-bold uppercase tracking-wider">
                             📍 Vị trí
                         </p>
@@ -578,7 +605,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                                 <p className="text-gray-400 text-xs font-mono">
                                     Tọa độ: {mapLat.toFixed(6)}, {mapLon.toFixed(6)}
                                 </p>
-                                <div className="h-64 lg:h-[420px] rounded-xl overflow-hidden border border-white/10">
+                                <div className="h-64 lg:h-[420px] rounded-xl overflow-hidden border border-white/20">
                                     <OpenMap
                                         latitude={mapLat}
                                         longitude={mapLon}
@@ -592,7 +619,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
 
                 {/* Images */}
                 {images.length > 0 && (
-                    <div className="bg-black/20 border border-white/10 rounded-xl p-5 lg:p-6 space-y-4">
+                    <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl p-5 lg:p-6 space-y-4">
                         <p className="text-gray-400 text-sm font-bold uppercase tracking-wider">
                             📸 Hình ảnh hiện trường ({images.length})
                         </p>
@@ -602,7 +629,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                                     key={i}
                                     type="button"
                                     onClick={() => openLightbox(i)}
-                                    className="relative aspect-square rounded-lg overflow-hidden border border-white/10 hover:border-[#FF7700]/60 transition-all group focus:outline-none focus:ring-2 focus:ring-[#FF7700]"
+                                    className="relative aspect-square rounded-lg overflow-hidden border border-white/20 hover:border-[#FF7700]/60 transition-all group focus:outline-none focus:ring-2 focus:ring-[#FF7700]"
                                     aria-label={`Xem ảnh ${i + 1}`}
                                 >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -633,16 +660,16 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                     </div>
                 ) : (
                     <div className="flex flex-col gap-3">
-                        {["Pending", "PENDING", "pending", "Submitted", "SUBMITTED", "VERIFIED", "Accepted"].includes(request.status) && (
+                        {["VERIFIED", "Accepted", "ACCEPTED", "IN_PROGRESS", "In Progress", "PARTIALLY_FULFILLED", "FULFILLED", "CLOSED", "COMPLETED", "Completed"].includes(request.status) && (
                             <div className="flex items-start gap-3 p-5 lg:p-6 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-yellow-300 text-base">
-                                <span className="text-xl leading-none mt-0.5">ℹ️</span>
+
                                 <span>
-                                    Bạn có thể hủy yêu cầu khi chưa được xử lý hoàn tất.
+                                    Bạn chỉ có thể hủy yêu cầu khi đang ở trạng thái chờ tiếp nhận.
                                 </span>
                             </div>
                         )}
 
-                        {(["Pending", "PENDING", "pending", "Submitted", "SUBMITTED", "Accepted", "ACCEPTED", "VERIFIED"].includes(request.status)) && (
+                        {canCancelRequest && (
                             <button
                                 onClick={handleCancelRequest}
                                 disabled={actionLoading !== null}
@@ -666,6 +693,54 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                     ← Quay lại lịch sử yêu cầu
                 </Link>
             </main>
+
+            {/* Cancel confirmation modal */}
+            {isCancelConfirmOpen && (
+                <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/70 p-4">
+                    <div className="w-full max-w-md rounded-2xl border border-red-400/30 bg-[#17384f] p-5 shadow-2xl">
+                        <p className="text-red-300 font-extrabold text-lg">Xác nhận hủy yêu cầu</p>
+                        <p className="text-white/85 text-sm leading-relaxed mt-2">
+                            Bạn có chắc muốn hủy yêu cầu này? Hành động này không thể hoàn tác.
+                        </p>
+                        <div className="mt-5 flex gap-3 justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setIsCancelConfirmOpen(false)}
+                                className="px-4 py-2 rounded-lg border border-white/20 bg-white/5 text-white/90 hover:bg-white/10 transition-colors"
+                            >
+                                Đóng
+                            </button>
+                            <button
+                                type="button"
+                                onClick={executeCancelRequest}
+                                disabled={actionLoading === "cancel"}
+                                className="px-4 py-2 rounded-lg border border-red-400/45 bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors disabled:opacity-60"
+                            >
+                                {actionLoading === "cancel" ? "Đang hủy..." : "Xác nhận hủy"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Notice modal */}
+            {noticeModal && (
+                <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/70 p-4">
+                    <div className="w-full max-w-md rounded-2xl border border-[#FF7700]/35 bg-[#17384f] p-5 shadow-2xl">
+                        <p className="text-[#FFD1A0] font-extrabold text-lg">{noticeModal.title}</p>
+                        <p className="text-white/85 text-sm leading-relaxed mt-2">{noticeModal.description}</p>
+                        <div className="mt-5 flex justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setNoticeModal(null)}
+                                className="px-4 py-2 rounded-lg border border-[#FF7700]/45 bg-[#FF7700]/15 text-[#FFD1A0] hover:bg-[#FF7700]/25 transition-colors"
+                            >
+                                Đã hiểu
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ─── Lightbox ─── */}
             {lightboxIndex !== null && (

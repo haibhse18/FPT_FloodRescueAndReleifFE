@@ -7,7 +7,7 @@ export class UpdateMissionRequestProgressUseCase {
     missionRequestId: string,
     payload: {
       peopleRescuedIncrement?: number;
-      suppliesDelivered?: { supplyId: string; quantityDelivered: number }[];
+      suppliesDelivered?: { name: string; deliveredQty: number }[];
     },
   ): Promise<void> {
     if (!missionRequestId) {

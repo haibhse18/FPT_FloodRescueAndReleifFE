@@ -96,7 +96,7 @@ export class MissionRepositoryImpl implements IMissionRepository {
     missionRequestId: string,
     payload: {
       peopleRescuedIncrement?: number;
-      suppliesDelivered?: { supplyId: string; quantityDelivered: number }[];
+      suppliesDelivered?: { name: string; deliveredQty: number }[];
     },
   ): Promise<void> {
     await missionApi.updateMissionRequestProgress(missionRequestId, payload);

@@ -257,11 +257,23 @@ function InternalTeamTimelineDetailPage({
     if (!form) return;
 
     const peopleRescuedIncrement = parseInt(form.rescuedCount || "0", 10);
-    const suppliesDelivered: { supplyId: string; quantityDelivered: number }[] = [];
+    const mr = missionRequests.find(r => r._id === missionRequestId);
+    const suppliesDelivered: { name: string; deliveredQty: number }[] = [];
+    
     Object.entries(form.supplies).forEach(([supplyId, value]) => {
       const qty = parseFloat(value || "0");
       if (!Number.isNaN(qty) && qty > 0) {
-        suppliesDelivered.push({ supplyId, quantityDelivered: qty });
+        // Find supply name from requestSuppliesSnapshot
+        let supplyName = "Unknown";
+        if (mr && (mr as any).requestSuppliesSnapshot) {
+          const requestedSupply = (mr as any).requestSuppliesSnapshot.find(
+            (item: any) => (item.supplyId?._id ?? item.supplyId) === supplyId
+          );
+          if (requestedSupply) {
+            supplyName = requestedSupply.supplyId?.name || requestedSupply.name || "Unknown";
+          }
+        }
+        suppliesDelivered.push({ name: supplyName, deliveredQty: qty });
       }
     });
 
@@ -271,14 +283,13 @@ function InternalTeamTimelineDetailPage({
     }
 
     // Validate supply quantities
-    const mr = missionRequests.find(r => r._id === missionRequestId);
     if (mr && (mr as any).requestSuppliesSnapshot) {
       for (const delivered of suppliesDelivered) {
         const requestedSupply = (mr as any).requestSuppliesSnapshot.find(
-          (item: any) => (item.supplyId?._id ?? item.supplyId) === delivered.supplyId
+          (item: any) => (item.supplyId?.name || item.name) === delivered.name
         );
-        if (requestedSupply && delivered.quantityDelivered > requestedSupply.requestedQty) {
-          toast.error(`Vượt quá số lượng yêu cầu cho ${requestedSupply.supplyId?.name || requestedSupply.name}. Yêu cầu: ${requestedSupply.requestedQty}, Nhập: ${delivered.quantityDelivered}`);
+        if (requestedSupply && delivered.deliveredQty > requestedSupply.requestedQty) {
+          toast.error(`Vượt quá số lượng yêu cầu cho ${delivered.name}. Yêu cầu: ${requestedSupply.requestedQty}, Nhập: ${delivered.deliveredQty}`);
           return;
         }
       }

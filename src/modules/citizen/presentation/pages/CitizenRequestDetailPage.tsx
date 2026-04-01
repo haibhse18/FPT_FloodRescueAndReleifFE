@@ -4,6 +4,23 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import type { IconType } from "react-icons";
+import {
+    FiAlertTriangle,
+    FiArrowLeft,
+    FiCheck,
+    FiCheckCircle,
+    FiChevronLeft,
+    FiChevronRight,
+    FiClock,
+    FiImage,
+    FiMapPin,
+    FiSearch,
+    FiSlash,
+    FiTruck,
+    FiX,
+    FiXCircle,
+} from "react-icons/fi";
 
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 
@@ -25,104 +42,104 @@ interface Props {
 
 const STATUS_META: Record<
     string,
-    { label: string; color: string; icon: string; step: number }
+    { label: string; color: string; icon: IconType; step: number }
 > = {
     // Backend enum: Pending | Accepted | In Progress | Completed | Rejected | Cancelled
     Pending: {
         label: "Chờ xử lý",
         color: "bg-gray-500/20 text-gray-300 border-gray-500/30",
-        icon: "⏳",
+        icon: FiClock,
         step: 0,
     },
     SUBMITTED: {
         label: "Chờ xử lý",
         color: "bg-gray-500/20 text-gray-300 border-gray-500/30",
-        icon: "⏳",
+        icon: FiClock,
         step: 0,
     },
     // Legacy / fallback alias
     Submitted: {
         label: "Chờ xử lý",
         color: "bg-gray-500/20 text-gray-300 border-gray-500/30",
-        icon: "⏳",
+        icon: FiClock,
         step: 0,
     },
     VERIFIED: {
         label: "Đã tiếp nhận",
         color: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-        icon: "✅",
+        icon: FiCheckCircle,
         step: 1,
     },
     Accepted: {
         label: "Đã chấp nhận",
         color: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-        icon: "✅",
+        icon: FiCheckCircle,
         step: 1,
     },
     IN_PROGRESS: {
         label: "Đang xử lý",
         color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
-        icon: "🚀",
+        icon: FiTruck,
         step: 2,
     },
     "In Progress": {
         label: "Đang xử lý",
         color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
-        icon: "🚀",
+        icon: FiTruck,
         step: 2,
     },
     FULFILLED: {
         label: "Hoàn thành",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
-        icon: "🎉",
+        icon: FiCheckCircle,
         step: 3,
     },
     PARTIALLY_FULFILLED: {
         label: "Hoàn thành một phần",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
-        icon: "🎉",
+        icon: FiCheckCircle,
         step: 3,
     },
     CLOSED: {
         label: "Hoàn thành",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
-        icon: "🎉",
+        icon: FiCheckCircle,
         step: 3,
     },
     COMPLETED: {
         label: "Hoàn thành",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
-        icon: "🎉",
+        icon: FiCheckCircle,
         step: 3,
     },
     Completed: {
         label: "Hoàn thành",
         color: "bg-green-500/20 text-green-300 border-green-500/30",
-        icon: "🎉",
+        icon: FiCheckCircle,
         step: 3,
     },
     REJECTED: {
         label: "Bị từ chối",
         color: "bg-red-500/20 text-red-300 border-red-500/30",
-        icon: "❌",
+        icon: FiXCircle,
         step: -1,
     },
     Rejected: {
         label: "Bị từ chối",
         color: "bg-red-500/20 text-red-300 border-red-500/30",
-        icon: "❌",
+        icon: FiXCircle,
         step: -1,
     },
     CANCELLED: {
         label: "Đã hủy",
         color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
-        icon: "🚫",
+        icon: FiSlash,
         step: -1,
     },
     Cancelled: {
         label: "Đã hủy",
         color: "bg-gray-500/20 text-gray-400 border-gray-500/30",
-        icon: "🚫",
+        icon: FiSlash,
         step: -1,
     },
 };
@@ -152,25 +169,25 @@ const URGENCY_META: Record<string, { label: string; color: string }> = {
     },
 };
 
-const TYPE_LABELS: Record<string, string> = {
+const TYPE_META: Record<string, { label: string; icon: IconType }> = {
     // Lowercase (legacy)
-    flood: "🌊 Lũ lụt",
-    trapped: "🆘 Mắc kẹt",
-    injury: "🩹 Chấn thương",
-    landslide: "⛰️ Sạt lở",
-    other: "⚠️ Khác",
+    flood: { label: "Lũ lụt", icon: FiAlertTriangle },
+    trapped: { label: "Mắc kẹt", icon: FiAlertTriangle },
+    injury: { label: "Chấn thương", icon: FiAlertTriangle },
+    landslide: { label: "Sạt lở", icon: FiAlertTriangle },
+    other: { label: "Khác", icon: FiAlertTriangle },
     // Backend enum values (capitalized)
-    Flood: "🌊 Lũ lụt",
-    Trapped: "🆘 Mắc kẹt",
-    Injured: "🩹 Chấn thương",
-    Injury: "🩹 Chấn thương",
-    Landslide: "⛰️ Sạt lở",
-    Other: "⚠️ Khác",
+    Flood: { label: "Lũ lụt", icon: FiAlertTriangle },
+    Trapped: { label: "Mắc kẹt", icon: FiAlertTriangle },
+    Injured: { label: "Chấn thương", icon: FiAlertTriangle },
+    Injury: { label: "Chấn thương", icon: FiAlertTriangle },
+    Landslide: { label: "Sạt lở", icon: FiAlertTriangle },
+    Other: { label: "Khác", icon: FiAlertTriangle },
     // Request type
-    Rescue: "🚁 Cứu hộ",
-    rescue: "🚁 Cứu hộ",
-    Relief: "📦 Cứu trợ",
-    relief: "📦 Cứu trợ",
+    Rescue: { label: "Cứu hộ", icon: FiTruck },
+    rescue: { label: "Cứu hộ", icon: FiTruck },
+    Relief: { label: "Cứu trợ", icon: FiImage },
+    relief: { label: "Cứu trợ", icon: FiImage },
 };
 
 const STEPS = ["Đã gửi", "Chấp nhận", "Đang xử lý", "Hoàn thành"];
@@ -312,7 +329,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                 reason: "Hủy bởi người dùng",
             });
             setRequest((prev: any) => ({ ...prev, status: "CANCELLED" }));
-            setActionSuccess("✅ Yêu cầu đã được hủy thành công.");
+            setActionSuccess("Yêu cầu đã được hủy thành công.");
         } catch (err: any) {
             const rawMessage =
                 err?.response?.data?.message || err?.message || "Không thể hủy yêu cầu";
@@ -358,7 +375,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     if (error || !request) {
         return (
             <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-8 gap-5">
-                <span className="text-6xl">😞</span>
+                <FiAlertTriangle className="text-6xl text-red-300" />
                 <p className="text-white font-bold text-2xl text-center">
                     {error || "Không tìm thấy yêu cầu"}
                 </p>
@@ -385,6 +402,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
 
     const statusKey = request.status || "Submitted";
     const meta = STATUS_META[statusKey] || STATUS_META["Submitted"];
+    const StatusIcon = meta.icon;
     const urgencyMeta =
         URGENCY_META[request.priority || request.urgencyLevel || "normal"] || URGENCY_META["normal"];
     const currentStep = meta.step;
@@ -414,30 +432,35 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     // Prioritize detailed address from reverse geocoding, then backend address
     const locationText: string | null = detailedAddress ?? request.address ?? parsedLoc?.text ?? (mapLat != null ? `${(mapLat as number).toFixed(5)}, ${(mapLon as number).toFixed(5)}` : null);
     const canCancelRequest = ["Pending", "PENDING", "pending", "Submitted", "SUBMITTED"].includes(request.status);
+    const typeRaw = request.incidentType || request.type;
+    const typeMeta = TYPE_META[typeRaw] || { label: typeRaw || "—", icon: FiAlertTriangle };
+    const TypeIcon = typeMeta.icon;
 
     return (
         <div className="min-h-screen bg-transparent text-white">
             {/* Header */}
             <header className="sticky top-0 z-40 bg-[#0f2a3f]/95 backdrop-blur-md border-b border-white/10 px-5 lg:px-8 py-4 lg:py-5 flex items-center gap-4">
-                <button
+                    <button
                     onClick={() => router.back()}
                     className="w-10 h-10 lg:w-11 lg:h-11 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-lg transition-all"
                 >
-                    ←
+                        <FiArrowLeft />
                 </button>
                 <div className="flex-1 min-w-0">
                     <h1 className="font-black text-xl lg:text-2xl text-white leading-tight">
                         Yêu cầu #{shortId}
                     </h1>
-                    <p className="text-gray-400 text-sm truncate">
-                        {TYPE_LABELS[request.incidentType || request.type] || request.incidentType || request.type} ·{" "}
+                    <p className="text-gray-400 text-sm truncate inline-flex items-center gap-1.5">
+                        <TypeIcon className="inline-block" />
+                        <span>{typeMeta.label} ·{" "}
                         {formatDate(request.createdAt)}
+                        </span>
                     </p>
                 </div>
                 <span
-                    className={`px-4 py-1.5 rounded-full border text-sm font-bold ${meta.color}`}
+                    className={`px-4 py-1.5 rounded-full border text-sm font-bold inline-flex items-center gap-1.5 ${meta.color}`}
                 >
-                    {meta.icon} {meta.label}
+                    <StatusIcon /> {meta.label}
                 </span>
             </header>
 
@@ -467,7 +490,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                                                         : "bg-white/5 border-white/30 text-gray-300"
                                                     }`}
                                             >
-                                                {idx < currentStep ? "✓" : idx + 1}
+                                                {idx < currentStep ? <FiCheck className="text-xs" /> : idx + 1}
                                             </div>
                                         </div>
                                         <p
@@ -497,7 +520,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                 {/* Rejected / Cancelled notice */}
                 {currentStep === -1 && (
                     <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-5 lg:p-6 flex items-start gap-4">
-                        <span className="text-3xl">{meta.icon}</span>
+                        <StatusIcon className="text-3xl" />
                         <div>
                             <p className="text-red-300 font-bold text-lg">
                                 Yêu cầu {meta.label.toLowerCase()}
@@ -522,7 +545,10 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                     <div className="px-5 lg:px-6 py-4 flex justify-between items-center">
                         <span className="text-gray-400 text-base">Loại sự cố</span>
                         <span className="text-white font-bold text-base lg:text-lg">
-                            {TYPE_LABELS[request.incidentType || request.type] || request.incidentType || request.type || "—"}
+                            <span className="inline-flex items-center gap-1.5">
+                                <TypeIcon />
+                                {typeMeta.label}
+                            </span>
                         </span>
                     </div>
 
@@ -586,8 +612,8 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                 {/* Location + Map */}
                 {(locationText || (mapLat !== null && mapLon !== null)) && (
                     <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl p-5 lg:p-6 space-y-4">
-                        <p className="text-gray-400 text-sm font-bold uppercase tracking-wider">
-                            📍 Vị trí
+                        <p className="text-gray-400 text-sm font-bold uppercase tracking-wider inline-flex items-center gap-1.5">
+                            <FiMapPin /> Vị trí
                         </p>
                         {locationText && (
                             <div className="space-y-2">
@@ -620,8 +646,8 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                 {/* Images */}
                 {images.length > 0 && (
                     <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl p-5 lg:p-6 space-y-4">
-                        <p className="text-gray-400 text-sm font-bold uppercase tracking-wider">
-                            📸 Hình ảnh hiện trường ({images.length})
+                        <p className="text-gray-400 text-sm font-bold uppercase tracking-wider inline-flex items-center gap-1.5">
+                            <FiImage /> Hình ảnh hiện trường ({images.length})
                         </p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
                             {images.map((url: string, i: number) => (
@@ -640,7 +666,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                                     />
                                     {/* overlay on hover */}
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 flex items-center justify-center">
-                                        <span className="text-white text-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 drop-shadow-lg">🔍</span>
+                                        <FiSearch className="text-white text-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 drop-shadow-lg" />
                                     </div>
                                     {/* index badge */}
                                     <span className="absolute bottom-1 right-1 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded-md">
@@ -655,7 +681,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                 {/* Action Buttons */}
                 {actionSuccess ? (
                     <div className="flex items-center gap-3 p-5 lg:p-6 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 font-semibold text-base lg:text-lg">
-                        <span className="text-2xl">✅</span>
+                        <FiCheckCircle className="text-2xl" />
                         <span>{actionSuccess}</span>
                     </div>
                 ) : (
@@ -678,7 +704,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                                 {actionLoading === "cancel" ? (
                                     <><div className="w-5 h-5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> Đang hủy...</>
                                 ) : (
-                                    <>🚫 Hủy yêu cầu</>
+                                    <><FiSlash /> Hủy yêu cầu</>
                                 )}
                             </button>
                         )}
@@ -690,7 +716,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                     href="/history"
                     className="flex items-center justify-center gap-2 w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-gray-300 font-bold text-base transition-all"
                 >
-                    ← Quay lại lịch sử yêu cầu
+                    <FiArrowLeft /> Quay lại lịch sử yêu cầu
                 </Link>
             </main>
 
@@ -759,15 +785,15 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                 >
                     {/* ── Top bar ── */}
                     <div className="flex items-center justify-between px-6 py-4 flex-shrink-0">
-                        <span className="text-white/70 text-base font-medium">
-                            📸 {lightboxIndex + 1} / {images.length}
+                        <span className="text-white/70 text-base font-medium inline-flex items-center gap-2">
+                            <FiImage /> {lightboxIndex + 1} / {images.length}
                         </span>
                         <button
                             onClick={closeLightbox}
                             className="w-10 h-10 bg-white/10 hover:bg-white/25 rounded-full flex items-center justify-center text-white font-bold text-xl transition-colors"
                             aria-label="Đóng"
                         >
-                            ✕
+                            <FiX />
                         </button>
                     </div>
 
@@ -783,7 +809,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                                 className="absolute left-3 lg:left-5 z-10 w-12 h-12 lg:w-14 lg:h-14 bg-white/10 hover:bg-white/25 rounded-full flex items-center justify-center text-white text-2xl font-bold transition-colors shadow-lg"
                                 aria-label="Ảnh trước"
                             >
-                                ‹
+                                <FiChevronLeft />
                             </button>
                         )}
 
@@ -814,7 +840,7 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                                 className="absolute right-3 lg:right-5 z-10 w-12 h-12 lg:w-14 lg:h-14 bg-white/10 hover:bg-white/25 rounded-full flex items-center justify-center text-white text-2xl font-bold transition-colors shadow-lg"
                                 aria-label="Ảnh tiếp"
                             >
-                                ›
+                                <FiChevronRight />
                             </button>
                         )}
                     </div>
@@ -840,8 +866,11 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                     )}
 
                     {/* ── Hint ── */}
-                    <p className="text-center text-white/30 text-sm pb-4 flex-shrink-0">
-                        Bấm ngoài ảnh để đóng · Phím ← → để chuyển · Vuốt để lướt
+                    <p className="text-center text-white/30 text-sm pb-4 flex-shrink-0 inline-flex items-center justify-center gap-2">
+                        Bấm ngoài ảnh để đóng · Phím
+                        <FiChevronLeft className="inline" />
+                        <FiChevronRight className="inline" />
+                        để chuyển · Vuốt để lướt
                     </p>
                 </div>
             )}

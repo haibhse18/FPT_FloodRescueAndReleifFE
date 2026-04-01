@@ -207,7 +207,7 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
     missionRequestId: string,
     data: {
       peopleRescuedIncrement?: number;
-      suppliesDelivered?: { supplyId: string; quantityDelivered: number }[];
+      suppliesDelivered?: { name: string; deliveredQty: number }[];
     }
   ) => {
     setActionLoading(`progress_${missionRequestId}`);

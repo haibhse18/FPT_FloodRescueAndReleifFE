@@ -31,7 +31,7 @@ const ACTIVE_REQUEST_STATUSES = new Set([
   "ACCEPTED",
 ]);
 
-const HOME_BACKGROUND_URL = "/images/flood-rescue.jpg";
+const HOME_BACKGROUND_URL = "/images/flood-rescue2.jpg";
 
 function normalizeStatus(status: unknown): string {
   return String(status ?? "")

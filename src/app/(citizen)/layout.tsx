@@ -8,7 +8,7 @@ import { useSocketInit } from "@/hooks/useSocketInit";
 import { useNotificationStore } from "@/store/useNotification.store";
 import { usePathname } from "next/navigation";
 
-const CITIZEN_BACKGROUND_URL = "/images/flood-rescue.jpg";
+const CITIZEN_BACKGROUND_URL = "/images/flood-rescue2.jpg";
 
 /**
  * Layout cho Citizen routes

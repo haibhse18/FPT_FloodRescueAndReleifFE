@@ -40,30 +40,12 @@ export default function AssignedStepView({
     fetchWarehouses();
   }, []);
 
-  // Calculate summary statistics
-  const totalPeople = missionRequests.reduce((sum, mr) => {
-    const peopleNeeded = (mr as any).requestPeopleSnapshot || (mr as any).peopleNeeded || 0;
-    return sum + peopleNeeded;
-  }, 0);
+  // Summary metrics are provided by mission detail API.
+  const totalPeople = Number(mission.peopleCount) || 0;
 
   const totalRequests = missionRequests.length;
 
-  const suppliesNeeded = missionRequests.reduce((acc, mr) => {
-    const supplies = (mr as any).requestSuppliesSnapshot || [];
-    supplies.forEach((item: any) => {
-      const name = item.supplyId?.name || item.name || "Vật tư";
-      const qty = item.requestedQty || 0;
-      const unit = item.unit || item.supplyId?.unit || "";
-      
-      if (!acc[name]) {
-        acc[name] = { quantity: 0, unit };
-      }
-      acc[name].quantity += qty;
-    });
-    return acc;
-  }, {} as Record<string, { quantity: number; unit: string }>);
-
-  const totalSupplies = Object.keys(suppliesNeeded).length;
+  const totalSupplies = Number(mission.totalSupply) || 0;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">

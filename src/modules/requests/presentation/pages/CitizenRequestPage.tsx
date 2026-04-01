@@ -1002,11 +1002,19 @@ export default function CitizenRequestPage() {
 
     setIsSubmitting(true);
     try {
+      const reliefRequestSupplies = reliefSupplyPlan.totalItems
+        .filter((item) => (Number(item.qty) || 0) > 0)
+        .map((item) => ({
+          name: item.label,
+          requestedQty: Number(item.qty) || 0,
+        }));
+
       const payload: Record<string, unknown> = {
         type: "Relief",
         incidentType: reliefIncidentType,
         description: reliefDescription,
         peopleCount: reliefFamilySize,
+        requestSupplies: reliefRequestSupplies,
         location: {
           type: "Point",
           coordinates: [coordinates.lon, coordinates.lat] as [number, number],

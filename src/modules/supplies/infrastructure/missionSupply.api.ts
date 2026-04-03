@@ -41,8 +41,8 @@ export const missionSupplyApi = {
     return apiClient.get<MissionSupplyListResponse>(
       `/mission-supplies${buildMissionSuppliesQuery({ missionId })}`,
       {
-      headers: authSession.getAuthHeaders(),
-    });
+        headers: authSession.getAuthHeaders(),
+      });
   },
 
   /** GET /mission-supplies — flexible list for manager/global filters */
@@ -52,8 +52,8 @@ export const missionSupplyApi = {
     return apiClient.get<MissionSupplyListResponse>(
       `/mission-supplies${buildMissionSuppliesQuery(filters)}`,
       {
-      headers: authSession.getAuthHeaders(),
-    });
+        headers: authSession.getAuthHeaders(),
+      });
   },
 
   /** GET /mission-supplies/{id} — get single mission supply detail */

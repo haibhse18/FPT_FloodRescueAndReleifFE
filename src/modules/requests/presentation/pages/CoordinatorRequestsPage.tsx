@@ -1,28 +1,53 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
+import {
+  PiSirenBold,
+  PiMapPinBold,
+  PiUsersBold,
+  PiArrowRightBold,
+  PiArrowsInSimpleBold,
+  PiArrowsOutSimpleBold,
+  PiSortAscendingBold,
+} from "react-icons/pi";
+import {
+  FiRefreshCw,
+  FiAlertTriangle,
+  FiClock,
+  FiChevronLeft,
+  FiChevronRight,
+  FiPackage,
+  FiWifiOff,
+  FiLink,
+} from "react-icons/fi";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
+import { warehouseRepository } from "@/modules/warehouse/infrastructure/warehouse.repository.impl";
 import type {
   CoordinatorRequest,
   RequestStatus,
   GetRequestsFilter,
 } from "@/modules/requests/domain/request.entity";
+import type { Warehouse } from "@/modules/warehouse/domain/warehouse.entity";
+
+const GoongCoordinatorMap = dynamic(
+  () => import("@/modules/map/presentation/components/GoongCoordinatorMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full bg-[#0d2233] rounded-xl flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-[#FF7700] border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-300 text-sm">Đang tải bản đồ...</p>
+        </div>
+      </div>
+    ),
+  }
+);
 
 // ─── Constants ────────────────────────────────────────────
-
-const STATUS_TABS: { label: string; value: RequestStatus | "ALL" }[] = [
-  { label: "Tất cả", value: "ALL" },
-  { label: "📩 Chờ xử lý", value: "SUBMITTED" },
-  { label: "✅ Đã xác minh", value: "VERIFIED" },
-  { label: "🔄 Đang xử lý", value: "IN_PROGRESS" },
-  { label: "⚠️ Một phần", value: "PARTIALLY_FULFILLED" },
-  { label: "📁 Đã đóng", value: "CLOSED" },
-  { label: "🚫 Đã hủy", value: "CANCELLED" },
-  { label: "❌ Từ chối", value: "REJECTED" },
-];
-// Note: FULFILLED status removed - backend auto-converts to CLOSED
 
 const STATUS_COLORS: Record<string, string> = {
   SUBMITTED: "bg-gray-500/20 text-gray-300 border-gray-500/30",
@@ -35,15 +60,21 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
-  Critical: "bg-red-500 text-white ring-red-500",
-  High: "bg-orange-500 text-white ring-orange-500",
-  Normal: "bg-blue-500 text-white ring-blue-500",
+  Critical: "bg-red-500 text-white",
+  High: "bg-orange-500 text-white",
+  Normal: "bg-blue-500 text-white",
 };
 
 const PRIORITY_LABELS: Record<string, string> = {
-  Critical: "🔴 KHẨN CẤP",
-  High: "🟠 CAO",
-  Normal: "🔵 BÌNH THƯỜNG",
+  Critical: "KHẨN CẤP",
+  High: "CAO",
+  Normal: "BÌNH THƯỜNG",
+};
+
+const PRIORITY_DOTS: Record<string, string> = {
+  Critical: "bg-red-500",
+  High: "bg-orange-500",
+  Normal: "bg-blue-500",
 };
 
 const SORT_OPTIONS = [
@@ -56,32 +87,29 @@ const SORT_OPTIONS = [
 
 export default function CoordinatorRequestsPage() {
   const searchParams = useSearchParams();
-  const initStatus = (searchParams?.get("status") as RequestStatus) || "ALL";
 
   const [requests, setRequests] = useState<CoordinatorRequest[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<RequestStatus | "ALL">(initStatus);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "priority">("newest");
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mapFilterStatus, setMapFilterStatus] = useState<string>("ALL");
+  const [mapFilterPriority, setMapFilterPriority] = useState<string>("ALL");
 
-  useEffect(() => {
-    const status = searchParams?.get("status") as RequestStatus;
-    // Only update if it's a valid tab and differs
-    if (status && STATUS_TABS.some((t) => t.value === status)) {
-      setActiveTab(status);
-      setPage(1);
-    }
-  }, [searchParams]);
+  // Refs for scrolling to selected card
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const listContainerRef = useRef<HTMLDivElement | null>(null);
 
   const fetchRequests = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const filters: GetRequestsFilter = { page, limit: 15 };
-      if (activeTab !== "ALL") filters.status = activeTab;
+      const filters: GetRequestsFilter = { page, limit: 50 };
 
       const result = await requestRepository.getAllRequests(filters);
       let sortedData = result.data || [];
@@ -113,15 +141,44 @@ export default function CoordinatorRequestsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [activeTab, page, sortBy]);
+  }, [page, sortBy]);
+
+  const fetchWarehouses = useCallback(async () => {
+    try {
+      const data = await warehouseRepository.getWarehouses();
+      setWarehouses(data.warehouses || []);
+    } catch (err) {
+      console.error("Error fetching warehouses:", err);
+    }
+  }, []);
 
   useEffect(() => {
     fetchRequests();
   }, [fetchRequests]);
 
-  const handleTabChange = (tab: RequestStatus | "ALL") => {
-    setActiveTab(tab);
-    setPage(1);
+  useEffect(() => {
+    fetchWarehouses();
+  }, [fetchWarehouses]);
+
+  // When map filters change → update sidebar
+  const handleFilterChange = useCallback((status: string, priority: string) => {
+    setMapFilterStatus(status);
+    setMapFilterPriority(priority);
+    setSelectedRequestId(null);
+  }, []);
+
+  // When map marker is clicked → scroll list to card
+  const handleMapRequestSelect = useCallback((id: string) => {
+    setSelectedRequestId(id);
+    const cardEl = cardRefs.current[id];
+    if (cardEl) {
+      cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, []);
+
+  // When card is clicked → set selected (map will flyTo via prop change)
+  const handleCardClick = (id: string) => {
+    setSelectedRequestId((prev) => (prev === id ? null : id));
   };
 
   const formatDate = (date: string | Date | undefined) => {
@@ -147,89 +204,111 @@ export default function CoordinatorRequestsPage() {
     return "Chưa có địa chỉ";
   };
 
+  const hasLocation = (request: CoordinatorRequest) => {
+    const lng = request.location?.coordinates[0] || request.longitude;
+    const lat = request.location?.coordinates[1] || request.latitude;
+    return !!(lat && lng && lat !== 0 && lng !== 0);
+  };
+
+  // Apply map filters to sidebar list
+  const filteredRequests = requests.filter((r) => {
+    const statusOk = mapFilterStatus === "ALL" || r.status === mapFilterStatus;
+    const priorityOk = mapFilterPriority === "ALL" || r.priority === mapFilterPriority;
+    return statusOk && priorityOk;
+  });
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <header className="sticky top-0 z-50 p-6 border-b border-white/10 bg-gradient-to-br from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-white text-2xl lg:text-3xl font-extrabold tracking-tight uppercase">
-                Yêu cầu cứu trợ
-              </h1>
-              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full w-fit mt-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                <span className="text-xs font-semibold text-white">
-                  {total} yêu cầu
-                </span>
-              </div>
+    <div className="flex flex-col h-screen overflow-hidden">
+      {/* ── Header ── */}
+      <header className="flex-shrink-0 z-20 px-4 py-3 border-b border-white/10 bg-gradient-to-r from-[var(--color-accent)]/10 to-transparent backdrop-blur-md">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <PiSirenBold className="text-[#FF7700] text-xl flex-shrink-0" />
+            <h1 className="text-white text-xl font-extrabold tracking-tight uppercase truncate">
+              Yêu cầu cứu trợ
+            </h1>
+            <div className="inline-flex items-center gap-1.5 bg-white/15 px-2.5 py-1 rounded-full flex-shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+              <span className="text-xs font-semibold text-white">{total} yêu cầu</span>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSidebarOpen((v) => !v)}
+              className="flex-shrink-0 bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5"
+              title={sidebarOpen ? "Thu gọn danh sách" : "Mở danh sách"}
+            >
+              {sidebarOpen ? <PiArrowsInSimpleBold className="text-base" /> : <PiArrowsOutSimpleBold className="text-base" />}
+              <span className="hidden sm:inline">{sidebarOpen ? "Thu gọn" : "Danh sách"}</span>
+            </button>
             <button
               onClick={fetchRequests}
               disabled={isLoading}
-              className="bg-[#FF7700] hover:bg-[#FF8820] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors disabled:opacity-50"
+              className="flex-shrink-0 bg-[#FF7700] hover:bg-[#FF8820] text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-1.5"
             >
-              {isLoading ?
-                <span className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  Đang tải...
-                </span>
-              : "🔄 Làm mới"}
+              <FiRefreshCw className={`text-base ${isLoading ? "animate-spin" : ""}`} />
+              <span>{isLoading ? "Đang tải..." : "Làm mới"}</span>
             </button>
           </div>
         </div>
       </header>
 
-      <main className="pb-24 lg:pb-0 overflow-auto">
-        <div className="relative p-4 lg:p-8 space-y-6 max-w-7xl mx-auto">
-          {/* Status Tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {STATUS_TABS.map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => handleTabChange(tab.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                  activeTab === tab.value ?
-                    "bg-[#FF7700] text-white"
-                  : "bg-white/5 text-gray-300 hover:bg-white/10"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+      {/* ── Main split-pane ── */}
+      <div className="flex flex-1 overflow-hidden">
 
-          {/* Sort Options */}
-          <div className="flex items-center gap-3">
-            <span className="text-gray-400 text-sm font-medium">Sắp xếp:</span>
-            <div className="flex gap-2">
-              {SORT_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setSortBy(option.value as typeof sortBy)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                    sortBy === option.value ?
-                      "bg-[#FF7700] text-white"
-                    : "bg-white/5 text-gray-300 hover:bg-white/10"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
+        {/* ── Left: Map (fills all remaining space) ── */}
+        <div className="flex-1 min-w-0 overflow-hidden relative">
+          <GoongCoordinatorMap
+            requests={requests}
+            warehouses={warehouses}
+            selectedRequestId={selectedRequestId}
+            onRequestSelect={handleMapRequestSelect}
+            filterStatus={mapFilterStatus}
+            filterPriority={mapFilterPriority}
+            onFilterChange={handleFilterChange}
+            className="w-full h-full"
+          />
+        </div>
+
+        {/* ── Right: Request list (collapsible) ── */}
+        <div
+          style={{ width: sidebarOpen ? 380 : 0 }}
+          className={`flex-shrink-0 flex flex-col bg-[#0d1e2c] transition-[width] duration-300 ease-in-out overflow-hidden ${
+            sidebarOpen ? "border-l border-white/10 pointer-events-auto" : "pointer-events-none"
+          }`}
+        >
+
+          {/* Panel header: sort only */}
+          <div className="flex-shrink-0 p-3 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <PiSortAscendingBold className="text-gray-400 text-base flex-shrink-0" />
+              <span className="text-gray-400 text-xs font-medium flex-shrink-0">Sắp xếp:</span>
+              <div className="flex gap-1">
+                {SORT_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setSortBy(option.value as typeof sortBy)}
+                    className={`px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
+                      sortBy === option.value
+                        ? "bg-[#FF7700] text-white"
+                        : "bg-white/5 text-gray-300 hover:bg-white/10"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Error */}
           {error && (
-            <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-red-200">
-              <p className="flex items-center gap-2">
-                <span>⚠️</span>
+            <div className="flex-shrink-0 mx-3 mt-3 bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-200 text-xs">
+              <p className="flex items-center gap-1.5">
+                <FiAlertTriangle className="flex-shrink-0" />
                 <span>{error}</span>
               </p>
-              <button
-                onClick={fetchRequests}
-                className="mt-2 text-sm underline hover:no-underline"
-              >
+              <button onClick={fetchRequests} className="mt-1 underline hover:no-underline">
                 Thử lại
               </button>
             </div>
@@ -237,149 +316,165 @@ export default function CoordinatorRequestsPage() {
 
           {/* Loading */}
           {isLoading && !error && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-16 h-16 border-4 border-[#FF7700] border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p className="text-gray-300 text-lg">
-                Đang tải danh sách yêu cầu...
-              </p>
+            <div className="flex-1 flex flex-col items-center justify-center gap-3">
+              <div className="w-10 h-10 border-4 border-[#FF7700] border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-gray-300 text-sm">Đang tải...</p>
             </div>
           )}
 
-          {/* Requests List */}
+          {/* Request cards – scrollable */}
           {!isLoading && !error && (
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-white font-bold text-xl">
-                  Danh sách yêu cầu ({requests.length})
-                </h2>
+            <>
+              <div className="flex-shrink-0 px-3 pt-2 pb-1 flex items-center justify-between">
+                <span className="text-gray-400 text-xs font-medium">
+                  {filteredRequests.length}{mapFilterStatus !== "ALL" || mapFilterPriority !== "ALL" ? ` / ${requests.length}` : ""} yêu cầu
+                  {selectedRequestId && (
+                    <button
+                      onClick={() => setSelectedRequestId(null)}
+                      className="ml-2 text-[#FF7700] hover:text-[#FF8820] underline"
+                    >
+                      Bỏ chọn
+                    </button>
+                  )}
+                </span>
+                <span className="text-gray-500 text-xs flex items-center gap-1">
+                  <PiMapPinBold />
+                  {requests.filter(hasLocation).length} có tọa độ
+                </span>
               </div>
 
-              {requests.length === 0 ?
-                <div className="bg-white/5 border border-white/10 rounded-xl p-12 text-center">
-                  <div className="text-6xl mb-4">📭</div>
-                  <p className="text-gray-300 text-lg">Không có yêu cầu nào</p>
-                  <p className="text-gray-400 text-sm mt-2">
-                    Thử thay đổi bộ lọc hoặc làm mới danh sách
-                  </p>
-                </div>
-              : <div className="space-y-3">
-                  {requests.map((request) => (
-                    <Link
-                      key={request._id}
-                      href={`/requests/${request._id}`}
-                      className="block bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-5 transition-all hover:shadow-xl hover:border-[#FF7700]/50 group"
-                    >
-                      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                        {/* Priority Badge */}
-                        <div
-                          className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold ${
-                            PRIORITY_COLORS[request.priority] ||
-                            PRIORITY_COLORS.Normal
-                          } ring-2 ring-offset-2 ring-offset-[#133249]`}
+              <div
+                ref={listContainerRef}
+                className="flex-1 overflow-y-auto px-3 pb-4 space-y-2 scrollbar-hide"
+              >
+                {filteredRequests.length === 0 ? (
+                  <div className="py-12 text-center">
+                    <PiSirenBold className="text-5xl text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-300 text-sm">Không có yêu cầu nào</p>
+                    <p className="text-gray-500 text-xs mt-1">Thử thay đổi bộ lọc</p>
+                  </div>
+                ) : (
+                  filteredRequests.map((request) => {
+                    const isSelected = selectedRequestId === request._id;
+                    return (
+                      <div
+                        key={request._id}
+                        ref={(el) => { cardRefs.current[request._id] = el; }}
+                        className={`rounded-xl border transition-all duration-200 overflow-hidden ${
+                          isSelected
+                            ? "border-[#FF7700] bg-[#FF7700]/10 shadow-lg shadow-[#FF7700]/20"
+                            : "border-white/10 bg-white/5 hover:bg-white/8 hover:border-white/20"
+                        }`}
+                      >
+                        {/* Card click area → focus map */}
+                        <button
+                          onClick={() => handleCardClick(request._id)}
+                          className="w-full text-left p-3"
                         >
-                          {PRIORITY_LABELS[request.priority] ||
-                            request.priority}
-                        </div>
-
-                        {/* Request Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start gap-3 mb-2">
-                            <div className="text-2xl">
-                              {request.type === "Rescue" ? "🆘" : "📦"}
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="text-white font-bold text-lg group-hover:text-[#FF7700] transition-colors">
-                                {request.userName ||
-                                  request.displayName ||
-                                  "Ẩn danh"}
-                              </h3>
-                              <p className="text-gray-300 text-sm line-clamp-2">
+                          <div className="flex items-start gap-2 mb-2">
+                            {/* Type icon */}
+                            {request.type === "Rescue"
+                              ? <PiSirenBold className="text-lg text-red-400 flex-shrink-0 mt-0.5" />
+                              : <FiPackage className="text-lg text-blue-400 flex-shrink-0 mt-0.5" />
+                            }
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                                <span
+                                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-bold flex-shrink-0 ${
+                                    PRIORITY_COLORS[request.priority] || PRIORITY_COLORS.Normal
+                                  }`}
+                                >
+                                  <span className={`w-1.5 h-1.5 rounded-full ${PRIORITY_DOTS[request.priority] || "bg-blue-500"}`} />
+                                  {PRIORITY_LABELS[request.priority] || request.priority}
+                                </span>
+                                {!hasLocation(request) && (
+                                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-400 flex-shrink-0">
+                                    <FiWifiOff className="text-xs" /> No GPS
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-white font-semibold text-sm truncate">
+                                {request.userName || request.displayName || "Ẩn danh"}
+                              </p>
+                              <p className="text-gray-400 text-xs line-clamp-2 mt-0.5">
                                 {request.description}
                               </p>
                             </div>
+                            {/* Status badge */}
+                            <span
+                              className={`flex-shrink-0 px-2 py-0.5 rounded text-xs font-bold border ${
+                                STATUS_COLORS[request.status] || STATUS_COLORS.SUBMITTED
+                              }`}
+                            >
+                              {request.status}
+                            </span>
                           </div>
 
-                          <div className="flex flex-wrap gap-2 items-center text-sm text-gray-400">
-                            <span className="flex items-center gap-1">
-                              📍 {getLocationDisplay(request)}
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500">
+                            <span className="flex items-center gap-1 truncate max-w-full">
+                              <PiMapPinBold className="flex-shrink-0" />
+                              <span className="truncate">{getLocationDisplay(request)}</span>
                             </span>
-                            <span>•</span>
-                            <span>🕐 {formatDate(request.createdAt)}</span>
+                            <span className="flex items-center gap-1">
+                              <FiClock className="flex-shrink-0" />
+                              {formatDate(request.createdAt)}
+                            </span>
                             {request.peopleCount && (
-                              <>
-                                <span>•</span>
-                                <span>👥 {request.peopleCount} người</span>
-                              </>
+                              <span className="flex items-center gap-1">
+                                <PiUsersBold className="flex-shrink-0" />
+                                {request.peopleCount}
+                              </span>
                             )}
                             {request.isDuplicated && (
-                              <>
-                                <span>•</span>
-                                <span className="text-yellow-400">
-                                  📎 Trùng lặp
-                                </span>
-                              </>
-                            )}
-                            {request.source && (
-                              <>
-                                <span>•</span>
-                                <span className="text-gray-500 text-xs">
-                                  {request.source === "COORDINATOR" ?
-                                    "Coord"
-                                  : "Citizen"}
-                                </span>
-                              </>
+                              <span className="flex items-center gap-1 text-yellow-400">
+                                <FiLink className="flex-shrink-0" /> Trùng
+                              </span>
                             )}
                           </div>
-                        </div>
+                        </button>
 
-                        {/* Status Badge */}
-                        <div className="flex-shrink-0">
-                          <span
-                            className={`inline-block px-4 py-2 rounded-lg text-sm font-bold border ${
-                              STATUS_COLORS[request.status] ||
-                              STATUS_COLORS.SUBMITTED
-                            }`}
+                        {/* Detail link */}
+                        <div className="px-3 pb-2.5">
+                          <Link
+                            href={`/requests/${request._id}`}
+                            className="flex items-center justify-center gap-1.5 w-full text-center py-1.5 rounded-lg bg-white/5 hover:bg-[#FF7700]/20 hover:text-[#FF7700] text-gray-400 text-xs font-medium transition-colors border border-white/10 hover:border-[#FF7700]/30"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            {request.status}
-                          </span>
-                        </div>
-
-                        {/* Arrow */}
-                        <div className="text-white/50 text-2xl group-hover:text-[#FF7700] transition-colors">
-                          →
+                            Xem chi tiết <PiArrowRightBold />
+                          </Link>
                         </div>
                       </div>
-                    </Link>
-                  ))}
-                </div>
-              }
+                    );
+                  })
+                )}
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center gap-2 mt-6">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-300 disabled:opacity-30 hover:bg-white/10"
-                  >
-                    ←
-                  </button>
-                  <span className="px-3 py-1.5 text-gray-400 text-sm">
-                    {page} / {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-300 disabled:opacity-30 hover:bg-white/10"
-                  >
-                    →
-                  </button>
-                </div>
-              )}
-            </section>
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center gap-2 pt-2">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-300 disabled:opacity-30 hover:bg-white/10 text-sm"
+                    >
+                      <FiChevronLeft />
+                    </button>
+                    <span className="px-3 py-1.5 text-gray-400 text-sm">
+                      {page} / {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-300 disabled:opacity-30 hover:bg-white/10 text-sm"
+                    >
+                      <FiChevronRight />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }

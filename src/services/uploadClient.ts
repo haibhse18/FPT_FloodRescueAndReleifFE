@@ -19,8 +19,7 @@ export interface CloudinarySignatureResponse {
   cloudName: string;
   apiKey: string;
   folder: string;
-  resourceType: string;
-  context?: Record<string, string>;
+  context?: string;
   eager?: string;
   eager_async?: boolean;
 }
@@ -84,11 +83,9 @@ export async function uploadImage(
     formData.append("api_key", apiKey);
     formData.append("folder", signedFolder);
 
-    if (context && Object.keys(context).length > 0) {
-      const contextStr = Object.entries(context)
-        .map(([k, v]) => `${k}=${v}`)
-        .join("|");
-      formData.append("context", contextStr);
+    // Use context string from backend signature if available
+    if (signatureData.context) {
+      formData.append("context", signatureData.context);
     }
 
     if (eager && signatureData.eager) {

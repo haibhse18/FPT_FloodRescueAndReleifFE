@@ -8,6 +8,7 @@ import { CreateRescueRequestUseCase } from "@/modules/requests/application/creat
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 import type { Supply } from "@/modules/supplies/domain/supply.entity";
 import { useToast } from "@/hooks/use-toast";
+import { uploadClient } from "@/services/uploadClient";
 
 // Initialize use case with repository
 const createRescueRequestUseCase = new CreateRescueRequestUseCase(
@@ -278,7 +279,7 @@ export default function CitizenRequestPage() {
     numberOfPeople: 1,
   });
   const [rescueContexts, setRescueContexts] = useState<string[]>([]);
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<Array<{publicId: string, secureUrl: string}>>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadImageError, setUploadImageError] = useState<string | null>(null);
   const [reliefNeedMedicine, setReliefNeedMedicine] = useState(false);
@@ -814,9 +815,13 @@ export default function CitizenRequestPage() {
         },
       };
 
-      // imageUrls: chỉ gửi khi có ảnh, không gửi mảng rỗng (backend validate min 1)
+      // media: chỉ gửi khi có ảnh, không gửi mảng rỗng (backend validate min 1)
       if (uploadedImages.length > 0) {
-        payload.imageUrls = uploadedImages;
+        payload.media = uploadedImages.map(img => ({
+          publicId: img.publicId,
+          secureUrl: img.secureUrl,
+          uploadedAt: new Date()
+        }));
       }
 
       const createdRequest = await createRescueRequestUseCase.execute(payload as any);
@@ -1021,6 +1026,15 @@ export default function CitizenRequestPage() {
         },
       };
 
+      // media: chỉ gửi khi có ảnh, không gửi mảng rỗng (backend validate min 1)
+      if (uploadedImages.length > 0) {
+        payload.media = uploadedImages.map(img => ({
+          publicId: img.publicId,
+          secureUrl: img.secureUrl,
+          uploadedAt: new Date()
+        }));
+      }
+
       const createdRequest = await createRescueRequestUseCase.execute(payload as any);
       const createdRequestId = getCreatedRequestId(createdRequest);
 
@@ -1087,33 +1101,26 @@ export default function CitizenRequestPage() {
     }
   };
 
-  // Hàm upload ảnh lên server (server-side upload to Cloudinary)
+  // Hàm upload ảnh lên Cloudinary (Direct Signed Upload)
   const handleImageUpload = async (file: File) => {
     setIsUploadingImage(true);
     setUploadImageError(null);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      // Upload using uploadImage to get full metadata
+      const result = await uploadClient.uploadImage(
+        file,
+        "rescue_requests",
+        {
+          requestType: requestType.toLowerCase(),
+        },
+        false // no eager transformations for now
+      );
 
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const text = await response.text();
-      let data: { success: boolean; url?: string; error?: string };
-      try {
-        data = JSON.parse(text);
-      } catch {
-        throw new Error(`Lỗi server (${response.status}) — vui lòng thử lại`);
-      }
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || `Lỗi HTTP ${response.status}`);
-      }
-
-      if (data.url) {
-        setUploadedImages((prev) => [...prev, data.url!]);
+      if (result) {
+        setUploadedImages((prev) => [...prev, {
+          publicId: result.public_id,
+          secureUrl: result.secure_url
+        }]);
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Lỗi không xác định";
@@ -1344,13 +1351,12 @@ export default function CitizenRequestPage() {
                     <div className="space-y-1">
                       <label className="text-xs text-white font-semibold block">Ảnh đã gửi</label>
                       <div className="flex flex-wrap gap-2">
-                        {uploadedImages.map((url, idx) => (
+                        {uploadedImages.map((media, idx) => (
                           <div key={idx} className="w-20 h-20 rounded-lg overflow-hidden border border-white/20 bg-white/5 flex items-center justify-center">
                             <img
-                              src={url}
-                              alt={`Ảnh hiện trường ${idx + 1}`}
-                              className="object-cover w-full h-full"
-                              loading="lazy"
+                              src={media.secureUrl}
+                              alt={`Uploaded image ${idx + 1}`}
+                              className="w-full h-full object-cover"
                             />
                           </div>
                         ))}

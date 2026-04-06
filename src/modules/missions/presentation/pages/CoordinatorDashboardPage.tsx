@@ -6,6 +6,18 @@ import { requestRepository } from "@/modules/requests/infrastructure/request.rep
 import { missionRepository } from "@/modules/missions/infrastructure/mission.repository.impl";
 import type { CoordinatorRequest } from "@/modules/requests/domain/request.entity";
 import type { Mission } from "@/modules/missions/domain/mission.entity";
+import {
+  FiPieChart,
+  FiInbox,
+  FiTarget,
+  FiClipboard,
+  FiCheckCircle,
+  FiLifeBuoy,
+  FiAlertTriangle,
+  FiPackage,
+  FiZap,
+  FiPlus,
+} from "react-icons/fi";
 
 // ─── Component ────────────────────────────────────────────
 
@@ -50,7 +62,9 @@ export default function CoordinatorDashboardPage() {
   return (
     <div className="p-4 lg:p-6 relative z-10">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">📊 Dashboard</h1>
+        <h1 className="text-2xl font-bold text-white flex items-center">
+          <FiPieChart className="mr-2" /> Dashboard
+        </h1>
         <p className="text-gray-400 text-sm mt-1">
           Tổng quan hoạt động điều phối
         </p>
@@ -59,28 +73,28 @@ export default function CoordinatorDashboardPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
-          icon="📩"
+          icon={<FiInbox className="text-yellow-400" />}
           title="Chờ xử lý"
           value={submittedCount}
           color="border-yellow-500/30"
           onClick={() => router.push("/requests?status=SUBMITTED")}
         />
         <StatCard
-          icon="🎯"
+          icon={<FiTarget className="text-blue-400" />}
           title="Mission đang chạy"
           value={activeMissions.length}
           color="border-blue-500/30"
           onClick={() => router.push("/mission-control?status=IN_PROGRESS")}
         />
         <StatCard
-          icon="📋"
+          icon={<FiClipboard className="text-red-400" />}
           title="Cần xử lý"
           value={urgentRequests.length}
           color="border-red-500/30"
           onClick={() => router.push("/requests")}
         />
         <StatCard
-          icon="✅"
+          icon={<FiCheckCircle className="text-green-400" />}
           title="Hoàn thành hôm nay"
           value="—"
           color="border-green-500/30"
@@ -92,8 +106,8 @@ export default function CoordinatorDashboardPage() {
         {/* Urgent Requests */}
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white">
-              🆘 Yêu cầu chờ xử lý
+            <h2 className="text-lg font-bold text-white flex items-center">
+              <FiLifeBuoy className="mr-2 text-red-500" /> Yêu cầu chờ xử lý
             </h2>
             <button
               onClick={() => router.push("/requests")}
@@ -135,8 +149,8 @@ export default function CoordinatorDashboardPage() {
         {/* Active Missions */}
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white">
-              🎯 Mission đang chạy
+            <h2 className="text-lg font-bold text-white flex items-center">
+              <FiTarget className="mr-2 text-blue-500" /> Mission đang chạy
             </h2>
             <button
               onClick={() => router.push("/mission-control")}
@@ -171,7 +185,7 @@ export default function CoordinatorDashboardPage() {
                       </p>
                     </div>
                     <span className="text-xs text-gray-500 ml-2 shrink-0">
-                      {m.type === "RESCUE" ? "🚨" : "📦"}
+                      {m.type === "RESCUE" ? <FiAlertTriangle className="text-red-500 w-4 h-4" /> : <FiPackage className="text-orange-500 w-4 h-4" />}
                     </span>
                   </div>
                 </div>
@@ -183,15 +197,17 @@ export default function CoordinatorDashboardPage() {
 
       {/* Quick Actions */}
       <div className="mt-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
-        <h2 className="text-lg font-bold text-white mb-4">⚡ Thao tác nhanh</h2>
+        <h2 className="text-lg font-bold text-white mb-4 flex items-center">
+          <FiZap className="mr-2 text-yellow-400" /> Thao tác nhanh
+        </h2>
         <div className="flex flex-wrap gap-3">
           <QuickAction
-            icon="📩"
+            icon={<FiInbox className="w-4 h-4" />}
             label="Xem requests mới"
             onClick={() => router.push("/requests")}
           />
           <QuickAction
-            icon="➕"
+            icon={<FiPlus className="w-4 h-4" />}
             label="Tạo mission"
             onClick={() => router.push("/mission-control")}
           />
@@ -210,7 +226,7 @@ function StatCard({
   color,
   onClick,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   value: number | string;
   color: string;
@@ -239,7 +255,7 @@ function QuickAction({
   label,
   onClick,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   onClick: () => void;
 }) {

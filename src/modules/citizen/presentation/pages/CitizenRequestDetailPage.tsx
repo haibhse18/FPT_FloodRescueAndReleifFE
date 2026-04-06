@@ -408,13 +408,12 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     const currentStep = meta.step;
 
     const shortId = (request._id || request.requestId || request.id || "").slice(-8).toUpperCase();
-    // Images: backend stores as imageUrls[] or in requestMedia[].url
+    // Images: new Cloudinary architecture uses media[].secureUrl
     const images: string[] =
-        request.imageUrls?.length > 0 ? request.imageUrls :
-            request.images?.length > 0 ? request.images :
-                Array.isArray(request.requestMedia)
-                    ? (request.requestMedia as any[]).map((m) => m?.url || m?.fileUrl || m?.path || (typeof m === "string" ? m : "")).filter(Boolean)
-                    : [];
+        Array.isArray(request.media) && request.media.length > 0
+            ? (request.media as any[]).map((m) => m?.secureUrl || m?.imageUrl || "").filter(Boolean)
+            : request.images?.length > 0 ? request.images
+            : [];
 
     // Parse location: backend trả về GeoJSON { type:"Point", coordinates:[lon,lat] }
     const parsedLoc = (() => {

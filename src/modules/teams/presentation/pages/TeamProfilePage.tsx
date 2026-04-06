@@ -13,6 +13,7 @@ import {
     ProfileHeader,
     ProfileLogoutButton,
     ProfileQuickSettings,
+    TelegramConnect,
     type CitizenProfile,
 } from "@/modules/users/presentation/components";
 
@@ -195,6 +196,8 @@ export default function TeamProfilePage() {
                             onSave={handleSave}
                             onCancel={handleCancel}
                         />
+
+                        <TelegramConnect />
 
                         <ProfileQuickSettings />
 

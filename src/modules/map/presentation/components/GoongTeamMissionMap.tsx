@@ -1,9 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import goongjs, { type Map, type Marker } from "@goongmaps/goong-js";
+import { renderToStaticMarkup } from "react-dom/server";
+import goongjs, { type Map, type Marker, type Popup } from "@goongmaps/goong-js";
 import "@goongmaps/goong-js/dist/goong-js.css";
-import { createWarehouseMarker } from "../../utils/goongMapHelpers";
+import { FaMapMarkerAlt } from "react-icons/fa";
+import {
+  createWarehouseMarker,
+  createWarehousePopupHTML,
+  createRequestMarker as createCoordinatorRequestMarker,
+  createRequestPopupHTML,
+  getNearestWarehouses,
+  PRIORITY_COLORS,
+  type Priority,
+} from "../../utils/goongMapHelpers";
 import type { MissionRequest } from "@/modules/missions/domain/missionRequest.entity";
 import type { Warehouse } from "@/modules/warehouse/domain/warehouse.entity";
 
@@ -20,20 +30,6 @@ export interface GoongTeamMissionMapProps {
   height?: string;
 }
 
-// Priority colors
-const PRIORITY_COLORS = {
-  Critical: "#FF0000", // Red
-  High: "#FF7700",     // Orange
-  Normal: "#FFD700",   // Yellow
-} as const;
-
-// Completion status colors (Step 4)
-const STATUS_COLORS = {
-  completed: "#22C55E", // Green
-  partial: "#FFD700",   // Yellow
-  failed: "#FF0000",    // Red
-} as const;
-
 export default function GoongTeamMissionMap({
   missionRequests,
   warehouses = [],
@@ -48,14 +44,70 @@ export default function GoongTeamMissionMap({
   const mapRef = useRef<Map | null>(null);
   const markersRef = useRef<Marker[]>([]);
   const teamMarkerRef = useRef<Marker | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+  const [internalTeamLocation, setInternalTeamLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const hasInitialTeamFocus = useRef(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const hasInitialFit = useRef(false);
 
   // Determine feature flags based on step
   const showWarehouses = step === "assigned";
-  const showTeamLocation = step === "enroute" || step === "inprogress";
+  const showTeamLocation = true;
   const enableTracking = step === "enroute";
   const readOnly = step === "completed";
+
+  const toValidLngLat = (lngCandidate: unknown, latCandidate: unknown): [number, number] | null => {
+    const lng = Number(lngCandidate);
+    const lat = Number(latCandidate);
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null;
+    if (lng < -180 || lng > 180 || lat < -90 || lat > 90) return null;
+    return [lng, lat];
+  };
+
+  const resolveRequestLngLat = (request: MissionRequest): [number, number] | null => {
+    const populatedRequest = typeof request.requestId === "object" ? (request.requestId as any) : null;
+    const candidates = [
+      populatedRequest?.location?.coordinates,
+      (request as any)?.requestDetails?.location?.coordinates,
+      (request as any)?.locationSnapshot?.coordinates,
+      (request as any)?.location?.coordinates,
+    ];
+
+    for (const coords of candidates) {
+      if (Array.isArray(coords) && coords.length >= 2) {
+        const direct = toValidLngLat(coords[0], coords[1]);
+        if (direct) return direct;
+
+        // Fallback for incorrectly stored [lat, lng] pairs in old data.
+        const swapped = toValidLngLat(coords[1], coords[0]);
+        if (swapped) return swapped;
+      }
+    }
+
+    return null;
+  };
+
+  const resolveWarehouseLngLat = (warehouse: Warehouse): [number, number] | null => {
+    const coords = warehouse?.location?.coordinates;
+    if (!Array.isArray(coords) || coords.length < 2) return null;
+
+    const direct = toValidLngLat(coords[0], coords[1]);
+    if (direct) return direct;
+
+    // Fallback for incorrectly stored [lat, lng] pairs in old data.
+    return toValidLngLat(coords[1], coords[0]);
+  };
+
+  const bindHoverPopup = (element: HTMLElement, popup: Popup) => {
+    element.addEventListener("mouseenter", () => {
+      if (mapRef.current) {
+        popup.addTo(mapRef.current);
+      }
+    });
+    element.addEventListener("mouseleave", () => {
+      popup.remove();
+    });
+  };
 
   // Initialize map
   useEffect(() => {
@@ -74,7 +126,10 @@ export default function GoongTeamMissionMap({
       style: "https://tiles.goong.io/assets/goong_map_web.json",
       center: [105.8542, 21.0285],
       zoom: 12,
+      attributionControl: false,
     });
+
+    map.addControl(new goongjs.NavigationControl(), "top-right");
 
     map.on("load", () => {
       mapRef.current = map;
@@ -82,6 +137,19 @@ export default function GoongTeamMissionMap({
     });
 
     return () => {
+      if (watchIdRef.current !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+
+      if (teamMarkerRef.current) {
+        teamMarkerRef.current.remove();
+        teamMarkerRef.current = null;
+      }
+
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -89,78 +157,65 @@ export default function GoongTeamMissionMap({
     };
   }, []);
 
-  // Create request marker based on step
-  const createRequestMarker = (
-    request: MissionRequest,
-    isSelected: boolean
-  ): HTMLDivElement => {
-    const el = document.createElement("div");
-    el.style.width = isSelected ? "36px" : "30px";
-    el.style.height = isSelected ? "36px" : "30px";
-    el.style.cursor = readOnly ? "default" : "pointer";
-    el.style.position = "relative";
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
 
-    const inner = document.createElement("div");
-    inner.style.width = "100%";
-    inner.style.height = "100%";
-    inner.style.borderRadius = "50%";
-    inner.style.border = isSelected ? "3px solid white" : "2px solid white";
-    inner.style.transition = "transform 0.2s";
-    inner.style.position = "absolute";
-    inner.style.top = "0";
-    inner.style.left = "0";
+    const map = mapRef.current;
+    const onResize = () => map.resize();
 
-    // Determine color based on step
-    if (step === "completed") {
-      // Step 4: Completion status colors
-      const status = getCompletionStatus(request);
-      inner.style.backgroundColor = STATUS_COLORS[status];
-    } else if (step === "inprogress") {
-      // Step 3: Gray for completed, priority colors for pending
-      const isCompleted = isRequestCompleted(request);
-      if (isCompleted) {
-        inner.style.backgroundColor = "#6B7280"; // Gray
-      } else {
-        const priority = (request as any).prioritySnapshot || "Normal";
-        inner.style.backgroundColor = PRIORITY_COLORS[priority as keyof typeof PRIORITY_COLORS] || PRIORITY_COLORS.Normal;
+    onResize();
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+    };
+  }, [mapLoaded, step]);
+
+  // Fallback geolocation source when parent does not pass teamLocation.
+  useEffect(() => {
+    if (!showTeamLocation || teamLocation || !navigator.geolocation) return;
+    if (watchIdRef.current !== null) return;
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        setInternalTeamLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      () => {
+        // Keep null on failure - map still works with request/warehouse markers.
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      },
+    );
+
+    return () => {
+      if (watchIdRef.current !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
       }
-    } else {
-      // Step 1, 2: Priority colors
-      const priority = (request as any).prioritySnapshot || "Normal";
-      inner.style.backgroundColor = PRIORITY_COLORS[priority as keyof typeof PRIORITY_COLORS] || PRIORITY_COLORS.Normal;
-    }
-
-    // Selected glowing effect
-    if (isSelected) {
-      el.style.boxShadow = "0 0 20px rgba(255, 255, 255, 0.8)";
-    }
-
-    el.appendChild(inner);
-
-    // Hover effect (scale 1.1)
-    if (!readOnly) {
-      el.addEventListener("mouseenter", () => {
-        inner.style.transform = "scale(1.1)";
-      });
-
-      el.addEventListener("mouseleave", () => {
-        inner.style.transform = "scale(1)";
-      });
-    }
-
-    return el;
-  };
+    };
+  }, [showTeamLocation, teamLocation]);
 
   // Create team location marker
   const createTeamLocationMarker = (): HTMLDivElement => {
     const el = document.createElement("div");
-    el.style.width = "32px";
-    el.style.height = "32px";
-    el.style.borderRadius = "50%";
-    el.style.backgroundColor = "#3B82F6"; // Blue
-    el.style.border = "3px solid white";
+    el.style.width = "36px";
+    el.style.height = "36px";
     el.style.cursor = "default";
-    el.style.boxShadow = "0 0 10px rgba(59, 130, 246, 0.5)";
+    el.style.display = "flex";
+    el.style.alignItems = "center";
+    el.style.justifyContent = "center";
+    el.style.filter = "drop-shadow(0 3px 6px rgba(0,0,0,0.35))";
+    el.style.zIndex = "40";
+
+    el.innerHTML = renderToStaticMarkup(
+      <FaMapMarkerAlt size={34} color="#2563EB" style={{ stroke: "#FFFFFF", strokeWidth: 1.2 }} />,
+    );
 
     // Pulse effect for tracking mode
     if (enableTracking) {
@@ -168,29 +223,6 @@ export default function GoongTeamMissionMap({
     }
 
     return el;
-  };
-
-  // Helper: Check if request is completed
-  const isRequestCompleted = (request: MissionRequest): boolean => {
-    return request.status === "CLOSED" || request.status === "FULFILLED";
-  };
-
-  // Helper: Get completion status for Step 4
-  const getCompletionStatus = (request: MissionRequest): "completed" | "partial" | "failed" => {
-    if (request.status !== "CLOSED" && request.status !== "FULFILLED") {
-      return "failed";
-    }
-
-    const peopleNeeded = (request as any).peopleNeeded || 0;
-    const peopleRescued = (request as any).peopleRescued || 0;
-
-    if (peopleRescued >= peopleNeeded && peopleNeeded > 0) {
-      return "completed";
-    } else if (peopleRescued > 0) {
-      return "partial";
-    }
-
-    return "failed";
   };
 
   // Update request markers
@@ -206,46 +238,30 @@ export default function GoongTeamMissionMap({
     const bounds = new goongjs.LngLatBounds();
     let hasMarkers = false;
 
-    // Add request markers
-    missionRequests.forEach((request) => {
-      const requestId = typeof request.requestId === "string"
-        ? request.requestId
-        : (request.requestId as any)?._id;
+    // Add warehouse markers (Step 1 only) - prioritize nearest to request area.
+    if (showWarehouses && warehouses.length > 0) {
+      const requestCoords = missionRequests
+        .map((request) => resolveRequestLngLat(request))
+        .filter((coord): coord is [number, number] => !!coord);
 
-      const location = (request.requestId as any)?.location;
-      if (!location?.coordinates || location.coordinates.length < 2) return;
+      let warehouseSource = warehouses;
+      if (requestCoords.length > 0) {
+        const centroidLng =
+          requestCoords.reduce((sum, coord) => sum + coord[0], 0) / requestCoords.length;
+        const centroidLat =
+          requestCoords.reduce((sum, coord) => sum + coord[1], 0) / requestCoords.length;
 
-      const [lng, lat] = location.coordinates;
-      const isSelected = requestId === selectedRequestId;
-
-      const markerElement = createRequestMarker(request, isSelected);
-
-      const marker = new goongjs.Marker({
-        element: markerElement,
-        anchor: "bottom",
-      })
-        .setLngLat([lng, lat])
-        .addTo(map);
-
-      // Click handler (not for read-only)
-      if (!readOnly && onRequestClick) {
-        markerElement.addEventListener("click", () => {
-          onRequestClick(requestId);
-        });
+        warehouseSource = getNearestWarehouses(warehouses, centroidLat, centroidLng, 8);
       }
 
-      markersRef.current.push(marker);
-      bounds.extend([lng, lat]);
-      hasMarkers = true;
-    });
+      warehouseSource.forEach((warehouse) => {
+        const lngLat = resolveWarehouseLngLat(warehouse);
+        if (!lngLat) return;
 
-    // Add warehouse markers (Step 1 only)
-    if (showWarehouses && warehouses.length > 0) {
-      warehouses.forEach((warehouse) => {
-        const lng = warehouse.location.coordinates[0];
-        const lat = warehouse.location.coordinates[1];
+        const [lng, lat] = lngLat;
 
         const markerElement = createWarehouseMarker();
+        markerElement.style.zIndex = "10";
 
         const marker = new goongjs.Marker({
           element: markerElement,
@@ -254,10 +270,102 @@ export default function GoongTeamMissionMap({
           .setLngLat([lng, lat])
           .addTo(map);
 
+          const warehousePopup = new goongjs.Popup({
+            offset: 20,
+            closeButton: false,
+            closeOnClick: false,
+          }).setHTML(
+            createWarehousePopupHTML({
+              _id: warehouse._id,
+              name: warehouse.name,
+              status: warehouse.status,
+            }),
+          );
+          bindHoverPopup(markerElement, warehousePopup);
+
         markersRef.current.push(marker);
         bounds.extend([lng, lat]);
         hasMarkers = true;
       });
+    }
+
+    const unresolvedRequests: string[] = [];
+
+    // Add request markers after warehouses so they stay on top.
+    missionRequests.forEach((request) => {
+      const requestId = typeof request.requestId === "string"
+        ? request.requestId
+        : (request.requestId as any)?._id || request._id;
+      const populatedRequest = typeof request.requestId === "object" ? (request.requestId as any) : null;
+
+      const lngLat = resolveRequestLngLat(request);
+      if (!lngLat) {
+        unresolvedRequests.push(requestId || request._id || "unknown");
+        return;
+      }
+
+      const [lng, lat] = lngLat;
+      const isSelected = !!selectedRequestId && requestId === selectedRequestId;
+
+      const priority =
+        ((populatedRequest?.priority || (request as any)?.prioritySnapshot || "Normal") as Priority) ||
+        "Normal";
+
+      const markerElement = createCoordinatorRequestMarker(priority);
+      markerElement.style.zIndex = isSelected ? "30" : "20";
+      markerElement.style.cursor = readOnly ? "default" : "pointer";
+      if (isSelected) {
+        markerElement.style.boxShadow = "0 0 20px rgba(255, 255, 255, 0.9)";
+        markerElement.style.transform = "scale(1.15)";
+      }
+
+      const marker = new goongjs.Marker({
+        element: markerElement,
+        anchor: "bottom",
+      })
+        .setLngLat([lng, lat])
+        .addTo(map);
+
+      const requestPopup = new goongjs.Popup({
+        offset: 25,
+        closeButton: false,
+        closeOnClick: false,
+      }).setHTML(
+        createRequestPopupHTML({
+          _id: requestId || request._id,
+          priority,
+          peopleCount: Number(populatedRequest?.peopleCount || (request as any)?.requestPeopleSnapshot || 0),
+          description: populatedRequest?.description,
+          status: request.status,
+        }),
+      );
+      bindHoverPopup(markerElement, requestPopup);
+
+      // Click handler (not for read-only)
+      if (!readOnly && onRequestClick) {
+        markerElement.addEventListener("click", () => {
+          if (requestId) {
+            onRequestClick(requestId);
+          }
+        });
+      }
+
+      markersRef.current.push(marker);
+      bounds.extend([lng, lat]);
+      hasMarkers = true;
+    });
+
+    if (unresolvedRequests.length > 0) {
+      console.warn("[GoongTeamMissionMap] Missing coordinates for mission requests:", unresolvedRequests);
+    }
+
+    const effectiveTeamLocation = teamLocation || internalTeamLocation;
+    if (step === "assigned" && effectiveTeamLocation) {
+      const teamLngLat = toValidLngLat(effectiveTeamLocation.lng, effectiveTeamLocation.lat);
+      if (teamLngLat) {
+        bounds.extend(teamLngLat);
+        hasMarkers = true;
+      }
     }
 
     // Auto fit bounds (Step 1 only, first time)
@@ -277,13 +385,15 @@ export default function GoongTeamMissionMap({
       );
       hasInitialFit.current = true;
     }
-  }, [mapLoaded, missionRequests, warehouses, selectedRequestId, step, showWarehouses, readOnly, onRequestClick]);
+  }, [mapLoaded, missionRequests, warehouses, selectedRequestId, step, showWarehouses, readOnly, onRequestClick, teamLocation, internalTeamLocation]);
 
   // Update team location marker
   useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !showTeamLocation || !teamLocation) return;
+    if (!mapRef.current || !mapLoaded || !showTeamLocation) return;
 
     const map = mapRef.current;
+    const effectiveTeamLocation = teamLocation || internalTeamLocation;
+    if (!effectiveTeamLocation) return;
 
     // Remove existing team marker
     if (teamMarkerRef.current) {
@@ -296,29 +406,102 @@ export default function GoongTeamMissionMap({
       element: markerElement,
       anchor: "bottom",
     })
-      .setLngLat([teamLocation.lng, teamLocation.lat])
+      .setLngLat([effectiveTeamLocation.lng, effectiveTeamLocation.lat])
       .addTo(map);
+
+    const teamPopup = new goongjs.Popup({
+      offset: 20,
+      closeButton: false,
+      closeOnClick: false,
+    }).setHTML(`
+      <div style="padding:6px 8px; font-size:12px;">
+        <strong>📍 Vị trí hiện tại của team</strong>
+      </div>
+    `);
+    bindHoverPopup(markerElement, teamPopup);
 
     teamMarkerRef.current = marker;
 
-    // Auto-center on team location (Step 2 only)
+    // Auto-center on team location for first lock, then keep following in en-route.
+    if (!hasInitialTeamFocus.current) {
+      map.flyTo({
+        center: [effectiveTeamLocation.lng, effectiveTeamLocation.lat],
+        zoom: 14,
+        duration: 800,
+      });
+      hasInitialTeamFocus.current = true;
+      return;
+    }
+
     if (enableTracking) {
       map.flyTo({
-        center: [teamLocation.lng, teamLocation.lat],
+        center: [effectiveTeamLocation.lng, effectiveTeamLocation.lat],
         zoom: 14,
-        duration: 1000,
+        duration: 700,
       });
     }
-  }, [mapLoaded, showTeamLocation, teamLocation, enableTracking]);
+  }, [mapLoaded, showTeamLocation, teamLocation, internalTeamLocation, enableTracking]);
 
   return (
-    <div className={className} style={{ height }}>
+    <div className={`relative ${className}`} style={{ height }}>
       <div ref={mapContainer} className="w-full h-full rounded-xl overflow-hidden" />
+
+      {mapLoaded && (
+        <div className="pointer-events-none absolute top-3 left-3 z-50 rounded-lg bg-black/45 backdrop-blur-sm px-3 py-2 text-[11px] text-white/95 border border-white/20">
+          <div className="font-semibold mb-1">Bản đồ nhiệm vụ</div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-3 h-3 rounded-full border border-white" style={{ backgroundColor: PRIORITY_COLORS.Critical }} />
+            <span>Request khẩn cấp</span>
+          </div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-3 h-3 rounded-full border border-white" style={{ backgroundColor: PRIORITY_COLORS.High }} />
+            <span>Request ưu tiên cao</span>
+          </div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-3 h-3 rounded-full border border-white" style={{ backgroundColor: PRIORITY_COLORS.Normal }} />
+            <span>Request bình thường</span>
+          </div>
+          <div className="flex items-center gap-2 mb-1">
+            <div
+              className="w-3 h-3"
+              style={{
+                backgroundImage: "url(/icon/warehouse-storage-unit-storehouse-svgrepo-com.svg)",
+                backgroundSize: "contain",
+                backgroundRepeat: "no-repeat",
+              }}
+            />
+            <span>Warehouse</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="text-blue-400 leading-none">
+              <FaMapMarkerAlt size={13} />
+            </div>
+            <span>Vị trí hiện tại của team</span>
+          </div>
+        </div>
+      )}
+
       {!mapLoaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/5 rounded-xl">
           <div className="text-white/60 text-sm">Đang tải bản đồ...</div>
         </div>
       )}
+
+      <style jsx global>{`
+        .goongjs-ctrl-bottom-left,
+        .goongjs-ctrl-bottom-right,
+        .goongjs-ctrl-logo,
+        .goongjs-ctrl-attrib,
+        .mapboxgl-ctrl-logo,
+        .mapboxgl-ctrl-attrib,
+        .maplibregl-ctrl-logo,
+        .maplibregl-ctrl-attrib {
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+        }
+      `}</style>
     </div>
   );
 }

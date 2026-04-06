@@ -22,12 +22,12 @@ export default function SupplyClaimCard({
   const allocatedQty = missionSupply.allocatedQty;
   const progressPercent = allocatedQty > 0 ? (claimedQty / allocatedQty) * 100 : 0;
   
-  const supplyName = typeof missionSupply.supplyId === 'object' 
-    ? missionSupply.supplyId.name 
+  const supplyName = missionSupply.supplyId && typeof missionSupply.supplyId === 'object' 
+    ? missionSupply.supplyId.name || 'Unknown Supply'
     : 'Unknown Supply';
   
-  const unit = typeof missionSupply.supplyId === 'object' 
-    ? missionSupply.supplyId.unit 
+  const unit = missionSupply.supplyId && typeof missionSupply.supplyId === 'object' 
+    ? missionSupply.supplyId.unit || ''
     : '';
   
   const warehouseName = typeof missionSupply.warehouseId === 'object' && missionSupply.warehouseId

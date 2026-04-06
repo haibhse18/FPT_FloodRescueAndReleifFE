@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { FaExclamationTriangle, FaCheckCircle, FaTimesCircle, FaUser, FaUsers, FaStar, FaUserSlash } from "react-icons/fa";
 import { teamRepository } from "@/modules/teams/infrastructure/team.repository.impl";
 import type { Team } from "@/modules/teams/domain/team.entity";
 
@@ -54,7 +55,7 @@ export default function TeamMyTeamPage({ teamId }: TeamMyTeamPageProps) {
     return (
       <div className="relative z-10 p-8 pb-24 lg:pb-8 text-center">
         <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6 inline-block">
-          <p className="text-red-200 text-lg">⚠️ {error || "Không tìm thấy đội"}</p>
+          <p className="text-red-200 text-lg flex items-center gap-2 justify-center"><FaExclamationTriangle /> {error || "Không tìm thấy đội"}</p>
           <button
             onClick={fetchTeam}
             className="mt-3 text-sm text-blue-400 underline hover:no-underline"
@@ -78,19 +79,19 @@ export default function TeamMyTeamPage({ teamId }: TeamMyTeamPageProps) {
 
             <div className="flex flex-wrap gap-3 mt-2">
               <span
-                className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1 ${
                   isAvailable
                     ? "bg-green-500/20 text-green-300 border-green-500/30"
                     : "bg-red-500/20 text-red-300 border-red-500/30"
                 }`}
               >
-                {isAvailable ? "🟢 Sẵn sàng" : "🔴 Đang bận"}
+                {isAvailable ? <><FaCheckCircle /> Sẵn sàng</> : <><FaTimesCircle /> Đang bận</>}
               </span>
               <span className="text-gray-300 text-sm flex items-center gap-1">
-                👤 Leader: {leader?.displayName || leader?.userName || "Chua chi dinh"}
+                <FaUser /> Leader: {leader?.displayName || leader?.userName || "Chua chi dinh"}
               </span>
               <span className="text-gray-300 text-sm flex items-center gap-1">
-                👥 {memberCount}
+                <FaUsers /> {memberCount}
                 {team.memberStats && (
                   <span className="text-green-400 ml-1">({team.memberStats.active} active)</span>
                 )}
@@ -101,13 +102,13 @@ export default function TeamMyTeamPage({ teamId }: TeamMyTeamPageProps) {
       </div>
 
       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-        <h2 className="text-lg font-bold text-white mb-4">
-          👥 Danh sách thành viên ({memberCount})
+        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <FaUsers /> Danh sách thành viên ({memberCount})
         </h2>
 
         {!team.members || team.members.length === 0 ? (
           <div className="text-center py-8">
-            <div className="text-4xl mb-3">🫥</div>
+            <div className="text-4xl mb-3 text-gray-400"><FaUserSlash className="inline" /></div>
             <p className="text-gray-300">Đội chưa có thành viên nào</p>
           </div>
         ) : (
@@ -135,8 +136,8 @@ export default function TeamMyTeamPage({ teamId }: TeamMyTeamPageProps) {
                             {member.displayName || member.userName}
                           </span>
                           {isLeader && (
-                            <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded-full">
-                              ⭐ Leader
+                            <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <FaStar /> Leader
                             </span>
                           )}
                         </div>

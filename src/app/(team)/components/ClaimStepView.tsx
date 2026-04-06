@@ -95,7 +95,10 @@ export default function ClaimStepView({
 
   const handleClaimClick = (missionSupplyId: string, allocatedQty: number, supplyName: string, warehouseName: string) => {
     const missionSupply = missionSupplies.find(ms => ms._id === missionSupplyId);
-    const unit = typeof missionSupply?.supplyId === 'object' ? missionSupply.supplyId.unit : '';
+    const unit =
+      missionSupply?.supplyId && typeof missionSupply.supplyId === "object"
+        ? missionSupply.supplyId.unit || ""
+        : "";
     
     setModalData({
       missionSupplyId,
@@ -131,6 +134,7 @@ export default function ClaimStepView({
   const allocatedSupplies = missionSupplies.filter(ms => 
     ms.status === "ALLOCATED" || ms.status === "FULLY_CLAIMED"
   );
+  const requestedSupplies = missionSupplies.filter(ms => ms.status === "REQUESTED");
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
@@ -166,31 +170,90 @@ export default function ClaimStepView({
 
         {/* Supplies List */}
         <div className="space-y-3">
-          {allocatedSupplies.length === 0 ? (
-            <div className="text-center py-10 text-gray-400 border border-dashed border-white/10 rounded-xl">
-              <p className="text-3xl mb-2">📦</p>
-              <p className="text-sm">Chưa có vật tư được phân bổ</p>
-              <p className="text-xs mt-1 text-gray-500">Vui lòng liên hệ Manager</p>
+          {/* Allocated section */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-mission-text-muted font-semibold">
+                Đã phân bổ ({allocatedSupplies.length})
+              </p>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {allocatedSupplies.map((missionSupply) => {
-                const timelineSupply = timelineSupplies.find(
-                  ts => ts.missionSupplyId === missionSupply._id
-                );
-                
-                return (
-                  <SupplyClaimCard
-                    key={missionSupply._id}
-                    missionSupply={missionSupply}
-                    timelineSupply={timelineSupply}
-                    onClaim={handleClaimClick}
-                    loading={claimingSupplyId === missionSupply._id}
-                  />
-                );
-              })}
+
+            {allocatedSupplies.length === 0 ? (
+              <div className="text-center py-6 text-gray-400 border border-dashed border-white/10 rounded-xl">
+                <p className="text-2xl mb-1">📦</p>
+                <p className="text-sm">Chưa có vật tư đã phân bổ</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {allocatedSupplies.map((missionSupply) => {
+                  const timelineSupply = timelineSupplies.find(
+                    ts => ts.missionSupplyId === missionSupply._id
+                  );
+                  
+                  return (
+                    <SupplyClaimCard
+                      key={missionSupply._id}
+                      missionSupply={missionSupply}
+                      timelineSupply={timelineSupply}
+                      onClaim={handleClaimClick}
+                      loading={claimingSupplyId === missionSupply._id}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Requested section */}
+          <div className="space-y-2 pt-2">
+            <p className="text-xs uppercase tracking-wide text-mission-text-muted font-semibold">
+              Chờ phân bổ ({requestedSupplies.length})
+            </p>
+
+            {requestedSupplies.length === 0 ? (
+              <div className="text-center py-5 text-gray-500 border border-dashed border-white/10 rounded-xl">
+                <p className="text-xs">Không có vật tư chờ phân bổ</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {requestedSupplies.map((missionSupply) => {
+                  const supplyName =
+                    missionSupply.supplyId && typeof missionSupply.supplyId === "object"
+                      ? missionSupply.supplyId.name || "Unknown Supply"
+                      : "Unknown Supply";
+                  const unit =
+                    missionSupply.supplyId && typeof missionSupply.supplyId === "object"
+                      ? missionSupply.supplyId.unit || ""
+                      : "";
+
+                  return (
+                    <div
+                      key={missionSupply._id}
+                      className="bg-mission-bg-secondary border border-mission-border/60 rounded-xl p-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-mission-text-primary truncate">{supplyName}</p>
+                          <p className="text-xs text-mission-text-subtle mt-1">
+                            Nhu cầu: <span className="font-mono">{missionSupply.plannedQty}</span> {unit}
+                          </p>
+                        </div>
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold bg-yellow-500/15 text-yellow-300 border border-yellow-500/30 whitespace-nowrap">
+                          <FaWarehouse className="text-[10px]" />
+                          Chờ Manager phân bổ
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          {allocatedSupplies.length === 0 && requestedSupplies.length === 0 ? (
+            <div className="text-center py-6 text-gray-500 border border-dashed border-white/10 rounded-xl">
+              <p className="text-xs">Chưa có dữ liệu vật tư cho mission này</p>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Confirm Button */}

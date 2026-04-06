@@ -8,7 +8,7 @@ import { useSocketInit } from "@/hooks/useSocketInit";
 import { useNotificationStore } from "@/store/useNotification.store";
 import { usePathname } from "next/navigation";
 
-const CITIZEN_BACKGROUND_URL = "/images/flood-rescue.jpg";
+const CITIZEN_BACKGROUND_URL = "/images/flood-rescue2.jpg";
 
 /**
  * Layout cho Citizen routes
@@ -43,9 +43,13 @@ export default function CitizenLayout({
         aria-hidden="true"
       />
 
-      <div className="relative z-10 min-h-screen flex flex-col lg:flex-row">
+      <div
+        className={`relative z-10 flex flex-col lg:flex-row ${isRequestPage ? "h-screen overflow-hidden" : "min-h-screen"}`}
+      >
         <CitizenSidebar />
-        <div className="flex-1 flex flex-col lg:ml-[var(--sidebar-width)] transition-[margin-left] duration-300 relative">
+        <div
+          className={`flex-1 flex flex-col lg:ml-[var(--sidebar-width)] transition-[margin-left] duration-300 relative ${isRequestPage ? "min-h-0 overflow-hidden" : ""}`}
+        >
           {children}
           <Toaster />
 

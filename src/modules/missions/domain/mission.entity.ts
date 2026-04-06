@@ -29,6 +29,9 @@ export interface Mission {
   priority: PriorityLevel;
   type: MissionType;
   coordinatorId: string;
+  peopleCount?: number;
+  totalSupply?: number;
+  warehouseName?: string;
   createdAt: string;
   updatedAt: string;
 }

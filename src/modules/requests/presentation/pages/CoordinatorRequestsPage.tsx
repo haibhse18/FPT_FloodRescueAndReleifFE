@@ -46,6 +46,12 @@ const PRIORITY_LABELS: Record<string, string> = {
   Normal: "🔵 BÌNH THƯỜNG",
 };
 
+const SORT_OPTIONS = [
+  { label: "Mới nhất", value: "newest" },
+  { label: "Cũ nhất", value: "oldest" },
+  { label: "Ưu tiên cao", value: "priority" },
+];
+
 // ─── Component ────────────────────────────────────────────
 
 export default function CoordinatorRequestsPage() {
@@ -59,6 +65,7 @@ export default function CoordinatorRequestsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "priority">("newest");
 
   useEffect(() => {
     const status = searchParams?.get("status") as RequestStatus;
@@ -77,7 +84,27 @@ export default function CoordinatorRequestsPage() {
       if (activeTab !== "ALL") filters.status = activeTab;
 
       const result = await requestRepository.getAllRequests(filters);
-      setRequests(result.data || []);
+      let sortedData = result.data || [];
+      
+      // Client-side sorting
+      if (sortBy === "newest") {
+        sortedData = [...sortedData].sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      } else if (sortBy === "oldest") {
+        sortedData = [...sortedData].sort((a, b) => 
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      } else if (sortBy === "priority") {
+        const priorityOrder = { Critical: 0, High: 1, Normal: 2 };
+        sortedData = [...sortedData].sort((a, b) => {
+          const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 3;
+          const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 3;
+          return aPriority - bPriority;
+        });
+      }
+      
+      setRequests(sortedData);
       setTotalPages(result.totalPages || 1);
       setTotal(result.total || 0);
     } catch (err: any) {
@@ -86,7 +113,7 @@ export default function CoordinatorRequestsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [activeTab, page]);
+  }, [activeTab, page, sortBy]);
 
   useEffect(() => {
     fetchRequests();
@@ -106,6 +133,18 @@ export default function CoordinatorRequestsPage() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const getLocationDisplay = (request: CoordinatorRequest) => {
+    if (request.address) return request.address;
+    if (request.location?.coordinates) {
+      const [lng, lat] = request.location.coordinates;
+      return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    }
+    if (request.latitude && request.longitude) {
+      return `${request.latitude.toFixed(4)}, ${request.longitude.toFixed(4)}`;
+    }
+    return "Chưa có địa chỉ";
   };
 
   return (
@@ -158,6 +197,26 @@ export default function CoordinatorRequestsPage() {
                 {tab.label}
               </button>
             ))}
+          </div>
+
+          {/* Sort Options */}
+          <div className="flex items-center gap-3">
+            <span className="text-gray-400 text-sm font-medium">Sắp xếp:</span>
+            <div className="flex gap-2">
+              {SORT_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setSortBy(option.value as typeof sortBy)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                    sortBy === option.value ?
+                      "bg-[#FF7700] text-white"
+                    : "bg-white/5 text-gray-300 hover:bg-white/10"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Error */}
@@ -242,7 +301,7 @@ export default function CoordinatorRequestsPage() {
 
                           <div className="flex flex-wrap gap-2 items-center text-sm text-gray-400">
                             <span className="flex items-center gap-1">
-                              📍 {request.address || "Chưa có địa chỉ"}
+                              📍 {getLocationDisplay(request)}
                             </span>
                             <span>•</span>
                             <span>🕐 {formatDate(request.createdAt)}</span>

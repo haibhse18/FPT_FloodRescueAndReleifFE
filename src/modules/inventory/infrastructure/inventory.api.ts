@@ -8,6 +8,13 @@ import { ApiResponse } from '@/types';
 import axiosInstance from '@/lib/axios';
 import { uploadFile } from '@/services/uploadFile';
 
+export interface AllocateSupplyPayload {
+    missionId: string;
+    supplyId: string;
+    warehouseId: string;
+    allocatedQty: number;
+}
+
 export const inventoryApi = {
     /**
      * GET /api/inventory
@@ -72,6 +79,14 @@ export const inventoryApi = {
                 warehouseId,
                 quantity
             }
+        );
+        return response.data;
+    },
+
+    allocateSupply: async (payload: AllocateSupplyPayload) => {
+        const response = await axiosInstance.post<ApiResponse<unknown>>(
+            `/inventory/allocate`,
+            payload,
         );
         return response.data;
     },

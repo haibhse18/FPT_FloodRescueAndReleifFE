@@ -1,4 +1,3 @@
-import { UserRole } from "@/modules/auth/domain/user.entity";
 import { adminApi } from "./admin.api";
 import { IAdminRepository } from "../domain/admin.repository";
 
@@ -12,7 +11,7 @@ export class AdminRepositoryImpl implements IAdminRepository {
             total: result?.meta?.total ?? 0
         };
     }
-    async updateUserRole(userId: string, role: UserRole[]): Promise<void> {
+    async updateUserRole(userId: string, role: string): Promise<void> {
         await adminApi.updateUserRole(userId, role);
     }
 

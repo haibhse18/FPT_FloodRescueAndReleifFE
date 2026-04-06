@@ -11,7 +11,7 @@ interface InProgressStepViewProps {
   teamRequests: TeamRequest[];
   onUpdateProgress: (missionRequestId: string, data: {
     peopleRescuedIncrement?: number;
-    suppliesDelivered?: { supplyId: string; quantityDelivered: number }[];
+    suppliesDelivered?: { name: string; deliveredQty: number }[];
   }) => Promise<void>;
   onCompleteRequest: (teamRequestId: string, note?: string) => Promise<void>;
   onCompleteMission: () => Promise<void>;
@@ -66,17 +66,17 @@ export default function InProgressStepView({
 
     const peopleRescuedIncrement = data.peopleIncrement;
     const suppliesSnapshot = (mr as any).requestSuppliesSnapshot || [];
-    const suppliesDelivered: { supplyId: string; quantityDelivered: number }[] = [];
+    const suppliesDelivered: { name: string; deliveredQty: number }[] = [];
     
     // Calculate supplies increment proportionally
     if (data.suppliesIncrement > 0 && suppliesSnapshot.length > 0) {
       suppliesSnapshot.forEach((item: any) => {
-        const supplyId = item.supplyId?._id || item.supplyId;
+        const supplyName = item.supplyId?.name || item.name || "Unknown";
         const requested = item.requestedQty || 0;
         const delivered = item.deliveredQty || 0;
         const remaining = requested - delivered;
         
-        if (remaining > 0 && supplyId) {
+        if (remaining > 0) {
           // Distribute increment proportionally based on remaining amount
           const totalRemaining = suppliesSnapshot.reduce((sum: number, s: any) => {
             const req = s.requestedQty || 0;
@@ -88,7 +88,7 @@ export default function InProgressStepView({
           const qty = Math.min(data.suppliesIncrement * proportion, remaining);
           
           if (qty > 0) {
-            suppliesDelivered.push({ supplyId, quantityDelivered: qty });
+            suppliesDelivered.push({ name: supplyName, deliveredQty: qty });
           }
         }
       });

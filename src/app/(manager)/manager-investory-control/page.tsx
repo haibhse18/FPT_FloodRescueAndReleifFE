@@ -21,6 +21,12 @@ export default function InventoryIndexPage() {
         >
           <span className="text-xl mr-3 group-hover:scale-110 inline-block transition-transform">🚗</span> Phương tiện
         </Link>
+        <Link
+          href="allocation"
+          className="block px-6 py-5 bg-white rounded-2xl shadow-sm border border-gray-100 hover:border-emerald-500 hover:shadow-md transition-all text-gray-800 font-medium group"
+        >
+          <span className="text-xl mr-3 group-hover:scale-110 inline-block transition-transform">🧭</span> Phân bổ theo mission
+        </Link>
       </div>
     </div>
   );

@@ -34,53 +34,18 @@ const MAX_DESCRIPTION = 500;
 
 const CONTEXT_OPTIONS = ["Trẻ em", "Người già", "Người bị thương"];
 const MEDICINE_NEED = "Thuốc";
-const MEDICINE_NOTE_PREFIX = "Thuốc yêu cầu:";
 const CONTEXT_EXTRA_SUPPLIES: Record<string, string[]> = {
   "Trẻ em": ["Sữa trẻ em", "Tã em bé"],
   "Người già": ["Thực phẩm mềm", "Đồ giữ ấm"],
   "Người bị thương": ["Băng gạc", "Thuốc sát trùng"],
 };
 
-const quickReliefActions = [
-  {
-    id: "heavy-rain",
-    label: "Mưa lớn kéo dài",
-    description: "Mưa to liên tục, nguy cơ cô lập và thiếu nhu yếu phẩm",
-    needs: ["Nước uống", "Thực phẩm", "Áo phao"],
-    contexts: [],
-    note: "Khu vực đang mưa lớn kéo dài, cần hỗ trợ nhu yếu phẩm sớm.",
-  },
-  {
-    id: "flooded-area",
-    label: "Ngập lụt",
-    description: "Nước dâng cao, đi lại khó khăn, thiếu nguồn cung cơ bản",
-    needs: ["Nước uống", "Thực phẩm", "Chăn / quần áo", "Áo phao"],
-    contexts: [],
-    note: "Khu vực đang ngập lụt, gia đình cần hỗ trợ nhu yếu phẩm khẩn cấp.",
-  },
-  {
-    id: "landslide-risk",
-    label: "Sạt lở",
-    description: "Khu vực có nguy cơ hoặc đã xảy ra sạt lở đất đá",
-    needs: ["Nước uống", "Thực phẩm", "Thuốc"],
-    contexts: ["Người bị thương"],
-    note: "Khu vực có sạt lở đất đá, cần hỗ trợ vật phẩm cứu trợ an toàn.",
-  },
-  {
-    id: "storm-wind",
-    label: "Gió mạnh / bão",
-    description: "Thời tiết xấu gây mất điện, thiếu nước và vật dụng thiết yếu",
-    needs: ["Nước uống", "Thực phẩm", "Chăn / quần áo"],
-    contexts: [],
-    note: "Khu vực có gió mạnh/bão, sinh hoạt bị gián đoạn cần hỗ trợ khẩn.",
-  },
-] as const;
-
-const RELIEF_INCIDENT_TYPE_BY_CONDITION: Record<string, "Flood" | "Landslide" | "Other"> = {
-  "heavy-rain": "Other",
-  "flooded-area": "Flood",
-  "landslide-risk": "Landslide",
-  "storm-wind": "Other",
+const RELIEF_INCIDENT_TYPE_BY_DANGER: Record<string, "Flood" | "Landslide" | "Other"> = {
+  flood: "Flood",
+  landslide: "Landslide",
+  trapped: "Other",
+  injury: "Other",
+  other: "Other",
 };
 
 const RELIEF_MIN_FAMILY_MEMBERS = 1;
@@ -260,7 +225,7 @@ export default function CitizenRequestPage() {
   const { toast } = useToast();
   const reverseGeoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [requestType, setRequestType] = useState<"Rescue" | "Relief">("Rescue");
+  const [isReliefRequest, setIsReliefRequest] = useState(false);
   const [currentLocation, setCurrentLocation] = useState("Đang tải vị trí...");
   const [coordinates, setCoordinates] = useState<{
     lat: number;
@@ -279,28 +244,23 @@ export default function CitizenRequestPage() {
     numberOfPeople: 1,
   });
   const [rescueContexts, setRescueContexts] = useState<string[]>([]);
-  const [uploadedImages, setUploadedImages] = useState<Array<{publicId: string, secureUrl: string}>>([]);
+  const [uploadedImages, setUploadedImages] = useState<Array<{ publicId: string, secureUrl: string }>>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadImageError, setUploadImageError] = useState<string | null>(null);
   const [reliefNeedMedicine, setReliefNeedMedicine] = useState(false);
   const [reliefContexts, setReliefContexts] = useState<string[]>([]);
-  const [familyMemberCount, setFamilyMemberCount] = useState(1);
   const [reliefChildCount, setReliefChildCount] = useState(0);
   const [reliefElderlyCount, setReliefElderlyCount] = useState(0);
   const [reliefInjuredCount, setReliefInjuredCount] = useState(0);
   const [isReliefComboModalOpen, setIsReliefComboModalOpen] = useState(false);
   const [reliefMedicineDetails, setReliefMedicineDetails] = useState("");
-  const [reliefNote, setReliefNote] = useState("");
-  const [selectedReliefQuickAction, setSelectedReliefQuickAction] = useState<
-    string | null
-  >(null);
   const [desktopMapHeight, setDesktopMapHeight] = useState(520);
   const [isCheckingActiveRequest, setIsCheckingActiveRequest] = useState(true);
   const [activeRequestIdOnEntry, setActiveRequestIdOnEntry] = useState<string | null>(null);
 
   const reliefFamilySize = Math.max(
     RELIEF_MIN_FAMILY_MEMBERS,
-    Math.min(RELIEF_MAX_FAMILY_MEMBERS, familyMemberCount || RELIEF_MIN_FAMILY_MEMBERS),
+    Math.min(RELIEF_MAX_FAMILY_MEMBERS, rescueRequest.numberOfPeople || RELIEF_MIN_FAMILY_MEMBERS),
   );
 
   const isChildSelected = reliefContexts.includes("Trẻ em");
@@ -391,11 +351,6 @@ export default function CitizenRequestPage() {
       description: "Bị mắc kẹt, không thể thoát ra",
     },
     {
-      id: "injury",
-      label: "Bị thương",
-      description: "Có người bị thương cần cấp cứu",
-    },
-    {
       id: "landslide",
       label: "Sạt lở",
       description: "Đất đá sạt lở, nguy hiểm cao",
@@ -420,7 +375,7 @@ export default function CitizenRequestPage() {
   useEffect(() => {
     const typeParam = searchParams.get("type");
     if (typeParam === "rescue") {
-      setRequestType("Rescue");
+      setIsReliefRequest(false);
       setSelectedQuickAction("flood");
       setRescueRequest((prev) => ({
         ...prev,
@@ -428,9 +383,9 @@ export default function CitizenRequestPage() {
         description: prev.description || defaultDescriptionMap["flood"],
       }));
     } else if (typeParam === "relief") {
-      setRequestType("Relief");
+      setIsReliefRequest(true);
     } else if (typeParam === "report") {
-      setRequestType("Rescue");
+      setIsReliefRequest(false);
       setSelectedQuickAction("landslide");
       setRescueRequest((prev) => ({
         ...prev,
@@ -467,27 +422,10 @@ export default function CitizenRequestPage() {
     return () => window.removeEventListener("resize", updateDesktopMapHeight);
   }, []);
 
-  const stripMedicineNoteLine = (note: string) =>
-    note
-      .split("\n")
-      .filter((line) => !line.trim().startsWith(MEDICINE_NOTE_PREFIX))
-      .join("\n")
-      .trim();
-
-  // Đồng bộ ô nhập thuốc vào ghi chú để coordinator nắm đúng loại thuốc cần hỗ trợ.
   useEffect(() => {
-    const hasMedicineNeed = reliefNeedMedicine;
-    if (!hasMedicineNeed && reliefMedicineDetails) {
+    if (!reliefNeedMedicine && reliefMedicineDetails) {
       setReliefMedicineDetails("");
     }
-
-    setReliefNote((prev) => {
-      const base = stripMedicineNoteLine(prev);
-      if (!hasMedicineNeed || !reliefMedicineDetails.trim()) return base;
-      return [base, `${MEDICINE_NOTE_PREFIX} ${reliefMedicineDetails.trim()}`]
-        .filter(Boolean)
-        .join("\n");
-    });
   }, [reliefNeedMedicine, reliefMedicineDetails]);
 
   // Hàm lấy vị trí hiện tại
@@ -610,34 +548,24 @@ export default function CitizenRequestPage() {
     }, 450);
   };
 
-  const getMaxAssignableForContext = (context: string) => {
-    const child = context === "Trẻ em" ? 0 : selectedChildCount;
-    const elderly = context === "Người già" ? 0 : selectedElderlyCount;
-    const injured = context === "Người bị thương" ? 0 : selectedInjuredCount;
-    const used = child + elderly + injured;
-    return Math.max(0, reliefFamilySize - used);
-  };
+  const applyBalancedReliefCounts = (nextCounts: {
+    child: number;
+    elderly: number;
+    injured: number;
+  }) => {
+    let remaining = reliefFamilySize;
 
-  const handleReliefContextToggle = (context: string, checked: boolean) => {
-    setReliefContexts((prev) => {
-      if (checked) {
-        if (prev.includes(context)) return prev;
-        return [...prev, context];
-      }
-      return prev.filter((item) => item !== context);
-    });
+    const nextChild = Math.min(nextCounts.child, remaining);
+    remaining -= nextChild;
 
-    if (!checked) {
-      if (context === "Trẻ em") setReliefChildCount(0);
-      if (context === "Người già") setReliefElderlyCount(0);
-      if (context === "Người bị thương") setReliefInjuredCount(0);
-      return;
-    }
+    const nextElderly = Math.min(nextCounts.elderly, remaining);
+    remaining -= nextElderly;
 
-    const suggested = Math.min(1, getMaxAssignableForContext(context));
-    if (context === "Trẻ em") setReliefChildCount(suggested);
-    if (context === "Người già") setReliefElderlyCount(suggested);
-    if (context === "Người bị thương") setReliefInjuredCount(suggested);
+    const nextInjured = Math.min(nextCounts.injured, remaining);
+
+    setReliefChildCount(nextChild);
+    setReliefElderlyCount(nextElderly);
+    setReliefInjuredCount(nextInjured);
   };
 
   const handleRescueContextToggle = (context: string, checked: boolean) => {
@@ -648,39 +576,52 @@ export default function CitizenRequestPage() {
       }
       return prev.filter((item) => item !== context);
     });
+
+    if (!isReliefRequest) return;
+
+    if (checked) {
+      applyBalancedReliefCounts({
+        child: context === "Trẻ em" ? Math.max(reliefChildCount, 1) : reliefChildCount,
+        elderly: context === "Người già" ? Math.max(reliefElderlyCount, 1) : reliefElderlyCount,
+        injured: context === "Người bị thương" ? Math.max(reliefInjuredCount, 1) : reliefInjuredCount,
+      });
+      return;
+    }
+
+    applyBalancedReliefCounts({
+      child: context === "Trẻ em" ? 0 : reliefChildCount,
+      elderly: context === "Người già" ? 0 : reliefElderlyCount,
+      injured: context === "Người bị thương" ? 0 : reliefInjuredCount,
+    });
   };
 
   const handleReliefContextCountChange = (context: string, rawValue: string) => {
     if (rawValue.trim() === "") {
-      if (context === "Trẻ em") setReliefChildCount(0);
-      if (context === "Người già") setReliefElderlyCount(0);
-      if (context === "Người bị thương") setReliefInjuredCount(0);
+      applyBalancedReliefCounts({
+        child: context === "Trẻ em" ? 1 : reliefChildCount,
+        elderly: context === "Người già" ? 1 : reliefElderlyCount,
+        injured: context === "Người bị thương" ? 1 : reliefInjuredCount,
+      });
       return;
     }
 
     const parsed = Number.parseInt(rawValue || "0", 10);
     const next = Number.isFinite(parsed) ? parsed : 0;
-    const clamped = Math.max(0, Math.min(getMaxAssignableForContext(context), next));
+    const clamped = Math.max(1, Math.min(20, next));
 
-    if (context === "Trẻ em") setReliefChildCount(clamped);
-    if (context === "Người già") setReliefElderlyCount(clamped);
-    if (context === "Người bị thương") setReliefInjuredCount(clamped);
+    applyBalancedReliefCounts({
+      child: context === "Trẻ em" ? clamped : reliefChildCount,
+      elderly: context === "Người già" ? clamped : reliefElderlyCount,
+      injured: context === "Người bị thương" ? clamped : reliefInjuredCount,
+    });
   };
 
   useEffect(() => {
-    let remaining = reliefFamilySize;
-
-    const nextChild = isChildSelected ? Math.min(reliefChildCount, remaining) : 0;
-    remaining -= nextChild;
-
-    const nextElderly = isElderlySelected ? Math.min(reliefElderlyCount, remaining) : 0;
-    remaining -= nextElderly;
-
-    const nextInjured = isInjuredSelected ? Math.min(reliefInjuredCount, remaining) : 0;
-
-    if (nextChild !== reliefChildCount) setReliefChildCount(nextChild);
-    if (nextElderly !== reliefElderlyCount) setReliefElderlyCount(nextElderly);
-    if (nextInjured !== reliefInjuredCount) setReliefInjuredCount(nextInjured);
+    applyBalancedReliefCounts({
+      child: isChildSelected ? Math.max(reliefChildCount, 1) : 0,
+      elderly: isElderlySelected ? Math.max(reliefElderlyCount, 1) : 0,
+      injured: isInjuredSelected ? Math.max(reliefInjuredCount, 1) : 0,
+    });
   }, [
     reliefFamilySize,
     isChildSelected,
@@ -691,39 +632,22 @@ export default function CitizenRequestPage() {
     reliefInjuredCount,
   ]);
 
-  const handleRequestTypeChange = (type: "Rescue" | "Relief") => {
-    setRequestType(type);
-    if (type === "Rescue") {
-      setReliefNeedMedicine(false);
-      setReliefContexts([]);
-      setFamilyMemberCount(1);
-      setReliefChildCount(0);
-      setReliefElderlyCount(0);
-      setReliefInjuredCount(0);
+  const handleReliefRequestToggle = (checked: boolean) => {
+    setIsReliefRequest(checked);
+    if (!checked) {
       setIsReliefComboModalOpen(false);
-      setReliefMedicineDetails("");
-      setReliefNote("");
-      setSelectedReliefQuickAction(null);
-      return;
     }
-
-    setRescueContexts([]);
   };
 
-  const applyReliefQuickAction = (actionId: string) => {
-    const action = quickReliefActions.find((item) => item.id === actionId);
-    if (!action) return;
-    const actionContexts = action.contexts as readonly string[];
+  useEffect(() => {
+    if (!isReliefRequest) return;
 
-    setSelectedReliefQuickAction(action.id);
-    setReliefNeedMedicine(action.needs.some((need) => need === MEDICINE_NEED));
-    setReliefContexts([...actionContexts]);
-    setReliefChildCount(actionContexts.includes("Trẻ em") ? 1 : 0);
-    setReliefElderlyCount(actionContexts.includes("Người già") ? 1 : 0);
-    setReliefInjuredCount(actionContexts.includes("Người bị thương") ? 1 : 0);
+    setReliefContexts(rescueContexts);
 
-    setReliefNote(action.note);
-  };
+    if (!rescueContexts.includes("Trẻ em")) setReliefChildCount(0);
+    if (!rescueContexts.includes("Người già")) setReliefElderlyCount(0);
+    if (!rescueContexts.includes("Người bị thương")) setReliefInjuredCount(0);
+  }, [isReliefRequest, rescueContexts]);
 
   // Xử lý submit form cứu hộ
   const handleRescueSubmit = async () => {
@@ -897,11 +821,11 @@ export default function CitizenRequestPage() {
   };
 
   const handleReliefSubmit = async () => {
-    if (!selectedReliefQuickAction) {
+    if (!rescueRequest.dangerType) {
       toast({
         variant: "destructive",
-        title: "Thiếu tình huống khu vực",
-        description: "Vui lòng chọn tình huống khu vực trước khi nhập và gửi yêu cầu cứu trợ.",
+        title: "Thiếu tình huống",
+        description: "Vui lòng chọn tình huống trước khi gửi yêu cầu cứu trợ.",
       });
       return;
     }
@@ -912,15 +836,6 @@ export default function CitizenRequestPage() {
         title: "Chưa có vị trí GPS",
         description:
           "Không thể gửi yêu cầu khi chưa xác định được vị trí. Vui lòng bật GPS và nhấn Cập nhật.",
-      });
-      return;
-    }
-
-    if (reliefFamilySize < RELIEF_MIN_FAMILY_MEMBERS || reliefFamilySize > RELIEF_MAX_FAMILY_MEMBERS) {
-      toast({
-        variant: "destructive",
-        title: "Số thành viên không hợp lệ",
-        description: `Vui lòng nhập từ ${RELIEF_MIN_FAMILY_MEMBERS} đến ${RELIEF_MAX_FAMILY_MEMBERS} người.`,
       });
       return;
     }
@@ -960,37 +875,35 @@ export default function CitizenRequestPage() {
       ]),
     );
 
-    if (!reliefNote.trim()) {
+    const reliefBaseNote = rescueRequest.description.trim();
+
+    if (!reliefBaseNote) {
       toast({
         variant: "destructive",
-        title: "Thiếu ghi chú",
-        description: "Vui lòng nhập ghi chú cho yêu cầu cứu trợ.",
+        title: "Thiếu mô tả",
+        description: "Vui lòng nhập mô tả tình huống trước khi gửi yêu cầu cứu trợ.",
       });
       return;
     }
 
-    if (reliefNote.trim().length < MIN_DESCRIPTION) {
+    if (reliefBaseNote.length < MIN_DESCRIPTION) {
       toast({
         variant: "destructive",
-        title: "Ghi chú quá ngắn",
-        description: `Ghi chú cần ít nhất ${MIN_DESCRIPTION} ký tự.`,
+        title: "Mô tả quá ngắn",
+        description: `Mô tả cần ít nhất ${MIN_DESCRIPTION} ký tự.`,
       });
       return;
     }
 
-    const selectedCondition = quickReliefActions.find(
-      (action) => action.id === selectedReliefQuickAction,
-    );
-    const reliefIncidentType = selectedCondition
-      ? RELIEF_INCIDENT_TYPE_BY_CONDITION[selectedCondition.id]
-      : "Other";
+    const reliefIncidentType =
+      RELIEF_INCIDENT_TYPE_BY_DANGER[rescueRequest.dangerType] ?? "Other";
 
     const reliefDescription = [
-      selectedCondition ? `Tình trạng khu vực: ${selectedCondition.label}` : "",
+      `Tình trạng khu vực: ${quickRescueActions.find((item) => item.id === rescueRequest.dangerType)?.label || rescueRequest.dangerType}`,
       `Số thành viên gia đình: ${reliefFamilySize}`,
       `Cơ cấu: Trưởng thành ${reliefComposition.adult}, Trẻ em ${reliefComposition.child}, Người già ${reliefComposition.elderly}, Bị thương ${reliefComposition.injured}`,
       `Combo 3 ngày: ${reliefSupplyPlan.totalLines.join(", ")}`,
-      `Ghi chú: ${reliefNote.trim()}`,
+      `Mô tả: ${reliefBaseNote}`,
       selectedSupplies.length > 0 ? `Nhu cầu bổ sung: ${selectedSupplies.join(", ")}` : "",
     ]
       .filter(Boolean)
@@ -1050,13 +963,10 @@ export default function CitizenRequestPage() {
 
       setReliefNeedMedicine(false);
       setReliefContexts([]);
-      setFamilyMemberCount(1);
       setReliefChildCount(0);
       setReliefElderlyCount(0);
       setReliefInjuredCount(0);
       setReliefMedicineDetails("");
-      setReliefNote("");
-      setSelectedReliefQuickAction(null);
     } catch (error: unknown) {
       const err = error as {
         response?: {
@@ -1111,7 +1021,7 @@ export default function CitizenRequestPage() {
         file,
         "rescue_requests",
         {
-          requestType: requestType.toLowerCase(),
+          requestType: isReliefRequest ? "relief" : "rescue",
         },
         false // no eager transformations for now
       );
@@ -1134,11 +1044,18 @@ export default function CitizenRequestPage() {
 
   const descLen = rescueRequest.description.length;
   const descOverLimit = descLen > MAX_DESCRIPTION;
-  const reliefNoteLen = reliefNote.length;
-  const reliefNoteOverLimit = reliefNoteLen > MAX_DESCRIPTION;
-  const submitDisabled = requestType === "Rescue" ? descOverLimit : reliefNoteOverLimit;
+  const submitDisabled = descOverLimit;
   const sectionCardClass =
     "rounded-2xl border border-white/20 bg-[#0f2f44]/70 backdrop-blur-sm shadow-[0_10px_24px_rgba(0,0,0,0.18)]";
+
+  const handleSubmit = async () => {
+    if (isReliefRequest) {
+      await handleReliefSubmit();
+      return;
+    }
+
+    await handleRescueSubmit();
+  };
 
   if (isCheckingActiveRequest || activeRequestIdOnEntry) {
     return (
@@ -1177,221 +1094,184 @@ export default function CitizenRequestPage() {
                 <p className="text-[#FFD6A6] text-xs leading-relaxed">
                   Nhập thông tin nhanh rồi chấm vị trí trên bản đồ
                 </p>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {[
-                    {
-                      id: "Rescue" as const,
-                      title: "Rescue",
-                      subtitle: "Cứu hộ",
-                    },
-                    {
-                      id: "Relief" as const,
-                      title: "Relief",
-                      subtitle: "Cứu trợ",
-                    },
-                  ].map((type) => (
-                    <div
-                      key={type.id}
-                      onClick={() => handleRequestTypeChange(type.id)}
-                      className={`cursor-pointer rounded-lg p-3 border-2 transition-all duration-200 ${requestType === type.id ?
-                        "bg-[#FF7700]/20 border-[#FF7700] shadow-[0_0_12px_rgba(255,119,0,0.25)]"
-                        : "bg-[#0f2f44]/70 border-white/20 hover:bg-[#1a3f57]/80 hover:border-white/30"
-                        }`}
-                    >
-                      <div className="font-bold text-white text-sm lg:text-base">{type.title}</div>
-                      <div className="text-[#FFB066] text-xs lg:text-sm">{type.subtitle}</div>
-                    </div>
-                  ))}
-                </div>
+                <label className="flex items-center gap-3 rounded-lg border border-white/20 bg-[#0f2f44]/70 px-3 py-2.5 text-sm text-white cursor-pointer hover:border-[#FF7700]/60 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={isReliefRequest}
+                    onChange={(e) => handleReliefRequestToggle(e.target.checked)}
+                    className="w-4 h-4 accent-[#FF7700] rounded cursor-pointer"
+                  />
+                  <span className="font-semibold"> Tôi cần cứu trợ (Relief)</span>
+                </label>
               </div>
 
 
-              {requestType === "Rescue" && (
-                <div className={`${sectionCardClass} p-4 space-y-3.5 bg-[#0f2f44]/70 border border-white/20 rounded-xl`}>
-                  {/* Tình huống */}
+              <div className={`${sectionCardClass} p-4 space-y-3.5 bg-[#0f2f44]/70 border border-white/20 rounded-xl`}>
+                {/* Tình huống */}
+                <div className="space-y-2.5">
+                  <label className="text-sm text-white font-semibold block">Tình huống</label>
+                  <select
+                    value={rescueRequest.dangerType}
+                    onChange={(e) => {
+                      const selected = e.target.value;
+                      setSelectedQuickAction(selected);
+                      setRescueRequest({
+                        ...rescueRequest,
+                        dangerType: selected,
+                        description: defaultDescriptionMap[selected] || "",
+                      });
+                    }}
+                    className="w-full h-10 rounded-lg border border-[#89b8d4]/45 bg-[#0f2f44]/95 px-3 text-[#f3f9ff] text-sm focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-[#9ec8e0]/70"
+                  >
+                    <option value="">Chọn tình huống</option>
+                    {quickRescueActions.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Số người cần hỗ trợ + Thêm ảnh */}
+                <div className="grid grid-cols-[1fr_auto] items-end gap-3">
                   <div className="space-y-2.5">
-                    <label className="text-sm text-white font-semibold block">Tình huống</label>
-                    <select
-                      value={rescueRequest.dangerType}
-                      onChange={(e) => {
-                        const selected = e.target.value;
-                        setSelectedQuickAction(selected);
+                    <label className="text-sm text-white font-semibold">Số người cần hỗ trợ</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={MAX_PEOPLE}
+                      value={rescueRequest.numberOfPeople}
+                      onChange={(e) =>
                         setRescueRequest({
                           ...rescueRequest,
-                          dangerType: selected,
-                          description: defaultDescriptionMap[selected] || "",
-                        });
-                      }}
-                      className="w-full h-10 rounded-lg border border-[#89b8d4]/45 bg-[#0f2f44]/95 px-3 text-[#f3f9ff] text-sm focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-[#9ec8e0]/70"
-                    >
-                      <option value="">Chọn tình huống</option>
-                      {quickRescueActions.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Số người cần hỗ trợ + Thêm ảnh */}
-                  <div className="grid grid-cols-[1fr_auto] items-end gap-3">
-                    <div className="space-y-2.5">
-                      <label className="text-sm text-white font-semibold">Số người cần hỗ trợ</label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={MAX_PEOPLE}
-                        value={rescueRequest.numberOfPeople}
-                        onChange={(e) =>
-                          setRescueRequest({
-                            ...rescueRequest,
-                            numberOfPeople: Math.min(MAX_PEOPLE, Math.max(1, parseInt(e.target.value) || 1)),
-                          })
-                        }
-                        className="w-full h-10 rounded-lg border border-white/20 bg-white/[0.03] px-3 text-white text-sm focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-white/30"
-                      />
-                    </div>
-
-                    <label className="h-10 inline-flex items-center justify-center rounded-lg border border-dashed border-white/30 px-3 text-sm text-[#FFD1A0] cursor-pointer hover:border-[#FF7700]/80 hover:bg-[#FF7700]/10 transition-all duration-200">
-                      Thêm ảnh
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        disabled={isUploadingImage}
-                        onChange={(e) => {
-                          Array.from(e.target.files || []).forEach(handleImageUpload);
-                          e.target.value = "";
-                        }}
-                      />
-                    </label>
-                  </div>
-
-                  {/* Tình trạng gia đình (checkbox giống Relief) */}
-                  <div className="space-y-2.5">
-                    <label className="text-sm text-white font-semibold block">Tình trạng gia đình</label>
-                    <div className="space-y-2">
-                      {CONTEXT_OPTIONS.map((context) => {
-                        const checked = rescueContexts.includes(context);
-                        return (
-                          <div
-                            key={context}
-                            className={`rounded-lg border px-3 py-2 transition-all duration-200 ${checked
-                              ? "border-[#FF7700] bg-[#FF7700]/15"
-                              : "border-white/20 bg-[#0f2f44]/70"
-                              }`}
-                          >
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={(e) => {
-                                  handleRescueContextToggle(context, e.target.checked);
-                                  setRescueRequest((prev) => {
-                                    // Tự động đồng bộ text vào mô tả
-                                    let desc = prev.description || "";
-                                    const prefix = "Tình trạng gia đình:";
-                                    const lines = desc.split("\n").filter((line) => !line.trim().startsWith(prefix));
-                                    let newContexts = rescueContexts;
-                                    if (e.target.checked && !rescueContexts.includes(context)) {
-                                      newContexts = [...rescueContexts, context];
-                                    } else if (!e.target.checked && rescueContexts.includes(context)) {
-                                      newContexts = rescueContexts.filter((c) => c !== context);
-                                    }
-                                    if (newContexts.length > 0) {
-                                      lines.unshift(`${prefix} ${newContexts.join(", ")}`);
-                                    }
-                                    return { ...prev, description: lines.join("\n").trim() };
-                                  });
-                                }}
-                                className="h-3.5 w-3.5 accent-[#FF7700]"
-                              />
-                              <span className={`text-xs font-semibold ${checked ? "text-[#FFD1A0]" : "text-white"}`}>{context}</span>
-                            </label>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <p className="text-[11px] text-white/65">
-                      Khi chọn, thông tin sẽ tự động hiển thị vào đầu ô mô tả.
-                    </p>
-                  </div>
-
-                  {/* Mô tả */}
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm text-white font-semibold">Mô tả *</label>
-                      <span className={`text-[11px] font-mono ${descOverLimit ? "text-red-400" : "text-gray-500"}`}>
-                        {descLen}/{MAX_DESCRIPTION}
-                      </span>
-                    </div>
-                    <textarea
-                      value={rescueRequest.description}
-                      onChange={(e) => {
-                        // Khi sửa mô tả, vẫn giữ dòng tình trạng gia đình ở đầu nếu có
-                        let desc = e.target.value || "";
-                        const prefix = "Tình trạng gia đình:";
-                        const lines = desc.split("\n").filter((line) => !line.trim().startsWith(prefix));
-                        if (rescueContexts.length > 0) {
-                          lines.unshift(`${prefix} ${rescueContexts.join(", ")}`);
-                        }
-                        setRescueRequest({
-                          ...rescueRequest,
-                          description: lines.join("\n").trim(),
-                        });
-                      }}
-                      className={`w-full min-h-[96px] rounded-lg border bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 ${descOverLimit ? "border-red-500 focus:ring-red-500/50" : "border-white/20 focus:border-[#FF7700] focus:ring-[#FF7700]/50"}`}
-                      placeholder="Mô tả ngắn gọn tình huống..."
+                          numberOfPeople: Math.min(MAX_PEOPLE, Math.max(1, parseInt(e.target.value) || 1)),
+                        })
+                      }
+                      className="w-full h-10 rounded-lg border border-white/20 bg-white/[0.03] px-3 text-white text-sm focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-white/30"
                     />
                   </div>
 
-                  {/* Hiển thị thumbnail ảnh đã gửi */}
-                  {uploadedImages.length > 0 && (
-                    <div className="space-y-1">
-                      <label className="text-xs text-white font-semibold block">Ảnh đã gửi</label>
-                      <div className="flex flex-wrap gap-2">
-                        {uploadedImages.map((media, idx) => (
-                          <div key={idx} className="w-20 h-20 rounded-lg overflow-hidden border border-white/20 bg-white/5 flex items-center justify-center">
-                            <img
-                              src={media.secureUrl}
-                              alt={`Uploaded image ${idx + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-400">Đã tải {uploadedImages.length} ảnh hiện trường</p>
-                    </div>
-                  )}
-
-                  {uploadImageError && (
-                    <p className="text-xs text-red-300">{uploadImageError}</p>
-                  )}
+                  <label className="h-10 inline-flex items-center justify-center rounded-lg border border-dashed border-white/30 px-3 text-sm text-[#FFD1A0] cursor-pointer hover:border-[#FF7700]/80 hover:bg-[#FF7700]/10 transition-all duration-200">
+                    Thêm ảnh
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      disabled={isUploadingImage}
+                      onChange={(e) => {
+                        Array.from(e.target.files || []).forEach(handleImageUpload);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
                 </div>
-              )}
 
-              {requestType === "Relief" && (
-                <div className={`${sectionCardClass} p-4 space-y-3.5 bg-[#0f2f44]/70 border border-white/20 rounded-xl`}>
-                  <div className="space-y-2.5">
-                    <label className="text-sm text-white font-semibold block">Tình huống khu vực *</label>
-                    <select
-                      value={selectedReliefQuickAction || ""}
-                      onChange={(e) => applyReliefQuickAction(e.target.value)}
-                      className="w-full h-10 rounded-lg border border-[#89b8d4]/45 bg-[#0f2f44]/95 px-3 text-[#f3f9ff] text-sm focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-[#9ec8e0]/70"
-                    >
-                      <option value="">Chọn tình huống (bắt buộc)</option>
-                      {quickReliefActions.map((action) => (
-                        <option key={action.id} value={action.id}>
-                          {action.label}
-                        </option>
-                      ))}
-                    </select>
+                {/* Tình trạng gia đình (checkbox giống Relief) */}
+                <div className="space-y-2.5">
+                  <label className="text-sm text-white font-semibold block">Tình trạng gia đình</label>
+                  <div className="space-y-2">
+                    {CONTEXT_OPTIONS.map((context) => {
+                      const checked = rescueContexts.includes(context);
+                      return (
+                        <div
+                          key={context}
+                          className={`rounded-lg border px-3 py-2 transition-all duration-200 ${checked
+                            ? "border-[#FF7700] bg-[#FF7700]/15"
+                            : "border-white/20 bg-[#0f2f44]/70"
+                            }`}
+                        >
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                handleRescueContextToggle(context, e.target.checked);
+                                setRescueRequest((prev) => {
+                                  // Tự động đồng bộ text vào mô tả
+                                  let desc = prev.description || "";
+                                  const prefix = "Tình trạng gia đình:";
+                                  const lines = desc.split("\n").filter((line) => !line.trim().startsWith(prefix));
+                                  let newContexts = rescueContexts;
+                                  if (e.target.checked && !rescueContexts.includes(context)) {
+                                    newContexts = [...rescueContexts, context];
+                                  } else if (!e.target.checked && rescueContexts.includes(context)) {
+                                    newContexts = rescueContexts.filter((c) => c !== context);
+                                  }
+                                  if (newContexts.length > 0) {
+                                    lines.unshift(`${prefix} ${newContexts.join(", ")}`);
+                                  }
+                                  return { ...prev, description: lines.join("\n").trim() };
+                                });
+                              }}
+                              className="h-3.5 w-3.5 accent-[#FF7700]"
+                            />
+                            <span className={`text-xs font-semibold ${checked ? "text-[#FFD1A0]" : "text-white"}`}>{context}</span>
+                          </label>
+                        </div>
+                      );
+                    })}
                   </div>
 
+                </div>
+
+                {/* Mô tả */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-white font-semibold">Mô tả *</label>
+                    <span className={`text-[11px] font-mono ${descOverLimit ? "text-red-400" : "text-gray-500"}`}>
+                      {descLen}/{MAX_DESCRIPTION}
+                    </span>
+                  </div>
+                  <textarea
+                    value={rescueRequest.description}
+                    onChange={(e) => {
+                      // Khi sửa mô tả, vẫn giữ dòng tình trạng gia đình ở đầu nếu có
+                      let desc = e.target.value || "";
+                      const prefix = "Tình trạng gia đình:";
+                      const lines = desc.split("\n").filter((line) => !line.trim().startsWith(prefix));
+                      if (rescueContexts.length > 0) {
+                        lines.unshift(`${prefix} ${rescueContexts.join(", ")}`);
+                      }
+                      setRescueRequest({
+                        ...rescueRequest,
+                        description: lines.join("\n").trim(),
+                      });
+                    }}
+                    className={`w-full min-h-[96px] rounded-lg border bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 ${descOverLimit ? "border-red-500 focus:ring-red-500/50" : "border-white/20 focus:border-[#FF7700] focus:ring-[#FF7700]/50"}`}
+                    placeholder="Mô tả ngắn gọn tình huống..."
+                  />
+                </div>
+
+                {/* Hiển thị thumbnail ảnh đã gửi */}
+                {uploadedImages.length > 0 && (
+                  <div className="space-y-1">
+                    <label className="text-xs text-white font-semibold block">Ảnh đã gửi</label>
+                    <div className="flex flex-wrap gap-2">
+                      {uploadedImages.map((media, idx) => (
+                        <div key={idx} className="w-20 h-20 rounded-lg overflow-hidden border border-white/20 bg-white/5 flex items-center justify-center">
+                          <img
+                            src={media.secureUrl}
+                            alt={`Uploaded image ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-400">Đã tải {uploadedImages.length} ảnh hiện trường</p>
+                  </div>
+                )}
+
+                {uploadImageError && (
+                  <p className="text-xs text-red-300">{uploadImageError}</p>
+                )}
+              </div>
+
+              {isReliefRequest && (
+                <div className={`${sectionCardClass} p-4 space-y-3.5 bg-[#0f2f44]/70 border border-white/20 rounded-xl`}>
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between gap-2">
-                      <label className="text-sm text-white font-semibold block">Số thành viên gia đình *</label>
+                      <label className="text-sm text-white font-semibold block">Combo nhu yếu phẩm.</label>
                       <button
                         type="button"
                         onClick={() => setIsReliefComboModalOpen(true)}
@@ -1400,94 +1280,38 @@ export default function CitizenRequestPage() {
                         Xem combo
                       </button>
                     </div>
-                    <input
-                      type="number"
-                      min={RELIEF_MIN_FAMILY_MEMBERS}
-                      max={RELIEF_MAX_FAMILY_MEMBERS}
-                      value={familyMemberCount === 0 ? "" : familyMemberCount}
-                      onChange={(e) => {
-                        const rawValue = e.target.value;
-                        if (rawValue.trim() === "") {
-                          setFamilyMemberCount(0);
-                          return;
-                        }
 
-                        const parsed = Number.parseInt(rawValue, 10);
-                        const safeValue = Number.isFinite(parsed) ? parsed : RELIEF_MIN_FAMILY_MEMBERS;
-                        setFamilyMemberCount(
-                          Math.max(
-                            RELIEF_MIN_FAMILY_MEMBERS,
-                            Math.min(RELIEF_MAX_FAMILY_MEMBERS, safeValue),
-                          ),
-                        );
-                      }}
-                      onBlur={() => {
-                        if (familyMemberCount === 0) {
-                          setFamilyMemberCount(RELIEF_MIN_FAMILY_MEMBERS);
-                          return;
-                        }
+                    {reliefContexts.length > 0 && (
+                      <div className="space-y-2">
+                        {reliefContexts.map((context) => {
+                          const currentCount =
+                            context === "Trẻ em"
+                              ? reliefChildCount
+                              : context === "Người già"
+                                ? reliefElderlyCount
+                                : reliefInjuredCount;
 
-                        setFamilyMemberCount(
-                          Math.max(
-                            RELIEF_MIN_FAMILY_MEMBERS,
-                            Math.min(RELIEF_MAX_FAMILY_MEMBERS, familyMemberCount),
-                          ),
-                        );
-                      }}
-                      className="w-full h-10 rounded-lg border border-white/20 bg-white/[0.03] px-3 text-white text-sm focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-white/30"
-                    />
-                    <p className="text-[11px] text-white/65">
-                      Mặc định hệ thống tính toàn bộ là người trưởng thành. Hãy chọn thêm nhóm trẻ em, người già hoặc bị thương nếu có.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    <label className="text-sm text-white font-semibold block">Tình trạng gia đình</label>
-                    <div className="space-y-2">
-                      {CONTEXT_OPTIONS.map((context) => {
-                        const checked = reliefContexts.includes(context);
-                        const currentCount =
-                          context === "Trẻ em"
-                            ? reliefChildCount
-                            : context === "Người già"
-                              ? reliefElderlyCount
-                              : reliefInjuredCount;
-                        return (
-                          <div
-                            key={context}
-                            className={`rounded-lg border px-3 py-2 transition-all duration-200 ${checked
-                              ? "border-[#FF7700] bg-[#FF7700]/15"
-                              : "border-white/20 bg-[#0f2f44]/70"
-                              }`}
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={(e) => handleReliefContextToggle(context, e.target.checked)}
-                                  className="h-3.5 w-3.5 accent-[#FF7700]"
-                                />
-                                <span className={`text-xs font-semibold ${checked ? "text-[#FFD1A0]" : "text-white"}`}>
-                                  {context}
-                                </span>
-                              </label>
-
-                              {checked && (
+                          return (
+                            <div
+                              key={context}
+                              className="rounded-lg border border-[#FF7700]/30 bg-[#0f2f44]/70 px-3 py-2"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-semibold text-[#FFD1A0]">{context}</span>
                                 <input
                                   type="number"
-                                  min={0}
-                                  max={getMaxAssignableForContext(context)}
+                                  min={1}
+                                  max={20}
                                   value={currentCount === 0 ? "" : currentCount}
                                   onChange={(e) => handleReliefContextCountChange(context, e.target.value)}
                                   className="h-8 w-20 rounded-md border border-white/20 bg-[#0f2f44]/80 px-2 text-xs text-white focus:outline-none focus:border-[#FF7700]"
                                 />
-                              )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   <div className="rounded-lg border border-white/20 bg-[#0f2f44]/70 p-3 space-y-1.5 text-xs">
@@ -1528,26 +1352,12 @@ export default function CitizenRequestPage() {
                     </p>
                   </div>
 
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm text-white font-semibold">Ghi chú *</label>
-                      <span className={`text-[11px] font-mono ${reliefNoteOverLimit ? "text-red-400" : "text-gray-500"}`}>
-                        {reliefNoteLen}/{MAX_DESCRIPTION}
-                      </span>
-                    </div>
-                    <textarea
-                      value={reliefNote}
-                      onChange={(e) => setReliefNote(e.target.value)}
-                      className={`w-full min-h-[96px] rounded-lg border bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 ${reliefNoteOverLimit ? "border-red-500 focus:ring-red-500/50" : "border-white/20 focus:border-[#FF7700] focus:ring-[#FF7700]/50"}`}
-                      placeholder="Mô tả nhu cầu cứu trợ hiện tại..."
-                    />
-                  </div>
                 </div>
               )}
 
               <div className="pt-3 pb-2">
                 <button
-                  onClick={requestType === "Rescue" ? handleRescueSubmit : handleReliefSubmit}
+                  onClick={handleSubmit}
                   disabled={isSubmitting || submitDisabled}
                   className="w-full min-h-[3rem] bg-[#FF7700] hover:bg-[#FF8800] active:bg-[#FF6600] text-white font-extrabold text-base py-3 rounded-xl shadow-[0_8px_24px_rgba(255,119,0,0.32)] active:shadow-[0_4px_12px_rgba(255,119,0,0.24)] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
@@ -1557,7 +1367,7 @@ export default function CitizenRequestPage() {
                       ĐANG GỬI...
                     </>
                   ) : (
-                    requestType === "Rescue" ? "GỬI YÊU CẦU CỨU HỘ" : "GỬI YÊU CẦU CỨU TRỢ"
+                    "GỬI YÊU CẦU"
                   )}
                 </button>
               </div>

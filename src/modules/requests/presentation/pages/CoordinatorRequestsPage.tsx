@@ -83,6 +83,8 @@ const SORT_OPTIONS = [
   { label: "Ưu tiên cao", value: "priority" },
 ];
 
+const DEFAULT_FILTER_STATUSES = ["SUBMITTED", "VERIFIED", "IN_PROGRESS", "PARTIALLY_FULFILLED"];
+
 // ─── Component ────────────────────────────────────────────
 
 export default function CoordinatorRequestsPage() {
@@ -98,7 +100,7 @@ export default function CoordinatorRequestsPage() {
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "priority">("newest");
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [mapFilterStatus, setMapFilterStatus] = useState<string>("ALL");
+  const [mapFilterStatuses, setMapFilterStatuses] = useState<string[]>(DEFAULT_FILTER_STATUSES);
   const [mapFilterPriority, setMapFilterPriority] = useState<string>("ALL");
 
   // Refs for scrolling to selected card
@@ -161,8 +163,8 @@ export default function CoordinatorRequestsPage() {
   }, [fetchWarehouses]);
 
   // When map filters change → update sidebar
-  const handleFilterChange = useCallback((status: string, priority: string) => {
-    setMapFilterStatus(status);
+  const handleFilterChange = useCallback((statuses: string[], priority: string) => {
+    setMapFilterStatuses(statuses);
     setMapFilterPriority(priority);
     setSelectedRequestId(null);
   }, []);
@@ -212,10 +214,12 @@ export default function CoordinatorRequestsPage() {
 
   // Apply map filters to sidebar list
   const filteredRequests = requests.filter((r) => {
-    const statusOk = mapFilterStatus === "ALL" || r.status === mapFilterStatus;
+    const statusOk = mapFilterStatuses.length === 0 ? false : mapFilterStatuses.includes(r.status);
     const priorityOk = mapFilterPriority === "ALL" || r.priority === mapFilterPriority;
     return statusOk && priorityOk;
   });
+
+  const isDefaultStatuses = mapFilterStatuses.length === DEFAULT_FILTER_STATUSES.length && DEFAULT_FILTER_STATUSES.every((s) => mapFilterStatuses.includes(s));
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -263,7 +267,7 @@ export default function CoordinatorRequestsPage() {
             warehouses={warehouses}
             selectedRequestId={selectedRequestId}
             onRequestSelect={handleMapRequestSelect}
-            filterStatus={mapFilterStatus}
+            filterStatuses={mapFilterStatuses}
             filterPriority={mapFilterPriority}
             onFilterChange={handleFilterChange}
             className="w-full h-full"
@@ -327,7 +331,7 @@ export default function CoordinatorRequestsPage() {
             <>
               <div className="flex-shrink-0 px-3 pt-2 pb-1 flex items-center justify-between">
                 <span className="text-gray-400 text-xs font-medium">
-                  {filteredRequests.length}{mapFilterStatus !== "ALL" || mapFilterPriority !== "ALL" ? ` / ${requests.length}` : ""} yêu cầu
+                  {filteredRequests.length}{!isDefaultStatuses || mapFilterPriority !== "ALL" ? ` / ${requests.length}` : ""} yêu cầu
                   {selectedRequestId && (
                     <button
                       onClick={() => setSelectedRequestId(null)}

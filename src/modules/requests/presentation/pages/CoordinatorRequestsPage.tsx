@@ -22,6 +22,7 @@ import {
   FiPackage,
   FiWifiOff,
   FiLink,
+  FiPlus,
 } from "react-icons/fi";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 import { warehouseRepository } from "@/modules/warehouse/infrastructure/warehouse.repository.impl";
@@ -29,7 +30,11 @@ import type {
   CoordinatorRequest,
   RequestStatus,
   GetRequestsFilter,
+  CreateOnBehalfInput,
 } from "@/modules/requests/domain/request.entity";
+import CreateOnBehalfModal from "../components/CreateOnBehalfModal";
+import { CreateOnBehalfUseCase } from "../../application/createOnBehalf.usecase";
+import { toast } from "sonner";
 import type { Warehouse } from "@/modules/warehouse/domain/warehouse.entity";
 
 const GoongCoordinatorMap = dynamic(
@@ -100,6 +105,11 @@ export default function CoordinatorRequestsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mapFilterStatus, setMapFilterStatus] = useState<string>("ALL");
   const [mapFilterPriority, setMapFilterPriority] = useState<string>("ALL");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSubmittingOnBehalf, setIsSubmittingOnBehalf] = useState(false);
+
+  // Use Case
+  const createOnBehalfUseCase = new CreateOnBehalfUseCase(requestRepository);
 
   // Refs for scrolling to selected card
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -181,6 +191,20 @@ export default function CoordinatorRequestsPage() {
     setSelectedRequestId((prev) => (prev === id ? null : id));
   };
 
+  const handleCreateOnBehalf = async (data: CreateOnBehalfInput) => {
+    setIsSubmittingOnBehalf(true);
+    try {
+      await createOnBehalfUseCase.execute(data);
+      toast.success("Tạo yêu cầu hộ thành công!");
+      setIsCreateModalOpen(false);
+      fetchRequests(); // Refresh list
+    } catch (err: any) {
+      toast.error(err.message || "Không thể tạo yêu cầu");
+    } finally {
+      setIsSubmittingOnBehalf(false);
+    }
+  };
+
   const formatDate = (date: string | Date | undefined) => {
     if (!date) return "N/A";
     return new Date(date).toLocaleString("vi-VN", {
@@ -248,6 +272,13 @@ export default function CoordinatorRequestsPage() {
             >
               <FiRefreshCw className={`text-base ${isLoading ? "animate-spin" : ""}`} />
               <span>{isLoading ? "Đang tải..." : "Làm mới"}</span>
+            </button>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="flex-shrink-0 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <FiPlus className="text-base" />
+              <span>Tạo hộ</span>
             </button>
           </div>
         </div>
@@ -475,6 +506,14 @@ export default function CoordinatorRequestsPage() {
           )}
         </div>
       </div>
+
+      {/* ── Modals ── */}
+      <CreateOnBehalfModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateOnBehalf}
+        isSubmitting={isSubmittingOnBehalf}
+      />
     </div>
   );
 }

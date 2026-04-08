@@ -35,17 +35,7 @@ export default function StockPage() {
 
   const [activeTab, setActiveTab] = useState<Tab>("supply");
 
-  // ---------- SUPPLY REQUEST MODAL STATE ----------
-  const [pendingRequest, setPendingRequest] = useState<{
-    id: string;
-    teamId: string;
-    teamName: string;
-    supplyId: string;
-    supplyName: string;
-    requiredQty: number;
-    description: string;
-  } | null>(null);
-  const [selectedWarehouseForRequest, setSelectedWarehouseForRequest] = useState("");
+
 
   // ---------- SUPPLY STATE ----------
   const [supplyItems, setSupplyItems]             = useState<InventoryItem[]>([]);
@@ -112,88 +102,7 @@ export default function StockPage() {
   };
   
 
-  const handleUseSupply = async (item: any) => {
-  const quantity = Number(prompt("Nhập số lượng cần dùng:"));
-
-  if (!quantity || quantity <= 0) return;
-
-  if (quantity > item.quantity) {
-    alert("Số lượng xuất vượt quá số lượng trong kho");
-    return;
-  }
-
-  const supplyID = typeof item.supplyID === 'string' ? item.supplyID : item.supplyID?._id;
-  const warehouseId = typeof item.warehouse === 'string' ? item.warehouse : item.warehouse?._id;
-
-  console.log("SEND:", { supplyID, warehouseId, quantity });
-
-  try {
-    await inventoryApi.useSupply(
-      supplyID,
-      warehouseId,
-      quantity
-    );
-
-    alert("Dùng vật tư thành công");
-
-    fetchSupplyItems(supplyKeyword, supplyPage);
-    fetchSupplyStats();
-
-  } catch (err: any) {
-    alert(err?.response?.data?.message || "Lỗi khi dùng vật tư");
-  }
-};
-
-  // ===============================
-  // HANDLE SUPPLY REQUEST (MOCK/DEMO PENDING API)
-  // ===============================
-
-  const simulateIncomingRequest = () => {
-    setPendingRequest({
-      id: "REQ-" + Math.floor(Math.random() * 10000),
-      teamId: "T123",
-      teamName: "Đội cứu hộ Alpha",
-      supplyId: "SUP-001", // ID demo
-      supplyName: "Áo phao",
-      requiredQty: 50,
-      description: "Chúng tôi cần gấp 50 áo phao cho khu vực ngập lụt 1m. Đề nghị cấp phát lập tức."
-    });
-    // Set mặc định kho đầu tiên nếu có
-    if (allWarehouses.length > 0) {
-      setSelectedWarehouseForRequest(allWarehouses[0]._id!);
-    }
-  };
-
-  const handleApproveRequest = async () => {
-    if (!pendingRequest) return;
-    if (!selectedWarehouseForRequest) {
-      alert("Vui lòng chọn kho để xuất!");
-      return;
-    }
-
-    console.log("APPROVE SUPPLY REQUEST:", {
-      requestId: pendingRequest.id,
-      teamId: pendingRequest.teamId,
-      supplyId: pendingRequest.supplyId,
-      warehouseId: selectedWarehouseForRequest,
-      quantity: pendingRequest.requiredQty
-    });
-
-    try {
-      // NOTE: Đây là nơi gọi API phê duyệt từ Backend thực tế
-      // Ví dụ: await inventoryApi.approveSupplyRequest(pendingRequest.id, ...)
-      
-      alert(`Đã cấp ${pendingRequest.requiredQty} ${pendingRequest.supplyName} cho ${pendingRequest.teamName}`);
-      setPendingRequest(null);
-      
-      // Load lại grid và số liệu
-      fetchSupplyItems(supplyKeyword, supplyPage);
-      fetchSupplyStats();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || "Lỗi khi chốt giao dịch cấp phát");
-    }
-  };
-
+ 
   // ===============================
   // FETCH VEHICLE
   // ===============================
@@ -292,18 +201,7 @@ export default function StockPage() {
           : row.status;
       }
     },
-    {
-      key: "action",
-      header: "Hành động",
-      render: (row: any) => (
-        <button
-          onClick={() => handleUseSupply(row)}
-          className="px-3 py-1 bg-red-500 text-white rounded-lg text-xs"
-        >
-          Dùng
-        </button>
-      )
-    }
+    
   ];
 
   const supplyTableData = supplyItems.map((item) => ({
@@ -415,13 +313,7 @@ export default function StockPage() {
           <p className="text-sm text-gray-500 mt-1">Quản lý vật tư và phương tiện cứu hộ</p>
         </div>
         
-        {/* Nút giả lập nhận Yêu Cầu */}
-        <button 
-          onClick={simulateIncomingRequest}
-          className="px-5 py-2.5 bg-amber-100 text-amber-700 font-bold rounded-full border border-amber-200 hover:bg-amber-200 transition-colors flex items-center gap-2"
-        >
-          <span>🔔</span> Giả lập nhận Request (Test)
-        </button>
+       
       </div>
 
       {/* TABS */}
@@ -637,76 +529,6 @@ export default function StockPage() {
             </div>
           </div>
         </>
-      )}
-
-      {/* ==================== SUPPLY REQUEST MODAL ==================== */}
-      {pendingRequest && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl relative animate-in fade-in zoom-in duration-300">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-              <span className="text-red-500">🚨</span> Yêu cầu cấp vật tư khẩn cấp
-            </h2>
-            <p className="text-sm text-gray-500 mb-6">Bạn vừa nhận được yêu cầu cung cấp vật tư từ đội cứu hộ.</p>
-
-            <div className="space-y-4 mb-6">
-              <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-2xl flex flex-col items-center">
-                <p className="text-xs font-bold text-blue-900/60 uppercase tracking-wider mb-1">Đội yêu cầu</p>
-                <p className="text-2xl font-black text-blue-700">{pendingRequest.teamName}</p>
-              </div>
-
-              <div className="flex gap-4">
-                <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl flex-1 text-center">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Vật tư cần</p>
-                  <p className="text-lg font-bold text-gray-900">{pendingRequest.supplyName}</p>
-                </div>
-                <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex-1 text-center">
-                  <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">Số lượng</p>
-                  <p className="text-2xl font-black text-amber-600">{pendingRequest.requiredQty}</p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Ghi chú từ đội cứu hộ</p>
-                <p className="text-gray-800 text-sm font-medium italic border-l-4 border-gray-300 pl-3">
-                  "{pendingRequest.description}"
-                </p>
-              </div>
-
-              <div className="pt-2">
-                <label className="text-sm font-bold text-gray-700 block mb-2">Chọn kho nguồn để xuất vật tư:</label>
-                <select 
-                  value={selectedWarehouseForRequest}
-                  onChange={(e) => setSelectedWarehouseForRequest(e.target.value)}
-                  className="w-full px-4 py-3.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#1890ff] focus:border-transparent transition-all shadow-sm"
-                >
-                  <option value="" disabled>-- Vui lòng chọn kho --</option>
-                  {allWarehouses.map(wh => (
-                    <option key={wh._id} value={wh._id}>{wh.name}</option>
-                  ))}
-                </select>
-                {!selectedWarehouseForRequest && (
-                  <p className="text-red-500 text-xs mt-2 font-medium">⚠️ Bạn phải chọn một kho để tiến hành cấp phát.</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-3 justify-end mt-8 border-t border-gray-100 pt-6">
-              <button 
-                onClick={() => setPendingRequest(null)}
-                className="px-6 py-3 rounded-full text-gray-600 font-bold hover:bg-gray-100 transition-colors"
-              >
-                Từ chối / Đóng
-              </button>
-              <button 
-                onClick={handleApproveRequest}
-                disabled={!selectedWarehouseForRequest}
-                className="px-6 py-3 rounded-full bg-[#1890ff] hover:bg-blue-600 active:scale-95 disabled:opacity-50 disabled:active:scale-100 text-white font-bold shadow-md transition-all"
-              >
-                Cấp phát ngay
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
     </div>

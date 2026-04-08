@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { missionSupplyApi } from "@/modules/supplies/infrastructure/missionSupply.api";
 import type { MissionSupply } from "@/modules/supplies/domain/missionSupply.entity";
@@ -86,6 +86,16 @@ export default function MissionSupplyAllocationPage() {
       return missionLabel.includes(normalized) || supplyName.includes(normalized);
     });
   }, [missionSupplies, query]);
+
+  const groupedMissions = useMemo(() => {
+    const groups: Record<string, MissionSupply[]> = {};
+    filteredRows.forEach((row) => {
+      const missionId = getMissionId(row) || "unknown";
+      if (!groups[missionId]) groups[missionId] = [];
+      groups[missionId].push(row);
+    });
+    return Object.values(groups);
+  }, [filteredRows]);
 
   const updateDraft = (missionSupplyId: string, patch: Partial<AllocationDraft>) => {
     setDrafts((prev) => {
@@ -191,56 +201,70 @@ export default function MissionSupplyAllocationPage() {
                   <th className="px-4 py-3 font-semibold">Thao tác</th>
                 </tr>
               </thead>
-              <tbody>
-                {filteredRows.map((row) => {
-                  const draft = drafts[row._id] || { warehouseId: "", allocatedQty: "" };
-                  const planned = Number(row.plannedQty || 0);
-                  const supplyUnit = getSupplyUnit(row);
-
+              <tbody className="divide-y divide-gray-100">
+                {groupedMissions.map((missionGroup) => {
+                  const firstRow = missionGroup[0];
                   return (
-                    <tr key={row._id} className="border-b border-gray-100 align-top">
-                      <td className="px-4 py-3 text-sm text-gray-800">{getMissionLabel(row)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">
-                        {getSupplyName(row)}
-                        <div className="text-xs text-gray-500 mt-1">ID: {row._id}</div>
-                      </td>
-                      <td className="px-4 py-3 text-sm font-mono text-gray-800">
-                        {planned} {supplyUnit}
-                      </td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={draft.warehouseId}
-                          onChange={(e) => updateDraft(row._id, { warehouseId: e.target.value })}
-                          className="w-full min-w-[220px] px-3 py-2 rounded-lg border border-gray-200 text-sm"
-                        >
-                          <option value="">Chọn kho...</option>
-                          {warehouses.map((warehouse) => (
-                            <option key={warehouse._id} value={warehouse._id}>
-                              {warehouse.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          min={1}
-                          max={planned || undefined}
-                          value={draft.allocatedQty}
-                          onChange={(e) => updateDraft(row._id, { allocatedQty: e.target.value })}
-                          className="w-28 px-3 py-2 rounded-lg border border-gray-200 text-sm"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => handleAllocate(row)}
-                          disabled={allocatingId === row._id}
-                          className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60"
-                        >
-                          {allocatingId === row._id ? "Đang phân bổ..." : "Phân bổ"}
-                        </button>
-                      </td>
-                    </tr>
+                    <React.Fragment key={getMissionId(firstRow) || Math.random()}>
+                      {missionGroup.map((row, index) => {
+                        const draft = drafts[row._id] || { warehouseId: "", allocatedQty: "" };
+                        const planned = Number(row.plannedQty || 0);
+                        const supplyUnit = getSupplyUnit(row);
+
+                        return (
+                          <tr key={row._id} className={`${index === 0 ? 'border-t border-gray-200' : ''} hover:bg-gray-50/50 transition-colors`}>
+                            {index === 0 && (
+                              <td 
+                                rowSpan={missionGroup.length} 
+                                className="px-4 py-4 text-sm font-medium text-gray-900 align-top border-r border-gray-100 bg-gray-50/30 w-[200px]"
+                              >
+                                {getMissionLabel(row)}
+                              </td>
+                            )}
+                            <td className="px-4 py-4 text-sm text-gray-800 align-middle">
+                              <span className="font-medium">{getSupplyName(row)}</span>
+                              <div className="text-xs text-gray-500 mt-0.5 font-mono">ID: {row._id}</div>
+                            </td>
+                            <td className="px-4 py-4 text-sm font-mono text-gray-800 align-middle">
+                              {planned} {supplyUnit}
+                            </td>
+                            <td className="px-4 py-4 align-middle">
+                              <select
+                                value={draft.warehouseId}
+                                onChange={(e) => updateDraft(row._id, { warehouseId: e.target.value })}
+                                className="w-full min-w-[220px] px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 bg-white"
+                              >
+                                <option value="">Chọn kho...</option>
+                                {warehouses.map((warehouse) => (
+                                  <option key={warehouse._id} value={warehouse._id}>
+                                    {warehouse.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="px-4 py-4 align-middle">
+                              <input
+                                type="number"
+                                min={1}
+                                max={planned || undefined}
+                                value={draft.allocatedQty}
+                                onChange={(e) => updateDraft(row._id, { allocatedQty: e.target.value })}
+                                className="w-28 px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 bg-white"
+                              />
+                            </td>
+                            <td className="px-4 py-4 align-middle">
+                              <button
+                                onClick={() => handleAllocate(row)}
+                                disabled={allocatingId === row._id}
+                                className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 transition-colors shadow-sm"
+                              >
+                                {allocatingId === row._id ? "Đang phân bổ..." : "Phân bổ"}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </React.Fragment>
                   );
                 })}
               </tbody>

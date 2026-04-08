@@ -39,6 +39,7 @@ export interface CreateRescueRequestDTO {
   numberOfPeople?: number;
   urgencyLevel?: string;
   images?: string[];
+  scenario?: string | null;
 }
 
 export interface EmergencyRequestDTO {

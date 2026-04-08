@@ -6,13 +6,16 @@ import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import { CreateRescueRequestUseCase } from "@/modules/requests/application/createRescueRequest.usecase";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
+import { GetSuppliesUseCase } from "@/modules/supplies/application/getSupplies.usecase";
+import { supplyRepository } from "@/modules/supplies/infrastructure/supply.repository.impl";
 import type { Supply } from "@/modules/supplies/domain/supply.entity";
 import { useToast } from "@/hooks/use-toast";
 
-// Initialize use case with repository
+// Initialize use cases with repositories
 const createRescueRequestUseCase = new CreateRescueRequestUseCase(
   requestRepository,
 );
+const getSuppliesUseCase = new GetSuppliesUseCase(supplyRepository);
 
 // Dynamic import cho OpenMap để tránh SSR issues
 const OpenMap = dynamic(
@@ -296,6 +299,25 @@ export default function CitizenRequestPage() {
   const [desktopMapHeight, setDesktopMapHeight] = useState(520);
   const [isCheckingActiveRequest, setIsCheckingActiveRequest] = useState(true);
   const [activeRequestIdOnEntry, setActiveRequestIdOnEntry] = useState<string | null>(null);
+  const [availableSupplies, setAvailableSupplies] = useState<Supply[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    const fetchSupplies = async () => {
+      try {
+        const response = await getSuppliesUseCase.execute();
+        if (active && response && Array.isArray(response.data)) {
+          setAvailableSupplies(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch available supplies", error);
+      }
+    };
+    fetchSupplies();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const reliefFamilySize = Math.max(
     RELIEF_MIN_FAMILY_MEMBERS,
@@ -804,6 +826,7 @@ export default function CitizenRequestPage() {
       };
       const payload: Record<string, unknown> = {
         type: "Rescue",
+        
         incidentType:
           incidentTypeMap[rescueRequest.dangerType] ?? rescueRequest.dangerType,
         description: rescueDescription,
@@ -1004,22 +1027,39 @@ export default function CitizenRequestPage() {
     try {
       const reliefRequestSupplies = reliefSupplyPlan.totalItems
         .filter((item) => (Number(item.qty) || 0) > 0)
-        .map((item) => ({
-          name: item.label,
-          requestedQty: Number(item.qty) || 0,
-        }));
+        .map((item) => {
+          const matchedSupply = availableSupplies.find((s) => {
+            const normalizedName = normalizeText(s.name);
+            return item.keywords.some((kw) => normalizedName.includes(normalizeText(kw)));
+          });
+
+          if (matchedSupply && matchedSupply.id) {
+            return {
+              supplyId: matchedSupply.id,
+              requestedQty: Number(item.qty) || 0,
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
 
       const payload: Record<string, unknown> = {
         type: "Relief",
         incidentType: reliefIncidentType,
         description: reliefDescription,
         peopleCount: reliefFamilySize,
-        requestSupplies: reliefRequestSupplies,
+        scenario: selectedReliefQuickAction || null,
         location: {
           type: "Point",
           coordinates: [coordinates.lon, coordinates.lat] as [number, number],
         },
       };
+
+      if (reliefRequestSupplies.length > 0) {
+        payload.requestSupplies = reliefRequestSupplies;
+      } else {
+        payload.requestSupplies = [];
+      }
 
       const createdRequest = await createRescueRequestUseCase.execute(payload as any);
       const createdRequestId = getCreatedRequestId(createdRequest);

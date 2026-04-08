@@ -193,6 +193,7 @@ export interface CreateRescueRequestData {
   numberOfPeople?: number;
   urgencyLevel?: string;
   images?: string[];
+  scenario?: string | null;
 }
 
 export interface EmergencyRequestData {

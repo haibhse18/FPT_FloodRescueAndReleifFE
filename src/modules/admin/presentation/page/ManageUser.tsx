@@ -11,7 +11,7 @@ import { ApproveTeamApplicationUseCase } from "@/modules/teams/application/Appro
 import { RejectTeamApplicationUseCase } from "@/modules/teams/application/Reject.usecase";
 import { teamRepository } from "@/modules/teams/infrastructure/team.repository.impl";
 import { TeamMember } from "@/modules/teams/domain/team.entity";
-import { Check, Trash2, UserPen, X, Lock } from "lucide-react";
+import { Check, Trash2, UserPen, X, Lock, Unlock } from "lucide-react";
 
   const getListUserUseCase = new GetListUserUseCase(adminRepository);
   const approveUseCase = new ApproveTeamApplicationUseCase(teamRepository);
@@ -114,14 +114,14 @@ export default function AdminUsersPage() {
   }
 };
 
-  const handleToggleStatus = async (id: string, status: string) => {
-  const newStatus = status === "khoa tai khoan" ? "online" : "khoa tai khoan";
-
+  const handleToggleStatus = async (id: string, currentIsActive: boolean) => {
   try {
-    await adminApi.updateUserStatus(id, newStatus);
+    const actionStatus = currentIsActive === false ? "unban" : "ban";
+    // Tuỳ vào backend yêu cầu isActive: boolean hay status: string, ta có thể gửi cả 2 để phòng hờ:
+    await adminApi.updateUserStatus(id, actionStatus);
     fetchUsers(keyword, page);
   } catch (err) {
-    console.error(err);
+    console.error("Lỗi khi khoá tài khoản:", err);
   }
 };
 
@@ -282,7 +282,7 @@ export default function AdminUsersPage() {
       key: "isActive",
       header: "Trạng thái",
       render: (user: any) =>
-        user.status === "khoa tai khoan" ? (
+        user.isActive === false ? (
           <span
             style={{
               display: "inline-block",
@@ -351,18 +351,18 @@ export default function AdminUsersPage() {
               </button>
             )}
             <button
-              onClick={() => handleToggleStatus(userId, user.status)}
+              onClick={() => handleToggleStatus(userId, user.isActive)}
               style={{ background: "none", border: "none", cursor: "pointer", fontSize: "16px", opacity: editingRole === userId ? 0.5 : 1 }}
               disabled={editingRole === userId}
-              title="Khoá/Mở"
+              title={user.isActive === false ? "Mở khoá" : "Khoá tài khoản"}
             >
-              <Lock />
+              {user.isActive === false ? <Unlock style={{ color: "#52c41a" }} /> : <Lock style={{ color: "#f5222d" }} />}
             </button>
             <button
               onClick={() => handleDeleteUser(userId)}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "16px", opacity: editingRole === userId ? 0.5 : 1 }}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "16px", opacity: editingRole === userId ? 0.5 : 1, color: "#f5222d" }}
               disabled={editingRole === userId}
-              title="Xoá"
+              title="Xoá người dùng"
             >
               <Trash2 />
             </button>

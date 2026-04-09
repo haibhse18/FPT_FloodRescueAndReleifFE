@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
+import { FiCheckSquare, FiChevronDown, FiChevronUp, FiMinus, FiPlus, FiSquare } from "react-icons/fi";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import { CreateRescueRequestUseCase } from "@/modules/requests/application/createRescueRequest.usecase";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
@@ -28,7 +29,7 @@ const OpenMap = dynamic(
   },
 );
 
-const MAX_PEOPLE = 100;
+const MAX_PEOPLE = 20;
 const MIN_DESCRIPTION = 10;
 const MAX_DESCRIPTION = 500;
 
@@ -49,7 +50,7 @@ const RELIEF_INCIDENT_TYPE_BY_DANGER: Record<string, "Flood" | "Landslide" | "Ot
 };
 
 const RELIEF_MIN_FAMILY_MEMBERS = 1;
-const RELIEF_MAX_FAMILY_MEMBERS = 15;
+const RELIEF_MAX_FAMILY_MEMBERS = 20;
 
 type ReliefGroupKey = "adult" | "child" | "elderly" | "injured";
 
@@ -277,7 +278,6 @@ export default function CitizenRequestPage() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadImageError, setUploadImageError] = useState<string | null>(null);
   const [reliefDangerType, setReliefDangerType] = useState("");
-  const [reliefDescription, setReliefDescription] = useState("");
   const [reliefNeedMedicine, setReliefNeedMedicine] = useState(false);
   const [reliefContexts, setReliefContexts] = useState<string[]>([]);
   const [reliefFamilySize, setReliefFamilySize] = useState(1);
@@ -286,6 +286,7 @@ export default function CitizenRequestPage() {
   const [reliefInjuredCount, setReliefInjuredCount] = useState(0);
   const [isReliefComboModalOpen, setIsReliefComboModalOpen] = useState(false);
   const [reliefMedicineDetails, setReliefMedicineDetails] = useState("");
+  const [isScenarioPickerOpen, setIsScenarioPickerOpen] = useState(false);
   const [desktopMapHeight, setDesktopMapHeight] = useState(520);
   const [isCheckingActiveRequest, setIsCheckingActiveRequest] = useState(true);
   const [activeRequestIdOnEntry, setActiveRequestIdOnEntry] = useState<string | null>(null);
@@ -297,6 +298,29 @@ export default function CitizenRequestPage() {
   const selectedChildCount = isChildSelected ? reliefChildCount : 0;
   const selectedElderlyCount = isElderlySelected ? reliefElderlyCount : 0;
   const selectedInjuredCount = isInjuredSelected ? reliefInjuredCount : 0;
+  const sharedDangerType = rescueRequest.dangerType || reliefDangerType;
+
+  const applySharedDangerType = useCallback((selected: string) => {
+    setSelectedQuickAction(selected || null);
+    setReliefDangerType(selected);
+    setRescueRequest((prev) => ({
+      ...prev,
+      dangerType: selected,
+    }));
+  }, []);
+
+  const handleSharedDangerTypeSelect = useCallback((selected: string) => {
+    applySharedDangerType(selected);
+
+    if (needRescue) {
+      setRescueRequest((prev) => ({
+        ...prev,
+        description: defaultDescriptionMap[selected] || "",
+      }));
+    }
+
+    setIsScenarioPickerOpen(false);
+  }, [applySharedDangerType, needRescue]);
 
   const rescueAutoDetailLines = [
     rescueContexts.length > 0
@@ -514,6 +538,9 @@ export default function CitizenRequestPage() {
     setNeedRelief(checked);
     if (checked) {
       setReliefFamilySize((prev) => Math.max(RELIEF_MIN_FAMILY_MEMBERS, prev || 1));
+      if (rescueRequest.dangerType) {
+        setReliefDangerType(rescueRequest.dangerType);
+      }
       return;
     }
 
@@ -525,7 +552,6 @@ export default function CitizenRequestPage() {
     setReliefNeedMedicine(false);
     setReliefMedicineDetails("");
     setReliefDangerType("");
-    setReliefDescription("");
   };
 
   // Hàm lấy vị trí hiện tại
@@ -689,6 +715,17 @@ export default function CitizenRequestPage() {
     });
   };
 
+  const changeReliefContextCount = (context: string, delta: number) => {
+    const current = context === "Trẻ em"
+      ? reliefChildCount
+      : context === "Người già"
+        ? reliefElderlyCount
+        : reliefInjuredCount;
+    const base = Math.max(1, current || 1);
+    const next = Math.max(1, Math.min(20, base + delta));
+    handleReliefContextCountChange(context, String(next));
+  };
+
   useEffect(() => {
     applyBalancedReliefCounts({
       child: isChildSelected ? Math.max(reliefChildCount, 1) : 0,
@@ -726,11 +763,11 @@ export default function CitizenRequestPage() {
       return;
     }
 
-    if (needRescue && !rescueRequest.dangerType) {
+    if ((needRescue || needRelief) && !sharedDangerType) {
       toast({
         variant: "destructive",
         title: "Thiếu thông tin",
-        description: "Vui lòng chọn loại nguy hiểm trước khi gửi yêu cầu cứu hộ.",
+        description: "Vui lòng chọn tình huống trước khi gửi yêu cầu.",
       });
       return;
     }
@@ -758,42 +795,6 @@ export default function CitizenRequestPage() {
         variant: "destructive",
         title: "Số người không hợp lệ",
         description: `Số người cần hỗ trợ không được vượt quá ${MAX_PEOPLE} người.`,
-      });
-      return;
-    }
-
-    if (needRelief && !reliefDangerType) {
-      toast({
-        variant: "destructive",
-        title: "Thiếu tình huống cứu trợ",
-        description: "Vui lòng chọn tình huống cho phần cứu trợ nhu yếu phẩm.",
-      });
-      return;
-    }
-
-    if (needRelief && !reliefDescription.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Thiếu mô tả cứu trợ",
-        description: "Vui lòng nhập mô tả cho phần cứu trợ nhu yếu phẩm.",
-      });
-      return;
-    }
-
-    if (needRelief && reliefDescription.trim().length < MIN_DESCRIPTION) {
-      toast({
-        variant: "destructive",
-        title: "Mô tả cứu trợ quá ngắn",
-        description: `Mô tả cứu trợ phải có ít nhất ${MIN_DESCRIPTION} ký tự.`,
-      });
-      return;
-    }
-
-    if (needRelief && reliefDescription.trim().length > MAX_DESCRIPTION) {
-      toast({
-        variant: "destructive",
-        title: "Mô tả cứu trợ quá dài",
-        description: `Mô tả cứu trợ không được vượt quá ${MAX_DESCRIPTION} ký tự.`,
       });
       return;
     }
@@ -849,8 +850,7 @@ export default function CitizenRequestPage() {
     ].filter(Boolean);
     const reliefDescriptionLines = needRelief
       ? [
-        `Tình huống: ${quickRescueActions.find((item) => item.id === reliefDangerType)?.label || reliefDangerType}`,
-        `Mô tả: ${reliefDescription.trim()}`,
+        `Tình huống: ${quickRescueActions.find((item) => item.id === sharedDangerType)?.label || sharedDangerType}`,
         `Số người cần cứu trợ: ${reliefFamilySize}`,
         `Cơ cấu: Trưởng thành ${reliefComposition.adult}, Trẻ em ${reliefComposition.child}, Người già ${reliefComposition.elderly}, Bị thương ${reliefComposition.injured}`,
         `Combo 3 ngày: ${reliefSupplyPlan.totalLines.join(", ")}`,
@@ -896,8 +896,8 @@ export default function CitizenRequestPage() {
           injury: "Injured",
           landslide: "Landslide",
           other: "Other",
-        }[(needRescue ? rescueRequest.dangerType : reliefDangerType)]
-          ?? (needRescue ? rescueRequest.dangerType : reliefDangerType || "Other"),
+        }[sharedDangerType]
+          ?? (sharedDangerType || "Other"),
         description: combinedDescription,
         peopleCount: needRescue ? rescueRequest.numberOfPeople : reliefFamilySize,
         location: {
@@ -942,7 +942,6 @@ export default function CitizenRequestPage() {
       setNeedRescue(false);
       setNeedRelief(false);
       setReliefDangerType("");
-      setReliefDescription("");
       setReliefNeedMedicine(false);
       setReliefContexts([]);
       setReliefFamilySize(0);
@@ -1029,11 +1028,9 @@ export default function CitizenRequestPage() {
 
   const descLen = rescueRequest.description.length;
   const descOverLimit = needRescue && descLen > MAX_DESCRIPTION;
-  const reliefDescLen = reliefDescription.length;
-  const reliefDescOverLimit = needRelief && reliefDescLen > MAX_DESCRIPTION;
-  const submitDisabled = (!needRescue && !needRelief) || descOverLimit || reliefDescOverLimit;
+  const submitDisabled = (!needRescue && !needRelief) || descOverLimit;
   const sectionCardClass =
-    "rounded-2xl border border-white/20 bg-[#0f2f44]/70 backdrop-blur-sm shadow-[0_10px_24px_rgba(0,0,0,0.18)]";
+    "border border-white/20 bg-[#0f2f44]/70 backdrop-blur-sm shadow-[0_10px_24px_rgba(0,0,0,0.18)]";
 
   if (isCheckingActiveRequest || activeRequestIdOnEntry) {
     return (
@@ -1072,380 +1069,393 @@ export default function CitizenRequestPage() {
 
               </div>
 
+              <div className="space-y-0">
+                <div className={`rounded-xl border border-white/20 overflow-hidden ${isScenarioPickerOpen ? "bg-[#0f2f44]/70" : ""}`}>
+                  <button
+                    type="button"
+                    onClick={() => setIsScenarioPickerOpen((prev) => !prev)}
+                    aria-expanded={isScenarioPickerOpen}
+                    className={`relative z-10 w-full min-h-[3.25rem] border-0 px-3 py-2.5 text-left font-semibold transition-all duration-200 flex items-center justify-between gap-3 ${isScenarioPickerOpen ? "rounded-t-xl rounded-b-none bg-[#FF7700]/20 text-[#FF7700] shadow-[0_1px_0_rgba(255,119,0,0.45)]" : "rounded-xl bg-[#0f2f44]/70 text-white hover:bg-[#1a3f57]/80"}`}
+                  >
+                    <span className="truncate text-sm lg:text-[15px]">
+                      {sharedDangerType
+                        ? `Tình huống: ${quickRescueActions.find((item) => item.id === sharedDangerType)?.label || sharedDangerType}`
+                        : "Chọn tình huống"}
+                    </span>
+                    {isScenarioPickerOpen ? (
+                      <FiChevronUp className="h-4 w-4 shrink-0" />
+                    ) : (
+                      <FiChevronDown className="h-4 w-4 shrink-0" />
+                    )}
+                  </button>
 
-              <div className="space-y-2">
-                <label className="inline-flex items-center gap-2 text-sm font-semibold text-white cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={needRescue}
-                    onChange={(e) => handleNeedRescueToggle(e.target.checked)}
-                    className="h-4 w-4 accent-[#FF7700]"
-                  />
-                  Thông tin cứu hộ
-                </label>
-
-                <div className={`${sectionCardClass} p-4 space-y-3.5 bg-[#0f2f44]/70 border border-white/20 rounded-xl ${needRescue ? "" : "opacity-60"}`}>
-                  {/* Tình huống */}
-                  <div className="space-y-2.5">
-                    <label className="text-sm text-white font-semibold block">Tình huống</label>
-                    <select
-                      disabled={!needRescue}
-                      value={rescueRequest.dangerType}
-                      onChange={(e) => {
-                        const selected = e.target.value;
-                        setSelectedQuickAction(selected);
-                        setRescueRequest({
-                          ...rescueRequest,
-                          dangerType: selected,
-                          description: defaultDescriptionMap[selected] || "",
-                        });
-                      }}
-                      className="w-full h-10 rounded-lg border border-[#89b8d4]/45 bg-[#0f2f44]/95 px-3 text-[#f3f9ff] text-sm focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-[#9ec8e0]/70"
-                    >
-                      <option value="">Chọn tình huống</option>
-                      {quickRescueActions.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Số người cần hỗ trợ + Thêm ảnh */}
-                  <div className="grid grid-cols-[1fr_auto] items-end gap-3">
-                    <div className="space-y-2.5">
-                      <label className="text-sm text-white font-semibold">Số người cần hỗ trợ</label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={MAX_PEOPLE}
-                        disabled={!needRescue}
-                        value={needRescue ? rescueRequest.numberOfPeople : 0}
-                        onChange={(e) =>
-                          setRescueRequest({
-                            ...rescueRequest,
-                            numberOfPeople: Math.min(MAX_PEOPLE, Math.max(1, parseInt(e.target.value) || 1)),
-                          })
-                        }
-                        className="w-full h-10 rounded-lg border border-white/20 bg-white/[0.03] px-3 text-white text-sm focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-white/30"
-                      />
-                    </div>
-
-                    <label className="h-10 inline-flex items-center justify-center rounded-lg border border-dashed border-white/30 px-3 text-sm text-[#FFD1A0] cursor-pointer hover:border-[#FF7700]/80 hover:bg-[#FF7700]/10 transition-all duration-200">
-                      Thêm ảnh
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        disabled={isUploadingImage || (!needRescue && !needRelief)}
-                        onChange={(e) => {
-                          Array.from(e.target.files || []).forEach(handleImageUpload);
-                          e.target.value = "";
-                        }}
-                      />
-                    </label>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    <label className="text-sm text-white font-semibold block">Tình trạng ưu tiên</label>
-                    <div className="space-y-2">
-                      {CONTEXT_OPTIONS.map((context) => {
-                        const checked = rescueContexts.includes(context);
+                  <div className={`overflow-hidden border-t border-white/20 bg-[#0f2f44]/70 rounded-b-xl rounded-t-none transition-all duration-200 ease-out ${isScenarioPickerOpen ? "max-h-[420px] opacity-100 translate-y-0 p-3.5" : "max-h-0 opacity-0 -translate-y-2 p-0 border-transparent"}`}>
+                    <div className={`${isScenarioPickerOpen ? "pointer-events-auto" : "pointer-events-none"} space-y-2`}>
+                      {quickRescueActions.map((item) => {
+                        const active = sharedDangerType === item.id;
                         return (
-                          <label
-                            key={`rescue-${context}`}
-                            className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold cursor-pointer transition-all duration-200 ${checked
-                              ? "border-[#FF7700] bg-[#FF7700]/15 text-[#FFD1A0]"
-                              : "border-white/20 bg-[#0f2f44]/70 text-white"
-                              }`}
-                          >
-                            <input
-                              type="checkbox"
-                              disabled={!needRescue}
-                              checked={checked}
-                              onChange={(e) => {
-                                const nextChecked = e.target.checked;
-                                setRescueContexts((prev) => {
-                                  if (nextChecked) {
-                                    if (prev.includes(context)) return prev;
-                                    return [...prev, context];
-                                  }
-                                  return prev.filter((item) => item !== context);
-                                });
-                              }}
-                              className="h-3.5 w-3.5 accent-[#FF7700]"
-                            />
-                            {context}
-                          </label>
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => handleSharedDangerTypeSelect(item.id)}
+                            className={`w-full rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${active ? "border-[#FF7700] bg-[#FF7700]/15 text-[#FF7700]" : "border-white/10 bg-white/[0.03] text-white hover:border-white/20 hover:bg-white/[0.06]"}`}
+                          >{item.label}</button>
                         );
                       })}
                     </div>
                   </div>
-
-                  <label className="flex items-center gap-3 text-sm text-white cursor-pointer hover:text-[#FFD1A0] transition-colors">
-                    <input
-                      type="checkbox"
-                      disabled={!needRescue}
-                      checked={rescueNeedMedicine}
-                      onChange={(e) => setRescueNeedMedicine(e.target.checked)}
-                      className="w-4 h-4 accent-[#FF7700] rounded cursor-pointer"
-                    />
-                    Có nhu cầu thuốc
-                  </label>
-
-                  {rescueNeedMedicine && (
-                    <input
-                      type="text"
-                      disabled={!needRescue}
-                      value={rescueMedicineDetails}
-                      onChange={(e) => setRescueMedicineDetails(e.target.value)}
-                      placeholder="Tên thuốc cần hỗ trợ"
-                      className="w-full h-10 rounded-lg border border-white/20 bg-white/[0.03] px-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-white/30"
-                    />
-                  )}
-
-                  {/* Mô tả */}
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm text-white font-semibold">Mô tả *</label>
-                      <span className={`text-[11px] font-mono ${descOverLimit ? "text-red-400" : "text-gray-500"}`}>
-                        {descLen}/{MAX_DESCRIPTION}
-                      </span>
-                    </div>
-                    <textarea
-                      disabled={!needRescue}
-                      value={rescueRequest.description}
-                      onChange={(e) => setRescueRequest({
-                        ...rescueRequest,
-                        description: mergeRescueDescriptionWithAutoLines(e.target.value, rescueAutoDetailLines),
-                      })}
-                      className={`w-full min-h-[96px] rounded-lg border bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 ${descOverLimit ? "border-red-500 focus:ring-red-500/50" : "border-white/20 focus:border-[#FF7700] focus:ring-[#FF7700]/50"}`}
-                      placeholder="Mô tả ngắn gọn tình huống..."
-                    />
-                  </div>
-
-                  {/* Hiển thị thumbnail ảnh đã gửi */}
-                  {uploadedImages.length > 0 && (
-                    <div className="space-y-1">
-                      <label className="text-xs text-white font-semibold block">Ảnh đã gửi</label>
-                      <div className="flex flex-wrap gap-2">
-                        {uploadedImages.map((media, idx) => (
-                          <div key={idx} className="w-20 h-20 rounded-lg overflow-hidden border border-white/20 bg-white/5 flex items-center justify-center">
-                            <img
-                              src={media.secureUrl}
-                              alt={`Uploaded image ${idx + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-400">Đã tải {uploadedImages.length} ảnh hiện trường</p>
-                    </div>
-                  )}
-
-                  {uploadImageError && (
-                    <p className="text-xs text-red-300">{uploadImageError}</p>
-                  )}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="inline-flex items-center gap-2 text-sm font-semibold text-white cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={needRelief}
-                    onChange={(e) => handleNeedReliefToggle(e.target.checked)}
-                    className="h-4 w-4 accent-[#FF7700]"
-                  />
-                  Thông tin cứu trợ nhu yếu phẩm
-                </label>
 
-                <div className={`${sectionCardClass} p-4 space-y-3.5 bg-[#0f2f44]/70 border border-white/20 rounded-xl transition-all duration-200 ${needRelief ? "" : "opacity-60"}`}>
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <label className="text-sm text-white font-semibold block">Chi tiết cứu trợ</label>
-                    <button
-                      type="button"
-                      disabled={!needRelief}
-                      onClick={() => setIsReliefComboModalOpen(true)}
-                      className="rounded-lg border border-[#FF7700]/45 bg-[#FF7700]/15 px-2.5 py-1.5 text-xs font-semibold text-[#FFD1A0] hover:bg-[#FF7700]/25 transition-colors"
-                    >
-                      Xem combo
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2.5">
-                  <label className="text-sm text-white font-semibold block">Tình huống cứu trợ</label>
-                  <select
-                    disabled={!needRelief}
-                    value={reliefDangerType}
-                    onChange={(e) => {
-                      const selected = e.target.value;
-                      setReliefDangerType(selected);
-                      if (!reliefDescription.trim()) {
-                        setReliefDescription(defaultDescriptionMap[selected] || "");
-                      }
-                    }}
-                    className="w-full h-10 rounded-lg border border-[#89b8d4]/45 bg-[#0f2f44]/95 px-3 text-[#f3f9ff] text-sm focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-[#9ec8e0]/70"
+              <div className="space-y-0">
+                <div className={`rounded-xl border border-white/20 overflow-hidden ${needRescue ? "bg-[#0f2f44]/70" : ""}`}>
+                  <button
+                    type="button"
+                    onClick={() => handleNeedRescueToggle(!needRescue)}
+                    aria-pressed={needRescue}
+                    className={`relative z-10 w-full min-h-[3.25rem] border-0 px-3 py-2.5 text-left font-semibold transition-all duration-200 flex items-center justify-between gap-3 ${needRescue ? "rounded-t-xl rounded-b-none bg-[#FF7700]/20 text-[#FF7700] shadow-[0_1px_0_rgba(255,119,0,0.45)]" : "rounded-xl bg-[#0f2f44]/70 text-white hover:bg-[#1a3f57]/80"}`}
                   >
-                    <option value="">Chọn tình huống</option>
-                    {quickRescueActions.map((item) => (
-                      <option key={`relief-${item.id}`} value={item.id}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm text-white font-semibold">Mô tả cứu trợ *</label>
-                    <span className={`text-[11px] font-mono ${reliefDescOverLimit ? "text-red-400" : "text-gray-500"}`}>
-                      {reliefDescLen}/{MAX_DESCRIPTION}
+                    <span className="flex items-center gap-2">
+                      {needRescue ? (
+                        <FiCheckSquare className="h-4 w-4 shrink-0" />
+                      ) : (
+                        <FiSquare className="h-4 w-4 shrink-0" />
+                      )}
+                      <span className="text-sm lg:text-[15px]">Cần cứu hộ</span>
                     </span>
-                  </div>
-                  <textarea
-                    disabled={!needRelief}
-                    value={reliefDescription}
-                    onChange={(e) => setReliefDescription(e.target.value)}
-                    className={`w-full min-h-[96px] rounded-lg border bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 ${reliefDescOverLimit ? "border-red-500 focus:ring-red-500/50" : "border-white/20 focus:border-[#FF7700] focus:ring-[#FF7700]/50"}`}
-                    placeholder="Mô tả nhu cầu cứu trợ..."
-                  />
-                </div>
+                    {needRescue ? (
+                      <FiChevronUp className="h-4 w-4 shrink-0" />
+                    ) : (
+                      <FiChevronDown className="h-4 w-4 shrink-0" />
+                    )}
+                  </button>
 
-                <div className="space-y-2.5">
-                  <label className="text-sm text-white font-semibold block">Số người cần cứu trợ</label>
-                  <input
-                    type="number"
-                    min={RELIEF_MIN_FAMILY_MEMBERS}
-                    max={RELIEF_MAX_FAMILY_MEMBERS}
-                    disabled={!needRelief}
-                    value={needRelief ? reliefFamilySize : 0}
-                    onChange={(e) => {
-                      const parsed = Number.parseInt(e.target.value || "0", 10);
-                      const next = Number.isFinite(parsed) ? parsed : RELIEF_MIN_FAMILY_MEMBERS;
-                      setReliefFamilySize(
-                        Math.max(RELIEF_MIN_FAMILY_MEMBERS, Math.min(RELIEF_MAX_FAMILY_MEMBERS, next)),
-                      );
-                    }}
-                    className="w-full h-10 rounded-lg border border-white/20 bg-white/[0.03] px-3 text-white text-sm focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-white/30"
-                  />
-                </div>
-
-                <div className="rounded-lg border border-white/20 bg-[#0f2f44]/70 p-3 space-y-1.5 text-xs">
-                  <p className="text-white/80">Người trưởng thành: <span className="text-[#FFD1A0] font-semibold">{reliefAdultCount}</span></p>
-                  <p className="text-white/70">Trẻ em: {selectedChildCount} | Người già: {selectedElderlyCount} | Bị thương: {selectedInjuredCount}</p>
-                  {reliefDistributionInvalid && (
-                    <p className="text-red-300">Tổng trẻ em, người già và người bị thương không được vượt quá số người cần cứu trợ.</p>
-                  )}
-                </div>
-
-                <div className="space-y-2.5">
-                  <label className="text-sm text-white font-semibold block">Tình trạng ưu tiên</label>
-                  <div className="space-y-2">
-                    {CONTEXT_OPTIONS.map((context) => {
-                      const checked = reliefContexts.includes(context);
-                      const currentCount =
-                        context === "Trẻ em"
-                          ? reliefChildCount
-                          : context === "Người già"
-                            ? reliefElderlyCount
-                            : reliefInjuredCount;
-
-                      return (
-                        <div
-                          key={context}
-                          className={`rounded-lg border px-3 py-2 transition-all duration-200 ${checked
-                            ? "border-[#FF7700] bg-[#FF7700]/15"
-                            : "border-white/20 bg-[#0f2f44]/70"
-                            }`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                disabled={!needRelief}
-                                checked={checked}
-                                onChange={(e) => {
-                                  const nextChecked = e.target.checked;
-                                  setReliefContexts((prev) => {
-                                    if (nextChecked) {
-                                      if (prev.includes(context)) return prev;
-                                      return [...prev, context];
-                                    }
-                                    return prev.filter((item) => item !== context);
-                                  });
-
-                                  if (nextChecked) {
-                                    applyBalancedReliefCounts({
-                                      child: context === "Trẻ em" ? Math.max(reliefChildCount, 1) : reliefChildCount,
-                                      elderly: context === "Người già" ? Math.max(reliefElderlyCount, 1) : reliefElderlyCount,
-                                      injured: context === "Người bị thương" ? Math.max(reliefInjuredCount, 1) : reliefInjuredCount,
-                                    });
-                                    return;
-                                  }
-
-                                  applyBalancedReliefCounts({
-                                    child: context === "Trẻ em" ? 0 : reliefChildCount,
-                                    elderly: context === "Người già" ? 0 : reliefElderlyCount,
-                                    injured: context === "Người bị thương" ? 0 : reliefInjuredCount,
-                                  });
-                                }}
-                                className="h-3.5 w-3.5 accent-[#FF7700]"
-                              />
-                              <span className={`text-xs font-semibold ${checked ? "text-[#FFD1A0]" : "text-white"}`}>{context}</span>
-                            </label>
-
-                            {checked && (
-                              <input
-                                type="number"
-                                min={1}
-                                max={20}
-                                disabled={!needRelief}
-                                value={currentCount === 0 ? "" : currentCount}
-                                onChange={(e) => handleReliefContextCountChange(context, e.target.value)}
-                                className="h-8 w-20 rounded-md border border-white/20 bg-[#0f2f44]/80 px-2 text-xs text-white focus:outline-none focus:border-[#FF7700]"
-                              />
-                            )}
+                  <div className={`overflow-hidden border-t border-white/20 bg-[#0f2f44]/70 rounded-b-xl rounded-t-none transition-all duration-200 ease-out ${needRescue ? "max-h-[1200px] opacity-100 translate-y-0 p-5" : "max-h-0 opacity-0 -translate-y-2 p-0 border-transparent"}`}>
+                    <div className={`${needRescue ? "pointer-events-auto" : "pointer-events-none"} space-y-5`}>
+                      {/* Tình huống */}
+                      {/* Số người cần hỗ trợ + Thêm ảnh */}
+                      <div className="grid grid-cols-[1fr_auto] items-end gap-4">
+                        <div className="space-y-2.5">
+                          <label className="text-sm text-white font-semibold">Số người cần hỗ trợ</label>
+                          <div className="h-10 grid grid-cols-3 border border-white/20 bg-white/[0.03]">
+                            <button
+                              type="button"
+                              disabled={!needRescue || rescueRequest.numberOfPeople <= 1}
+                              onClick={() => setRescueRequest((prev) => ({
+                                ...prev,
+                                numberOfPeople: Math.max(1, (prev.numberOfPeople || 1) - 1),
+                              }))}
+                              className="flex items-center justify-center border-r border-white/20 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <FiMinus className="h-4 w-4" />
+                            </button>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              disabled={!needRescue}
+                              value={needRescue ? rescueRequest.numberOfPeople : 0}
+                              onChange={(e) => {
+                                const digits = e.target.value.replace(/\D/g, "");
+                                const parsed = Number.parseInt(digits || "0", 10);
+                                const next = Number.isFinite(parsed) ? parsed : 1;
+                                setRescueRequest((prev) => ({
+                                  ...prev,
+                                  numberOfPeople: Math.max(1, Math.min(MAX_PEOPLE, next)),
+                                }));
+                              }}
+                              className="h-full w-full border-0 bg-transparent text-center text-sm font-semibold text-white focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              disabled={!needRescue || rescueRequest.numberOfPeople >= MAX_PEOPLE}
+                              onClick={() => setRescueRequest((prev) => ({
+                                ...prev,
+                                numberOfPeople: Math.min(MAX_PEOPLE, (prev.numberOfPeople || 1) + 1),
+                              }))}
+                              className="flex items-center justify-center border-l border-white/20 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <FiPlus className="h-4 w-4" />
+                            </button>
                           </div>
                         </div>
-                      );
-                    })}
+
+                        <label className="h-10 inline-flex items-center justify-center rounded-lg border border-dashed border-white/30 px-3 text-sm text-[#FF7700] cursor-pointer hover:border-[#FF7700]/80 hover:bg-[#FF7700]/10 transition-all duration-200">
+                          Thêm ảnh
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            disabled={isUploadingImage || (!needRescue && !needRelief)}
+                            onChange={(e) => {
+                              Array.from(e.target.files || []).forEach(handleImageUpload);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                      </div>
+
+                      {/* Mô tả */}
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm text-white font-semibold">Mô tả *</label>
+                          <span className={`text-[11px] font-mono ${descOverLimit ? "text-red-400" : "text-gray-500"}`}>
+                            {descLen}/{MAX_DESCRIPTION}
+                          </span>
+                        </div>
+                        <textarea
+                          disabled={!needRescue}
+                          value={rescueRequest.description}
+                          onChange={(e) => setRescueRequest({
+                            ...rescueRequest,
+                            description: mergeRescueDescriptionWithAutoLines(e.target.value, rescueAutoDetailLines),
+                          })}
+                          className={`w-full min-h-[96px] rounded-none border bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 ${descOverLimit ? "border-red-500 focus:ring-red-500/50" : "border-white/20 focus:border-[#FF7700] focus:ring-[#FF7700]/50"}`}
+                          placeholder="Mô tả ngắn gọn tình huống..."
+                        />
+                      </div>
+
+                      {/* Hiển thị thumbnail ảnh đã gửi */}
+                      {uploadedImages.length > 0 && (
+                        <div className="space-y-2">
+                          <label className="text-xs text-white font-semibold block">Ảnh đã gửi</label>
+                          <div className="flex flex-wrap gap-2">
+                            {uploadedImages.map((media, idx) => (
+                              <div key={idx} className="w-20 h-20 rounded-none overflow-hidden border border-white/20 bg-white/5 flex items-center justify-center">
+                                <img
+                                  src={media.secureUrl}
+                                  alt={`Uploaded image ${idx + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-400">Đã tải {uploadedImages.length} ảnh hiện trường</p>
+                        </div>
+                      )}
+
+                      {uploadImageError && (
+                        <p className="text-xs text-red-300">{uploadImageError}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
+              </div>
 
-                <label className="flex items-center gap-3 text-sm text-white cursor-pointer hover:text-[#FFD1A0] transition-colors">
-                  <input
-                    type="checkbox"
-                    disabled={!needRelief}
-                    checked={reliefNeedMedicine}
-                    onChange={(e) => setReliefNeedMedicine(e.target.checked)}
-                    className="w-4 h-4 accent-[#FF7700] rounded cursor-pointer"
-                  />
-                  Có nhu cầu thuốc
-                </label>
+              <div className="space-y-0">
+                <div className={`rounded-xl border border-white/20 overflow-hidden ${needRelief ? "bg-[#0f2f44]/70" : ""}`}>
+                  <button
+                    type="button"
+                    onClick={() => handleNeedReliefToggle(!needRelief)}
+                    aria-pressed={needRelief}
+                    className={`relative z-10 w-full min-h-[3.25rem] border-0 px-3 py-2.5 text-left font-semibold transition-all duration-200 flex items-center justify-between gap-3 ${needRelief ? "rounded-t-xl rounded-b-none bg-[#FF7700]/20 text-[#FF7700] shadow-[0_1px_0_rgba(255,119,0,0.45)]" : "rounded-xl bg-[#0f2f44]/70 text-white hover:bg-[#1a3f57]/80"}`}
+                  >
+                    <span className="flex items-center gap-2">
+                      {needRelief ? (
+                        <FiCheckSquare className="h-4 w-4 shrink-0" />
+                      ) : (
+                        <FiSquare className="h-4 w-4 shrink-0" />
+                      )}
+                      <span className="text-sm lg:text-[15px]">Cần nhu yếu phẩm</span>
+                    </span>
+                    {needRelief ? (
+                      <FiChevronUp className="h-4 w-4 shrink-0" />
+                    ) : (
+                      <FiChevronDown className="h-4 w-4 shrink-0" />
+                    )}
+                  </button>
 
-                {reliefNeedMedicine && (
-                  <input
-                    type="text"
-                    disabled={!needRelief}
-                    value={reliefMedicineDetails}
-                    onChange={(e) => setReliefMedicineDetails(e.target.value)}
-                    placeholder="Tên thuốc cần hỗ trợ"
-                    className="w-full h-10 rounded-lg border border-white/20 bg-white/[0.03] px-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-white/30"
-                  />
-                )}
+                  <div className={`overflow-hidden border-t border-white/20 bg-[#0f2f44]/70 rounded-b-xl rounded-t-none transition-all duration-200 ease-out ${needRelief ? "max-h-[1200px] opacity-100 translate-y-0 p-5" : "max-h-0 opacity-0 -translate-y-2 p-0 border-transparent"}`}>
+                    <div className={`${needRelief ? "pointer-events-auto" : "pointer-events-none"} space-y-5`}>
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="text-sm text-white font-semibold block">Chi tiết cứu trợ</label>
+                          <button
+                            type="button"
+                            disabled={!needRelief}
+                            onClick={() => setIsReliefComboModalOpen(true)}
+                            className="rounded-lg border border-[#FF7700]/45 bg-[#FF7700]/15 px-2.5 py-1.5 text-xs font-semibold text-[#FF7700] hover:bg-[#FF7700]/25 transition-colors"
+                          >
+                            Xem combo
+                          </button>
+                        </div>
+                      </div>
 
-                <div className="rounded-lg border border-white/20 bg-[#0f2f44]/70 p-3 space-y-2">
-                  <p className="text-xs text-white font-semibold">Tổng nhu cầu thiết yếu</p>
-                  <p className="text-[11px] text-white/70 leading-relaxed">
-                    {reliefSupplyPlan.totalLines.length > 0
-                      ? reliefSupplyPlan.totalLines.join(", ")
-                      : "Chưa có nhu cầu được tính"}
-                  </p>
-                </div>
+                      <div className="space-y-2.5">
+                        <label className="text-sm text-white font-semibold block">Số người cần cứu trợ</label>
+                        <div className="h-10 grid grid-cols-3 border border-white/20 bg-white/[0.03]">
+                          <button
+                            type="button"
+                            disabled={!needRelief || reliefFamilySize <= RELIEF_MIN_FAMILY_MEMBERS}
+                            onClick={() => setReliefFamilySize((prev) => Math.max(RELIEF_MIN_FAMILY_MEMBERS, prev - 1))}
+                            className="flex items-center justify-center border-r border-white/20 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            <FiMinus className="h-4 w-4" />
+                          </button>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            disabled={!needRelief}
+                            value={needRelief ? reliefFamilySize : 0}
+                            onChange={(e) => {
+                              const digits = e.target.value.replace(/\D/g, "");
+                              const parsed = Number.parseInt(digits || "0", 10);
+                              const next = Number.isFinite(parsed) ? parsed : RELIEF_MIN_FAMILY_MEMBERS;
+                              setReliefFamilySize(
+                                Math.max(RELIEF_MIN_FAMILY_MEMBERS, Math.min(RELIEF_MAX_FAMILY_MEMBERS, next)),
+                              );
+                            }}
+                            className="h-full w-full border-0 bg-transparent text-center text-sm font-semibold text-white focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            disabled={!needRelief || reliefFamilySize >= RELIEF_MAX_FAMILY_MEMBERS}
+                            onClick={() => setReliefFamilySize((prev) => Math.min(RELIEF_MAX_FAMILY_MEMBERS, prev + 1))}
+                            className="flex items-center justify-center border-l border-white/20 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            <FiPlus className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="rounded-none border border-white/20 bg-[#0f2f44]/70 p-3 space-y-1.5 text-xs">
+                        <p className="text-white/80">Người trưởng thành: <span className="text-[#FF7700] font-semibold">{reliefAdultCount}</span></p>
+                        <p className="text-white/70">Trẻ em: {selectedChildCount} | Người già: {selectedElderlyCount} | Bị thương: {selectedInjuredCount}</p>
+                        {reliefDistributionInvalid && (
+                          <p className="text-red-300">Tổng trẻ em, người già và người bị thương không được vượt quá số người cần cứu trợ.</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2.5">
+                        <label className="text-sm text-white font-semibold block">Tình trạng ưu tiên</label>
+                        <div className="space-y-2.5">
+                          {CONTEXT_OPTIONS.map((context) => {
+                            const checked = reliefContexts.includes(context);
+                            const currentCount =
+                              context === "Trẻ em"
+                                ? reliefChildCount
+                                : context === "Người già"
+                                  ? reliefElderlyCount
+                                  : reliefInjuredCount;
+
+                            return (
+                              <div
+                                key={context}
+                                className={`rounded-none border px-3 py-2 transition-all duration-200 ${checked
+                                  ? "border-[#FF7700] bg-[#FF7700]/15"
+                                  : "border-white/20 bg-[#0f2f44]/70"
+                                  }`}
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      disabled={!needRelief}
+                                      checked={checked}
+                                      onChange={(e) => {
+                                        const nextChecked = e.target.checked;
+                                        setReliefContexts((prev) => {
+                                          if (nextChecked) {
+                                            if (prev.includes(context)) return prev;
+                                            return [...prev, context];
+                                          }
+                                          return prev.filter((item) => item !== context);
+                                        });
+
+                                        if (nextChecked) {
+                                          applyBalancedReliefCounts({
+                                            child: context === "Trẻ em" ? Math.max(reliefChildCount, 1) : reliefChildCount,
+                                            elderly: context === "Người già" ? Math.max(reliefElderlyCount, 1) : reliefElderlyCount,
+                                            injured: context === "Người bị thương" ? Math.max(reliefInjuredCount, 1) : reliefInjuredCount,
+                                          });
+                                          return;
+                                        }
+
+                                        applyBalancedReliefCounts({
+                                          child: context === "Trẻ em" ? 0 : reliefChildCount,
+                                          elderly: context === "Người già" ? 0 : reliefElderlyCount,
+                                          injured: context === "Người bị thương" ? 0 : reliefInjuredCount,
+                                        });
+                                      }}
+                                      className="h-3.5 w-3.5 accent-[#FF7700]"
+                                    />
+                                    <span className={`text-xs font-semibold ${checked ? "text-[#FF7700]" : "text-white"}`}>{context}</span>
+                                  </label>
+
+                                  {checked && (
+                                    <div className="h-8 w-24 grid grid-cols-3 border border-white/20 bg-[#0f2f44]/80">
+                                      <button
+                                        type="button"
+                                        disabled={!needRelief || currentCount <= 1}
+                                        onClick={() => changeReliefContextCount(context, -1)}
+                                        className="flex items-center justify-center border-r border-white/20 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                                      >
+                                        <FiMinus className="h-3 w-3" />
+                                      </button>
+                                      <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
+                                        disabled={!needRelief}
+                                        value={currentCount || 1}
+                                        onChange={(e) => handleReliefContextCountChange(context, e.target.value.replace(/\D/g, ""))}
+                                        className="h-full w-full border-0 bg-transparent text-center text-xs font-semibold text-white focus:outline-none"
+                                      />
+                                      <button
+                                        type="button"
+                                        disabled={!needRelief || currentCount >= 20}
+                                        onClick={() => changeReliefContextCount(context, 1)}
+                                        className="flex items-center justify-center border-l border-white/20 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                                      >
+                                        <FiPlus className="h-3 w-3" />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        <label className="flex items-center gap-3 text-sm text-white cursor-pointer hover:text-[#FF7700] transition-colors">
+                          <input
+                            type="checkbox"
+                            disabled={!needRelief}
+                            checked={reliefNeedMedicine}
+                            onChange={(e) => setReliefNeedMedicine(e.target.checked)}
+                            className="w-4 h-4 accent-[#FF7700] rounded cursor-pointer"
+                          />
+                          Có nhu cầu thuốc
+                        </label>
+
+                        {reliefNeedMedicine && (
+                          <input
+                            type="text"
+                            disabled={!needRelief}
+                            value={reliefMedicineDetails}
+                            onChange={(e) => setReliefMedicineDetails(e.target.value)}
+                            placeholder="Tên thuốc cần hỗ trợ"
+                            className="w-full h-10 rounded-none border border-white/20 bg-white/[0.03] px-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-[#FF7700] focus:ring-1 focus:ring-[#FF7700]/50 hover:border-white/30"
+                          />
+                        )}
+                      </div>
+
+                      <div className="rounded-none border border-white/20 bg-[#0f2f44]/70 p-3 space-y-2">
+                        <p className="text-xs text-white font-semibold">Tổng nhu cầu thiết yếu</p>
+                        <p className="text-[11px] text-white/70 leading-relaxed">
+                          {reliefSupplyPlan.totalLines.length > 0
+                            ? reliefSupplyPlan.totalLines.join(", ")
+                            : "Chưa có nhu cầu được tính"}
+                        </p>
+                      </div>
+
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1476,7 +1486,7 @@ export default function CitizenRequestPage() {
                     type="button"
                     onClick={() => setIsManualSelectionMode(!isManualSelectionMode)}
                     className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-all duration-200 ${isManualSelectionMode
-                      ? "border-[#FF7700] bg-[#FF7700]/20 text-[#FFD1A0]"
+                      ? "border-[#FF7700] bg-[#FF7700]/20 text-[#FF7700]"
                       : "border-white/20 bg-[#0f2f44]/70 text-white"
                       }`}
                   >
@@ -1500,7 +1510,7 @@ export default function CitizenRequestPage() {
                     type="button"
                     onClick={getCurrentLocation}
                     disabled={isLoadingLocation}
-                    className="shrink-0 rounded-lg border border-[#FF7700]/45 bg-[#FF7700]/15 px-2.5 py-1.5 text-[11px] font-semibold text-[#FFD1A0] hover:bg-[#FF7700]/25 disabled:opacity-60 transition-colors"
+                    className="shrink-0 rounded-lg border border-[#FF7700]/45 bg-[#FF7700]/15 px-2.5 py-1.5 text-[11px] font-semibold text-[#FF7700] hover:bg-[#FF7700]/25 disabled:opacity-60 transition-colors"
                   >
                     {isLoadingLocation ? "Đang định vị..." : "GPS"}
                   </button>
@@ -1527,7 +1537,7 @@ export default function CitizenRequestPage() {
                     type="button"
                     onClick={getCurrentLocation}
                     disabled={isLoadingLocation}
-                    className="rounded-lg border border-[#FF7700]/45 bg-[#FF7700]/15 px-3 py-2 text-sm font-semibold text-[#FFD1A0] hover:bg-[#FF7700]/25 disabled:opacity-60 transition-colors"
+                    className="rounded-lg border border-[#FF7700]/45 bg-[#FF7700]/15 px-3 py-2 text-sm font-semibold text-[#FF7700] hover:bg-[#FF7700]/25 disabled:opacity-60 transition-colors"
                   >
                     {isLoadingLocation ? "Đang định vị..." : "Lấy vị trí GPS"}
                   </button>
@@ -1535,7 +1545,7 @@ export default function CitizenRequestPage() {
                     type="button"
                     onClick={() => setIsManualSelectionMode(!isManualSelectionMode)}
                     className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-all duration-200 ${isManualSelectionMode
-                      ? "border-[#FF7700] bg-[#FF7700]/20 text-[#FFD1A0] shadow-[0_0_8px_rgba(255,119,0,0.2)]"
+                      ? "border-[#FF7700] bg-[#FF7700]/20 text-[#FF7700] shadow-[0_0_8px_rgba(255,119,0,0.2)]"
                       : "border-white/20 bg-[#0f2f44]/70 text-white hover:bg-[#1a3f57]/80 hover:border-white/30"
                       }`}
                   >
@@ -1593,7 +1603,7 @@ export default function CitizenRequestPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     {combo.items.map((item) => (
                       <div key={`${combo.key}-${item.label}`} className="rounded-md border border-white/20 bg-[#0f2f44]/70 px-2.5 py-2 text-white/90">
-                        {item.label}: <span className="font-semibold text-[#FFD1A0]">{item.qtyPerPerson3Days}</span>
+                        {item.label}: <span className="font-semibold text-[#FF7700]">{item.qtyPerPerson3Days}</span>
                       </div>
                     ))}
                   </div>
@@ -1601,7 +1611,7 @@ export default function CitizenRequestPage() {
               ))}
 
               <div className="rounded-xl border border-[#FF7700]/35 bg-[#FF7700]/10 p-3 space-y-1.5">
-                <p className="text-[#FFD1A0] text-sm font-semibold">Tổng nhu cầu theo gia đình hiện tại của bạn</p>
+                <p className="text-[#FF7700] text-sm font-semibold">Tổng nhu cầu theo gia đình hiện tại của bạn</p>
                 <p className="text-white/80 text-xs">
                   Trưởng thành {reliefComposition.adult}, Trẻ em {reliefComposition.child}, Người già {reliefComposition.elderly}, Bị thương {reliefComposition.injured}
                 </p>

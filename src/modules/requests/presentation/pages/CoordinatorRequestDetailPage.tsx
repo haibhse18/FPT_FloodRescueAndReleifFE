@@ -459,10 +459,6 @@ export default function CoordinatorRequestDetailPage() {
                   </span>
                 )}
               </p>
-              <p className="text-gray-400 text-xs mb-4 font-mono">
-                Lat: {getLat(request).toFixed(6)} • Long:{" "}
-                {getLng(request).toFixed(6)}
-              </p>
               <GoongRequestMap
                 request={request}
                 warehouses={warehouses}

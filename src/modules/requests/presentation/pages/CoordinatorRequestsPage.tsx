@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   PiSirenBold,
   PiMapPinBold,
@@ -32,8 +32,6 @@ import type {
   GetRequestsFilter,
   CreateOnBehalfInput,
 } from "@/modules/requests/domain/request.entity";
-import CreateOnBehalfModal from "../components/CreateOnBehalfModal";
-import { CreateOnBehalfUseCase } from "../../application/createOnBehalf.usecase";
 import { toast } from "sonner";
 import type { Warehouse } from "@/modules/warehouse/domain/warehouse.entity";
 
@@ -91,6 +89,7 @@ const SORT_OPTIONS = [
 // ─── Component ────────────────────────────────────────────
 
 export default function CoordinatorRequestsPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [requests, setRequests] = useState<CoordinatorRequest[]>([]);
@@ -105,11 +104,7 @@ export default function CoordinatorRequestsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mapFilterStatus, setMapFilterStatus] = useState<string>("ALL");
   const [mapFilterPriority, setMapFilterPriority] = useState<string>("ALL");
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isSubmittingOnBehalf, setIsSubmittingOnBehalf] = useState(false);
-
-  // Use Case
-  const createOnBehalfUseCase = new CreateOnBehalfUseCase(requestRepository);
+  const [mapFilterSource, setMapFilterSource] = useState<string>("ALL");
 
   // Refs for scrolling to selected card
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -126,13 +121,17 @@ export default function CoordinatorRequestsPage() {
       
       // Client-side sorting
       if (sortBy === "newest") {
-        sortedData = [...sortedData].sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+        sortedData = [...sortedData].sort((a, b) => {
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return timeB - timeA;
+        });
       } else if (sortBy === "oldest") {
-        sortedData = [...sortedData].sort((a, b) => 
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
+        sortedData = [...sortedData].sort((a, b) => {
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : Infinity;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : Infinity;
+          return timeA - timeB;
+        });
       } else if (sortBy === "priority") {
         const priorityOrder = { Critical: 0, High: 1, Normal: 2 };
         sortedData = [...sortedData].sort((a, b) => {
@@ -171,9 +170,10 @@ export default function CoordinatorRequestsPage() {
   }, [fetchWarehouses]);
 
   // When map filters change → update sidebar
-  const handleFilterChange = useCallback((status: string, priority: string) => {
+  const handleFilterChange = useCallback((status: string, priority: string, source: string = "ALL") => {
     setMapFilterStatus(status);
     setMapFilterPriority(priority);
+    setMapFilterSource(source);
     setSelectedRequestId(null);
   }, []);
 
@@ -188,22 +188,9 @@ export default function CoordinatorRequestsPage() {
 
   // When card is clicked → set selected (map will flyTo via prop change)
   const handleCardClick = (id: string) => {
-    setSelectedRequestId((prev) => (prev === id ? null : id));
+    router.push(`/requests/${id}`);
   };
 
-  const handleCreateOnBehalf = async (data: CreateOnBehalfInput) => {
-    setIsSubmittingOnBehalf(true);
-    try {
-      await createOnBehalfUseCase.execute(data);
-      toast.success("Tạo yêu cầu hộ thành công!");
-      setIsCreateModalOpen(false);
-      fetchRequests(); // Refresh list
-    } catch (err: any) {
-      toast.error(err.message || "Không thể tạo yêu cầu");
-    } finally {
-      setIsSubmittingOnBehalf(false);
-    }
-  };
 
   const formatDate = (date: string | Date | undefined) => {
     if (!date) return "N/A";
@@ -238,7 +225,8 @@ export default function CoordinatorRequestsPage() {
   const filteredRequests = requests.filter((r) => {
     const statusOk = mapFilterStatus === "ALL" || r.status === mapFilterStatus;
     const priorityOk = mapFilterPriority === "ALL" || r.priority === mapFilterPriority;
-    return statusOk && priorityOk;
+    const sourceOk = mapFilterSource === "ALL" || r.source === mapFilterSource;
+    return statusOk && priorityOk && sourceOk;
   });
 
   return (
@@ -274,7 +262,7 @@ export default function CoordinatorRequestsPage() {
               <span>{isLoading ? "Đang tải..." : "Làm mới"}</span>
             </button>
             <button
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={() => router.push("/requests/create")}
               className="flex-shrink-0 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap"
             >
               <FiPlus className="text-base" />
@@ -296,6 +284,7 @@ export default function CoordinatorRequestsPage() {
             onRequestSelect={handleMapRequestSelect}
             filterStatus={mapFilterStatus}
             filterPriority={mapFilterPriority}
+            filterSource={mapFilterSource}
             onFilterChange={handleFilterChange}
             className="w-full h-full"
           />
@@ -358,7 +347,7 @@ export default function CoordinatorRequestsPage() {
             <>
               <div className="flex-shrink-0 px-3 pt-2 pb-1 flex items-center justify-between">
                 <span className="text-gray-400 text-xs font-medium">
-                  {filteredRequests.length}{mapFilterStatus !== "ALL" || mapFilterPriority !== "ALL" ? ` / ${requests.length}` : ""} yêu cầu
+                  {filteredRequests.length}{mapFilterStatus !== "ALL" || mapFilterPriority !== "ALL" || mapFilterSource !== "ALL" ? ` / ${requests.length}` : ""} yêu cầu
                   {selectedRequestId && (
                     <button
                       onClick={() => setSelectedRequestId(null)}
@@ -507,13 +496,6 @@ export default function CoordinatorRequestsPage() {
         </div>
       </div>
 
-      {/* ── Modals ── */}
-      <CreateOnBehalfModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={handleCreateOnBehalf}
-        isSubmitting={isSubmittingOnBehalf}
-      />
     </div>
   );
 }

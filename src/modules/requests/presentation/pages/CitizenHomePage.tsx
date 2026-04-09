@@ -33,22 +33,22 @@ const ACTIVE_REQUEST_STATUSES = new Set([
 
 const HOME_BACKGROUND_URL = "/images/flood-rescue2.jpg";
 const COORDINATOR_TELEGRAM_HANDLE =
-  process.env.NEXT_PUBLIC_COORDINATOR_TELEGRAM_HANDLE || "";
+  process.env.NEXT_PUBLIC_COORDINATOR_TELEGRAM_HANDLE || "0868969231";
 const COORDINATOR_PHONE_NUMBER =
-  process.env.NEXT_PUBLIC_COORDINATOR_PHONE_NUMBER || "";
+  process.env.NEXT_PUBLIC_COORDINATOR_PHONE_NUMBER || "0868969231";
 const FALLBACK_EMERGENCY_PHONE_NUMBER = "115";
 
 const EMERGENCY_TELEGRAM_URL = COORDINATOR_TELEGRAM_HANDLE
   ? `https://t.me/${COORDINATOR_TELEGRAM_HANDLE.replace(/^@/, "")}`
   : COORDINATOR_PHONE_NUMBER
-    ? `https://t.me/+${COORDINATOR_PHONE_NUMBER.replace(/\D/g, "")}`
+    ? `tg://resolve?phone=${COORDINATOR_PHONE_NUMBER.replace(/\D/g, "")}`
     : "https://t.me";
 
 const EMERGENCY_PHONE_URL = `tel:${(COORDINATOR_PHONE_NUMBER || FALLBACK_EMERGENCY_PHONE_NUMBER).replace(/[^\d+]/g, "")
   }`;
 
 const EMERGENCY_CONTACT_LABEL =
-  COORDINATOR_TELEGRAM_HANDLE || COORDINATOR_PHONE_NUMBER || "Telegram";
+  COORDINATOR_PHONE_NUMBER || COORDINATOR_TELEGRAM_HANDLE || "Telegram";
 
 function normalizeStatus(status: unknown): string {
   return String(status ?? "")
@@ -303,7 +303,7 @@ export default function CitizenHomePage() {
                       href="/request"
                       className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-full border-2 border-red-400/60 bg-[#FF3535] hover:bg-red-600 flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-red-500/50 hover:scale-95"
                       style={{ animation: "flare-red 2s ease-in-out infinite" }}
-                      aria-label="Gửi yêu cầu cứu hộ/cứu trợ"
+                      aria-label="GỬI YÊU CẦU"
                     >
                       <span className="text-white font-bold text-sm lg:text-base text-center px-6">
                         Gửi yêu cầu cứu hộ / cứu trợ

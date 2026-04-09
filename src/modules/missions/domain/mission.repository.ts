@@ -30,7 +30,7 @@ export interface IMissionRepository {
   removeTeam(missionId: string, teamId: string): Promise<void>;
   addTeams(missionId: string, input: { teamIds: string[]; note?: string }): Promise<Timeline[]>;
   startMission(missionId: string): Promise<Mission>;
-  updateMissionRequestProgress(missionRequestId: string, payload: { peopleRescuedIncrement?: number; suppliesDelivered?: { supplyId: string; quantityDelivered: number }[] }): Promise<void>;
+  updateMissionRequestProgress(missionRequestId: string, payload: { peopleRescuedIncrement?: number; suppliesDelivered?: { name: string; deliveredQty: number }[] }): Promise<void>;
 
   // ─── Status Control ──────────────────────────────────────
   pauseMission(missionId: string): Promise<Mission>;

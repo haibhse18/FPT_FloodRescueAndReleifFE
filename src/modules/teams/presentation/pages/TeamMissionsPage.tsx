@@ -2,6 +2,23 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { 
+  FaClipboardList, 
+  FaTruck, 
+  FaMapMarkerAlt, 
+  FaCheckCircle, 
+  FaExclamationTriangle, 
+  FaTimesCircle, 
+  FaUndo, 
+  FaBan,
+  FaBox,
+  FaExclamationCircle,
+  FaSync,
+  FaInbox,
+  FaArrowRight,
+  FaChevronLeft,
+  FaChevronRight
+} from "react-icons/fa";
 import { GetTimelinesUseCase } from "@/modules/timelines/application/getTimelines.usecase";
 import { timelineRepository } from "@/modules/timelines/infrastructure/timeline.repository.impl";
 import { GetMissionDetailUseCase } from "@/modules/missions/application/getMissionDetail.usecase";
@@ -13,16 +30,22 @@ import type {
 import type { Mission } from "@/modules/missions/domain/mission.entity";
 import { useNotificationStore } from "@/store/useNotification.store";
 
-const STATUS_TABS: { label: string; value: TimelineStatus | "ALL" }[] = [
-  { label: "Tất cả", value: "ALL" },
-  { label: "📋 Đã phân công", value: "ASSIGNED" },
-  { label: "🚗 Đang di chuyển", value: "EN_ROUTE" },
-  { label: "📍 Tại hiện trường", value: "ON_SITE" },
-  { label: "✅ Hoàn thành", value: "COMPLETED" },
-  { label: "⚠️ Một phần", value: "PARTIAL" },
-  { label: "❌ Thất bại", value: "FAILED" },
-  { label: "🔙 Đã rút", value: "WITHDRAWN" },
-  { label: "🚫 Đã hủy", value: "CANCELLED" },
+const STATUS_TABS: { label: string; value: TimelineStatus | "ALL"; icon: React.ReactNode }[] = [
+  { label: "Tất cả", value: "ALL", icon: null },
+  { label: "Đã phân công", value: "ASSIGNED", icon: <FaClipboardList className="inline" /> },
+  { label: "Đang di chuyển", value: "EN_ROUTE", icon: <FaTruck className="inline" /> },
+  { label: "Tại hiện trường", value: "ON_SITE", icon: <FaMapMarkerAlt className="inline" /> },
+  { label: "Hoàn thành", value: "COMPLETED", icon: <FaCheckCircle className="inline" /> },
+  { label: "Một phần", value: "PARTIAL", icon: <FaExclamationTriangle className="inline" /> },
+  { label: "Thất bại", value: "FAILED", icon: <FaTimesCircle className="inline" /> },
+  { label: "Đã rút", value: "WITHDRAWN", icon: <FaUndo className="inline" /> },
+  { label: "Đã hủy", value: "CANCELLED", icon: <FaBan className="inline" /> },
+];
+
+const SORT_OPTIONS = [
+  { label: "Mới nhất", value: "newest" },
+  { label: "Cũ nhất", value: "oldest" },
+  { label: "Ưu tiên cao", value: "priority" },
 ];
 
 const TIMELINE_STATUS_CLASSES: Record<string, string> = {
@@ -60,6 +83,7 @@ export default function TeamMissionsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "priority">("newest");
 
   const fetchTimelines = useCallback(
     async (opts?: { resetPage?: boolean }) => {
@@ -74,7 +98,38 @@ export default function TeamMissionsPage() {
         }
 
         const result = await getTimelinesUseCase.execute(filters);
-        setTimelines(result.data ?? []);
+        let sortedData = result.data ?? [];
+        
+        // Client-side sorting
+        if (sortBy === "newest") {
+          sortedData = [...sortedData].sort((a, b) => 
+            new Date(b.createdAt || b.assignedAt || 0).getTime() - 
+            new Date(a.createdAt || a.assignedAt || 0).getTime()
+          );
+        } else if (sortBy === "oldest") {
+          sortedData = [...sortedData].sort((a, b) => 
+            new Date(a.createdAt || a.assignedAt || 0).getTime() - 
+            new Date(b.createdAt || b.assignedAt || 0).getTime()
+          );
+        } else if (sortBy === "priority") {
+          const statusPriority: Record<string, number> = {
+            ON_SITE: 0,
+            EN_ROUTE: 1,
+            ASSIGNED: 2,
+            PARTIAL: 3,
+            COMPLETED: 4,
+            FAILED: 5,
+            WITHDRAWN: 6,
+            CANCELLED: 7,
+          };
+          sortedData = [...sortedData].sort((a, b) => {
+            const aPriority = statusPriority[a.status] ?? 99;
+            const bPriority = statusPriority[b.status] ?? 99;
+            return aPriority - bPriority;
+          });
+        }
+        
+        setTimelines(sortedData);
         setTotalPages(result.totalPages ?? 1);
         if (opts?.resetPage) {
           setPage(1);
@@ -83,7 +138,7 @@ export default function TeamMissionsPage() {
         setLoading(false);
       }
     },
-    [activeTab, page],
+    [activeTab, page, sortBy],
   );
 
   // Fetch mission details for timelines
@@ -163,9 +218,9 @@ export default function TeamMissionsPage() {
           <button
             onClick={() => fetchTimelines()}
             disabled={loading}
-            className="px-4 py-2 rounded-lg text-sm font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 disabled:opacity-50"
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 disabled:opacity-50 flex items-center gap-2"
           >
-            {loading ? "Đang tải..." : "🔄 Làm mới"}
+            {loading ? "Đang tải..." : <><FaSync /> Làm mới</>}
           </button>
         </header>
 
@@ -174,15 +229,36 @@ export default function TeamMissionsPage() {
             <button
               key={tab.value}
               onClick={() => handleTabChange(tab.value)}
-              className={`px-4 py-2 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`px-4 py-2 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-2 ${
                 activeTab === tab.value
                   ? "bg-white text-[var(--color-primary)]"
                   : "bg-white/10 text-white/80 hover:bg-white/20"
               }`}
             >
+              {tab.icon}
               {tab.label}
             </button>
           ))}
+        </div>
+
+        {/* Sort Options */}
+        <div className="flex items-center gap-3">
+          <span className="text-white/70 text-sm font-medium">Sắp xếp:</span>
+          <div className="flex gap-2">
+            {SORT_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setSortBy(option.value as typeof sortBy)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  sortBy === option.value ?
+                    "bg-white text-[var(--color-primary)]"
+                  : "bg-white/10 text-white/80 hover:bg-white/20"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {loading ? (
@@ -191,7 +267,7 @@ export default function TeamMissionsPage() {
           </div>
         ) : timelines.length === 0 ? (
           <div className="py-16 text-center text-white/80 border border-dashed border-white/20 rounded-2xl bg-white/5">
-            <div className="text-5xl mb-3">📭</div>
+            <div className="text-5xl mb-3"><FaInbox className="inline" /></div>
             <p className="text-lg">Hiện chưa có nhiệm vụ nào được phân công.</p>
             <p className="text-sm text-white/60 mt-1">
               Khi Coordinator gán đội vào mission, nhiệm vụ sẽ xuất hiện tại đây.
@@ -216,8 +292,8 @@ export default function TeamMissionsPage() {
                 );
               }
 
-              const missionType =
-                mission.type === "RELIEF" ? "📦 Cứu trợ" : "🚨 Cứu hộ";
+              const missionTypeLabel = mission.type === "RELIEF" ? "Cứu trợ" : "Cứu hộ";
+              const missionTypeIcon = mission.type === "RELIEF" ? <FaBox className="inline" /> : <FaExclamationCircle className="inline" />;
               const coordinatorName = (
                 (mission.coordinatorId as any)?.displayName ||
                 (mission.coordinatorId as any)?.userName ||
@@ -237,8 +313,8 @@ export default function TeamMissionsPage() {
                       <span className="text-xs font-mono text-white/70">
                         {mission.code}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full text-[11px] border bg-white/5 text-white/80">
-                        {missionType}
+                      <span className="px-2 py-0.5 rounded-full text-[11px] border bg-white/5 text-white/80 flex items-center gap-1">
+                        {missionTypeIcon} {missionTypeLabel}
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[11px] border ${
@@ -263,7 +339,7 @@ export default function TeamMissionsPage() {
                   </div>
                   <div className="flex items-center justify-between md:justify-end gap-3 md:w-40 shrink-0">
                     <span className="text-white/80 text-xl md:text-2xl">
-                      →
+                      <FaArrowRight />
                     </span>
                   </div>
                 </button>
@@ -277,7 +353,7 @@ export default function TeamMissionsPage() {
                   disabled={page === 1}
                   className="px-3 py-1.5 rounded-lg bg-white/10 text-white disabled:opacity-40 hover:bg-white/20"
                 >
-                  ←
+                  <FaChevronLeft />
                 </button>
                 <span className="text-sm text-white/80">
                   {page} / {totalPages}
@@ -289,7 +365,7 @@ export default function TeamMissionsPage() {
                   disabled={page === totalPages}
                   className="px-3 py-1.5 rounded-lg bg-white/10 text-white disabled:opacity-40 hover:bg-white/20"
                 >
-                  →
+                  <FaChevronRight />
                 </button>
               </div>
             )}

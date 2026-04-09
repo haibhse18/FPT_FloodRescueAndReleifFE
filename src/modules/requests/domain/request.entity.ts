@@ -46,9 +46,18 @@ export interface GeoPoint {
 // ─── Media ───────────────────────────────────────────────
 
 export interface RequestMedia {
-  imageUrl: string;
+  publicId?: string;
+  secureUrl?: string;
+  thumbnailUrl?: string;
+  format?: string;
+  width?: number;
+  height?: number;
+  bytes?: number;
+  resourceType?: string;
   description?: string;
   uploadedAt?: string;
+  uploadedBy?: string;
+  imageUrl?: string;
 }
 
 // ─── Supply Item ─────────────────────────────────────────
@@ -77,7 +86,6 @@ export interface CoordinatorRequest {
   status: RequestStatus | string;
   requestSupplies?: RequestSupplyItem[];
   media?: RequestMedia[];
-  imageUrls?: string[];
   isDuplicated?: boolean;
   duplicatedOfRequestId?: string | null;
   isLocationVerified?: boolean;
@@ -155,7 +163,7 @@ export interface CreateOnBehalfInput {
   peopleCount?: number;
   priority?: PriorityLevel;
   requestSupplies?: RequestSupplyItem[];
-  imageUrls?: string[];
+  media?: RequestMedia[];
 }
 
 // ─── Legacy types (kept for existing citizen pages) ──────
@@ -169,6 +177,7 @@ export interface RescueRequest {
   location: string;
   description: string;
   imageUrls: string[];
+  media?: RequestMedia[];
   urgencyLevel: UrgencyLevel;
   numberOfPeople: number;
   status: string;
@@ -183,16 +192,16 @@ export interface CreateRescueRequestData {
   latitude?: number;
   longitude?: number;
   description: string;
-  imageUrls?: string[];
   priority?: string;
   peopleCount?: number;
   requestSupply?: unknown[];
-  requestSupplies?: { supplyId: string; requestedQty: number }[];
+  requestSupplies?: { name?: string; supplyId?: string; requestedQty: number }[];
   location?: string | { type?: string; coordinates: [number, number] };
   dangerType?: string;
   numberOfPeople?: number;
   urgencyLevel?: string;
   images?: string[];
+  media?: { publicId: string; secureUrl: string; uploadedAt?: Date }[];
 }
 
 export interface EmergencyRequestData {

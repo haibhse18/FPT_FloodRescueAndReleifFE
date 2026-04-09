@@ -64,6 +64,7 @@ export default function CoordinatorRequestDetailPage() {
     "verify" | "reject" | "cancel" | "close" | "set_priority" | null
   >(null);
   const [selectedPriority, setSelectedPriority] = useState<string>("Normal");
+  const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
 
   useEffect(() => {
     if (requestId) {
@@ -71,6 +72,25 @@ export default function CoordinatorRequestDetailPage() {
       fetchWarehouses();
     }
   }, [requestId]);
+
+  // Reverse geocode when request location is available but no address
+  useEffect(() => {
+    if (!request) return;
+    const lat = request.location?.coordinates[1] || request.latitude;
+    const lng = request.location?.coordinates[0] || request.longitude;
+    if (!lat || !lng) return;
+    if (request.address) {
+      setResolvedAddress(request.address);
+      return;
+    }
+    fetch(`/api/goong/reverse-geocode?lat=${lat}&lng=${lng}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const addr = data.results?.[0]?.formatted_address;
+        if (addr) setResolvedAddress(addr);
+      })
+      .catch(() => {});
+  }, [request]);
 
   const fetchRequestDetail = async () => {
     setIsLoading(true);
@@ -432,7 +452,7 @@ export default function CoordinatorRequestDetailPage() {
             <section className="bg-white/5 border border-white/10 rounded-xl p-6">
               <h2 className="text-white font-bold text-xl mb-3">📍 Vị trí & Kho gần nhất</h2>
               <p className="text-gray-300 mb-2">
-                {request.address || "Chưa có địa chỉ"}
+                {resolvedAddress || "Đang lấy địa chỉ..."}
                 {request.isLocationVerified && (
                   <span className="ml-2 text-green-400 text-sm">
                     ✓ Đã xác minh
@@ -498,31 +518,10 @@ export default function CoordinatorRequestDetailPage() {
             </section>
           )}
 
-          {/* Images */}
-          {request.imageUrls && request.imageUrls.length > 0 && (
-            <section className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h2 className="text-white font-bold text-xl mb-4">Hình ảnh</h2>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                {request.imageUrls.map((url, idx) => (
-                  <div
-                    key={idx}
-                    className="aspect-square rounded-lg overflow-hidden border-2 border-white/20"
-                  >
-                    <img
-                      src={url}
-                      alt={`Image ${idx + 1}`}
-                      className="w-full h-full object-cover hover:scale-110 transition-transform"
-                    />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
           {/* Media */}
           {request.media && request.media.length > 0 && (
             <section className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h2 className="text-white font-bold text-xl mb-4">Media</h2>
+              <h2 className="text-white font-bold text-xl mb-4">Hình ảnh</h2>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 {request.media.map((m, idx) => (
                   <div
@@ -530,9 +529,9 @@ export default function CoordinatorRequestDetailPage() {
                     className="rounded-lg overflow-hidden border-2 border-white/20"
                   >
                     <img
-                      src={m.imageUrl}
-                      alt={m.description || `Media ${idx}`}
-                      className="w-full object-cover"
+                      src={m.secureUrl || m.imageUrl}
+                      alt={m.description || `Media ${idx + 1}`}
+                      className="w-full object-cover hover:scale-110 transition-transform"
                     />
                     {m.description && (
                       <p className="text-gray-400 text-xs p-2">

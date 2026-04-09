@@ -4,27 +4,36 @@
  */
 
 export type MissionSupplyStatus = 
-  | "PENDING"
+  | "REQUESTED"
   | "ALLOCATED"
   | "FULLY_CLAIMED"
   | "RETURNED";
 
+export interface MissionSupplyMissionRef {
+  _id: string;
+  name?: string;
+  code?: string;
+  status?: string;
+  type?: string;
+  priority?: string;
+}
+
 export interface MissionSupply {
   _id: string;
-  missionId: string;
+  missionId: string | MissionSupplyMissionRef;
   supplyId: {
     _id: string;
     name: string;
     unit: string;
     category?: string;
-  };
+  } | string | null;
   warehouseId?: {
     _id: string;
     name: string;
     location?: {
       coordinates: [number, number];
     };
-  };
+  } | null;
   inventoryItemId?: string;
   plannedQty: number;
   allocatedQty: number;
@@ -37,6 +46,8 @@ export interface MissionSupply {
 }
 
 export interface GetMissionSuppliesFilter {
-  missionId: string;
-  status?: MissionSupplyStatus;
+  missionId?: string;
+  status?: MissionSupplyStatus | MissionSupplyStatus[];
+  page?: number;
+  limit?: number;
 }

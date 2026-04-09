@@ -6,6 +6,7 @@ import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
 import {
   PiChartBarBold,
+  PiClipboardTextBold,
   PiHouseLineBold,
   PiPackageBold,
   PiTruckBold,
@@ -45,6 +46,7 @@ export default function ManagerSidebar() {
   const navItems: NavItem[] = [
     { icon: <PiHouseLineBold />, label: "Tổng quan", href: "/manager-dashboard" },
     { icon: <PiPackageBold />, label: "Vật tư", href: "/manager-investory-control/equipments" },
+    { icon: <PiClipboardTextBold />, label: "Phân bổ", href: "/manager-investory-control/allocation" },
     { icon: <PiTruckBold />, label: "Phương tiện", href: "/manager-investory-control/vehicles" },
     { icon: <PiChartBarBold />, label: "Tồn kho", href: "/manager-investory-control/stock" },
   ];

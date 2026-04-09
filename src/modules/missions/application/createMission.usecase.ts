@@ -2,7 +2,7 @@ import { IMissionRepository } from "../domain/mission.repository";
 import { Mission, CreateMissionInput } from "../domain/mission.entity";
 
 /**
- * Use Case: Create Mission (status = PLANNED)
+ * Use Case: Create Mission (status = DRAFT)
  */
 export class CreateMissionUseCase {
   constructor(private missionRepository: IMissionRepository) {}

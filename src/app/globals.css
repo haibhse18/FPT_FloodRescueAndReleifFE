@@ -16,7 +16,6 @@ input[type="password"]::-webkit-textfield-decoration-container {
     display: none !important;
 }
 
-
 /* Success Popup Animation */
 @keyframes shrinkWidth {
     from {
@@ -100,43 +99,6 @@ input[type="password"]::-webkit-textfield-decoration-container {
     }
 }
 
-/* Pulse animation for team location tracking */
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 0.7;
-        transform: scale(1.1);
-    }
-}
-
-/* Smooth progress bar fill animation for stepper */
-@keyframes progressFill {
-    from {
-        transform: scaleX(0);
-    }
-    to {
-        transform: scaleX(1);
-    }
-}
-
-.stepper-progress-bar {
-    animation: progressFill 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    transform-origin: left;
-}
-
-/* Hide scrollbar for all browsers */
-.scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-    display: none;  /* Chrome, Safari and Opera */
-}
-
 @layer base {
     :root {
         --sidebar-width: 5rem;
@@ -196,11 +158,40 @@ input[type="password"]::-webkit-textfield-decoration-container {
 }
 
 @layer base {
+
+    html,
+    body {
+        min-height: 100%;
+        overscroll-behavior-y: none;
+        overscroll-behavior-x: none;
+    }
+
     * {
         @apply border-border;
     }
 
     body {
         @apply bg-background text-foreground;
+        -webkit-overflow-scrolling: touch;
     }
+}
+
+/* Custom scrollbar styling for Relief/Rescue form */
+.request-form-section::-webkit-scrollbar {
+    width: 8px;
+}
+
+.request-form-section::-webkit-scrollbar-track {
+    background: rgba(15, 47, 68, 0.5);
+    border-radius: 4px;
+}
+
+.request-form-section::-webkit-scrollbar-thumb {
+    background: rgba(255, 119, 0, 0.4);
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.request-form-section::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 119, 0, 0.6);
 }

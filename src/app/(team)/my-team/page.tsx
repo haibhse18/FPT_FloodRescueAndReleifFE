@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { FaUserSlash } from "react-icons/fa";
 import TeamMyTeamPage from "@/modules/teams/presentation/pages/TeamMyTeamPage";
 import { useAuthStore } from "@/store/useAuth.store";
 
@@ -56,7 +57,7 @@ export default function MyTeamPage() {
   if (!teamId) {
     return (
       <div className="relative z-10 p-8 pb-24 lg:pb-8 text-center">
-        <div className="text-6xl mb-4">🫥</div>
+        <div className="text-6xl mb-4 text-gray-400"><FaUserSlash className="inline" /></div>
         <p className="text-gray-300 text-lg">Bạn chưa thuộc đội nào</p>
         <p className="text-gray-400 text-sm mt-2">
           Liên hệ Coordinator để được thêm vào đội cứu hộ

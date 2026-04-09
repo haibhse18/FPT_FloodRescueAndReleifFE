@@ -13,7 +13,7 @@ export type RequestStatus =
   | "PARTIALLY_FULFILLED"
   | "CLOSED"
   | "CANCELLED";
-  // Note: FULFILLED status has been removed - backend auto-converts to CLOSED
+// Note: FULFILLED status has been removed - backend auto-converts to CLOSED
 
 export type PriorityLevel = "Critical" | "High" | "Normal";
 
@@ -91,6 +91,17 @@ export interface CoordinatorRequest {
   isLocationVerified?: boolean;
   createdAt: string | Date;
   updatedAt?: string | Date;
+  /** Combo vật tư citizen đã chọn khi gửi yêu cầu — có thể được populate bởi backend */
+  comboSupplyId?: {
+    _id: string;
+    name: string;
+    incidentType?: string;
+    description?: string;
+    supplies?: Array<{
+      supplyId: string | { _id: string; name: string; unit?: string; category?: string };
+      quantity: number;
+    }>;
+  } | string | null;
 
   // Legacy fields for backward compat
   requestId?: string;
@@ -201,6 +212,7 @@ export interface CreateRescueRequestData {
   numberOfPeople?: number;
   urgencyLevel?: string;
   images?: string[];
+  comboSupplyId?: string | null;
   media?: { publicId: string; secureUrl: string; uploadedAt?: Date }[];
 }
 

@@ -494,6 +494,53 @@ export default function CoordinatorRequestDetailPage() {
             </section>
           )}
 
+          {/* Combo Supply Citizen đã chọn */}
+          {(request as any).comboSupplyId && (
+            <section className="bg-white/5 border border-white/10 rounded-xl p-6">
+              <h2 className="text-white font-bold text-xl mb-4 flex items-center gap-2">
+                📦 Gói nhu yếu phẩm (Combo Supply)
+              </h2>
+              {typeof (request as any).comboSupplyId === "object" ? (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <span className="px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 font-bold text-sm">
+                      {(request as any).comboSupplyId.name || "Combo"}
+                    </span>
+                    {(request as any).comboSupplyId.incidentType && (
+                      <span className="text-xs text-gray-400 px-2 py-1 rounded-full bg-white/5 border border-white/10">
+                        Loại sự cố: {(request as any).comboSupplyId.incidentType}
+                      </span>
+                    )}
+                  </div>
+                  {(request as any).comboSupplyId.description && (
+                    <p className="text-gray-300 text-sm">{(request as any).comboSupplyId.description}</p>
+                  )}
+                  {Array.isArray((request as any).comboSupplyId.supplies) && (request as any).comboSupplyId.supplies.length > 0 && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 mt-2">
+                      {(request as any).comboSupplyId.supplies.map((item: any, idx: number) => {
+                        const supplyName = typeof item.supplyId === "object" ? item.supplyId?.name : item.supplyId;
+                        const supplyUnit = typeof item.supplyId === "object" ? item.supplyId?.unit : "";
+                        const supplyCategory = typeof item.supplyId === "object" ? item.supplyId?.category : "";
+                        return (
+                          <div key={idx} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg px-4 py-3">
+                            <span className="text-xl">🧴</span>
+                            <div className="flex-1">
+                              <p className="text-white text-sm font-semibold">{supplyName || `Vật tư ${idx + 1}`}</p>
+                              <p className="text-gray-400 text-xs">Số lượng: <span className="text-yellow-300 font-bold">{item.quantity}</span> {supplyUnit}</p>
+                              {supplyCategory && <p className="text-gray-500 text-xs">Danh mục: {supplyCategory}</p>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-300 font-mono text-sm">{String((request as any).comboSupplyId)}</p>
+              )}
+            </section>
+          )}
+
           {/* Supplies */}
           {request.requestSupplies && request.requestSupplies.length > 0 && (
             <section className="bg-white/5 border border-white/10 rounded-xl p-6">

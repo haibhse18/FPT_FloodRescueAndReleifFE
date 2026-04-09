@@ -6,14 +6,20 @@ import dynamic from "next/dynamic";
 import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import { CreateRescueRequestUseCase } from "@/modules/requests/application/createRescueRequest.usecase";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
+import { GetSuppliesUseCase } from "@/modules/supplies/application/getSupplies.usecase";
+import { supplyRepository } from "@/modules/supplies/infrastructure/supply.repository.impl";
 import type { Supply } from "@/modules/supplies/domain/supply.entity";
 import { useToast } from "@/hooks/use-toast";
 import { uploadClient } from "@/services/uploadClient";
+import { GetComboSuppliesUseCase } from "@/modules/supplies/application/getComboSupplies.usecase";
+import { ComboSupply } from "@/modules/supplies/domain/comboSupply.entity";
 
-// Initialize use case with repository
+// Initialize use cases with repositories
 const createRescueRequestUseCase = new CreateRescueRequestUseCase(
   requestRepository,
 );
+const getSuppliesUseCase = new GetSuppliesUseCase(supplyRepository);
+const getComboSuppliesUseCase = new GetComboSuppliesUseCase();
 
 // Dynamic import cho OpenMap để tránh SSR issues
 const OpenMap = dynamic(
@@ -297,6 +303,63 @@ export default function CitizenRequestPage() {
   const [desktopMapHeight, setDesktopMapHeight] = useState(520);
   const [isCheckingActiveRequest, setIsCheckingActiveRequest] = useState(true);
   const [activeRequestIdOnEntry, setActiveRequestIdOnEntry] = useState<string | null>(null);
+  const [availableSupplies, setAvailableSupplies] = useState<Supply[]>([]);
+  const [comboSupplies, setComboSupplies] = useState<ComboSupply[]>([]);
+  const [selectedComboId, setSelectedComboId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const fetchSupplies = async () => {
+      try {
+        const response = await getSuppliesUseCase.execute();
+        if (active && response && Array.isArray(response.data)) {
+          setAvailableSupplies(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch available supplies", error);
+      }
+    };
+    fetchSupplies();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const fetchCombos = async () => {
+      let incidentType = "Other";
+
+      if (requestType === "Rescue") {
+        const incidentTypeMap: Record<string, string> = {
+          flood: "Flood",
+          trapped: "Trapped",
+          injury: "Injured",
+          landslide: "Landslide",
+          other: "Other",
+        };
+        incidentType = incidentTypeMap[rescueRequest.dangerType] || "Other";
+      } else if (requestType === "Relief") {
+        // Map quick action → incidentType (giống RELIEF_INCIDENT_TYPE_BY_CONDITION)
+        incidentType = RELIEF_INCIDENT_TYPE_BY_CONDITION[selectedReliefQuickAction ?? ""] || "Other";
+      }
+
+      try {
+        const response = await getComboSuppliesUseCase.execute(incidentType);
+        if (response && Array.isArray(response.data)) {
+          setComboSupplies(response.data);
+          if (response.data.length > 0) {
+            setSelectedComboId(response.data[0]._id);
+          } else {
+            setSelectedComboId(null);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch combo supplies", error);
+      }
+    };
+
+    fetchCombos();
+  }, [rescueRequest.dangerType, requestType, selectedReliefQuickAction]);
 
   const reliefFamilySize = Math.max(
     RELIEF_MIN_FAMILY_MEMBERS,
@@ -813,6 +876,7 @@ export default function CitizenRequestPage() {
           type: "Point",
           coordinates: [coordinates.lon, coordinates.lat] as [number, number],
         },
+        comboSupplyId: selectedComboId,
       };
 
       // media: chỉ gửi khi có ảnh, không gửi mảng rỗng (backend validate min 1)
@@ -1009,22 +1073,37 @@ export default function CitizenRequestPage() {
     try {
       const reliefRequestSupplies = reliefSupplyPlan.totalItems
         .filter((item) => (Number(item.qty) || 0) > 0)
-        .map((item) => ({
-          name: item.label,
-          requestedQty: Number(item.qty) || 0,
-        }));
+        .map((item) => {
+          const matchedSupply = availableSupplies.find((s) => {
+            const normalizedName = normalizeText(s.name);
+            return item.keywords.some((kw) => normalizedName.includes(normalizeText(kw)));
+          });
+
+          if (matchedSupply && matchedSupply.id) {
+            return {
+              supplyId: matchedSupply.id,
+              requestedQty: Number(item.qty) || 0,
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
 
       const payload: Record<string, unknown> = {
         type: "Relief",
         incidentType: reliefIncidentType,
         description: reliefDescription,
         peopleCount: reliefFamilySize,
-        requestSupplies: reliefRequestSupplies,
         location: {
           type: "Point",
           coordinates: [coordinates.lon, coordinates.lat] as [number, number],
         },
       };
+
+      // Gửi comboSupplyId nếu citizen đã chọn
+      if (selectedComboId) {
+        payload.comboSupplyId = selectedComboId;
+      }
 
       // media: chỉ gửi khi có ảnh, không gửi mảng rỗng (backend validate min 1)
       if (uploadedImages.length > 0) {
@@ -1233,6 +1312,43 @@ export default function CitizenRequestPage() {
                     </select>
                   </div>
 
+                  {/* Gói nhu yếu phẩm đề xuất (Combo Supply) */}
+                  {comboSupplies.length > 0 && (
+                    <div className="space-y-2.5">
+                      <label className="text-sm text-white font-semibold block">Gói nhu yếu phẩm (Tuỳ chọn)</label>
+                      <div className="grid grid-cols-1 gap-2">
+                        {comboSupplies.map((combo) => (
+                          <div
+                            key={combo._id}
+                            onClick={() => setSelectedComboId(combo._id)}
+                            className={`cursor-pointer rounded-lg p-3 border-2 transition-all duration-200 ${
+                              selectedComboId === combo._id
+                                ? "bg-[#FF7700]/15 border-[#FF7700] ring-1 ring-[#FF7700]/30"
+                                : "bg-white/[0.03] border-white/10 hover:border-white/20"
+                            }`}
+                          >
+                            <div className="flex justify-between items-center mb-1">
+                              <span className={`font-bold text-xs ${selectedComboId === combo._id ? "text-[#FFD1A0]" : "text-white"}`}>
+                                {combo.name}
+                              </span>
+                              {selectedComboId === combo._id && (
+                                <span className="text-[#FF7700] text-xs font-bold">✓</span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-white/60 line-clamp-2 leading-relaxed">{combo.description}</p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {combo.supplies.map((s, idx) => (
+                                <span key={idx} className="px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-[9px] text-[#FFD6A6]/80">
+                                  {typeof s.supplyId === 'string' ? 'Vật tư' : (s.supplyId as any).name}: {s.quantity}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Số người cần hỗ trợ + Thêm ảnh */}
                   <div className="grid grid-cols-[1fr_auto] items-end gap-3">
                     <div className="space-y-2.5">
@@ -1388,7 +1504,42 @@ export default function CitizenRequestPage() {
                       ))}
                     </select>
                   </div>
-
+ {/* Gói nhu yếu phẩm đề xuất (Combo Supply) */}
+                  {comboSupplies.length > 0 && (
+                    <div className="space-y-2.5">
+                      <label className="text-sm text-white font-semibold block">Gói nhu yếu phẩm (Tuỳ chọn)</label>
+                      <div className="grid grid-cols-1 gap-2">
+                        {comboSupplies.map((combo) => (
+                          <div
+                            key={combo._id}
+                            onClick={() => setSelectedComboId(combo._id)}
+                            className={`cursor-pointer rounded-lg p-3 border-2 transition-all duration-200 ${
+                              selectedComboId === combo._id
+                                ? "bg-[#FF7700]/15 border-[#FF7700] ring-1 ring-[#FF7700]/30"
+                                : "bg-white/[0.03] border-white/10 hover:border-white/20"
+                            }`}
+                          >
+                            <div className="flex justify-between items-center mb-1">
+                              <span className={`font-bold text-xs ${selectedComboId === combo._id ? "text-[#FFD1A0]" : "text-white"}`}>
+                                {combo.name}
+                              </span>
+                              {selectedComboId === combo._id && (
+                                <span className="text-[#FF7700] text-xs font-bold">✓</span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-white/60 line-clamp-2 leading-relaxed">{combo.description}</p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {combo.supplies.map((s, idx) => (
+                                <span key={idx} className="px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-[9px] text-[#FFD6A6]/80">
+                                  {typeof s.supplyId === 'string' ? 'Vật tư' : (s.supplyId as any).name}: {s.quantity}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between gap-2">
                       <label className="text-sm text-white font-semibold block">Số thành viên gia đình *</label>

@@ -232,7 +232,7 @@ const extractComboSupplyInfo = (
   }
 
   if (supplyRef && typeof supplyRef === "object") {
-    const candidate = supplyRef as Record<string, unknown>;
+    const candidate = supplyRef as unknown as Record<string, unknown>;
     const name = typeof candidate.name === "string"
       ? candidate.name
       : `Vật phẩm ${index + 1}`;

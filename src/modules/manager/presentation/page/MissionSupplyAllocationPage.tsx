@@ -4,15 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { missionSupplyApi } from "@/modules/supplies/infrastructure/missionSupply.api";
 import type { MissionSupply } from "@/modules/supplies/domain/missionSupply.entity";
-import { warehouseRepository } from "@/modules/warehouse/infrastructure/warehouse.repository.impl";
-import type { Warehouse } from "@/modules/warehouse/domain/warehouse.entity";
 import { comboSupplyApi } from "@/modules/supplies/infrastructure/comboSupply.api";
 import type { ComboSupply } from "@/modules/supplies/domain/comboSupply.entity";
-
-interface AllocationDraft {
-  warehouseId: string;
-  allocatedQty: string;
-}
 
 const DEFAULT_LIMIT = 100;
 
@@ -50,13 +43,14 @@ const getComboLabel = (
   if (!row.comboSupplyId) return null;
 
   if (typeof row.comboSupplyId === "string") {
-    // Backend trả về raw ID — tra cứu từ comboMap
+    // Thử resolve từ comboMap
     const resolved = comboMap?.[row.comboSupplyId];
     if (resolved) {
       const type = resolved.incidentType ? ` (${resolved.incidentType})` : "";
       return `${resolved.name}${type}`;
     }
-    return null; // Ẩn nếu chưa resolve được
+    // Fallback: hiển thị ID rút gọn
+    return `Combo #${row.comboSupplyId.slice(-6)}`;
   }
 
   // Backend đã populate object
@@ -80,47 +74,42 @@ const getNeededQty = (row: MissionSupply): number => {
   );
 };
 
+const getWarehouseName = (row: MissionSupply): string => {
+  if (!row.warehouseId) return "";
+  if (typeof row.warehouseId === "string") return row.warehouseId;
+  return (row.warehouseId as any).name || "";
+};
+
+const getWarehouseId = (row: MissionSupply): string => {
+  if (!row.warehouseId) return "";
+  if (typeof row.warehouseId === "string") return row.warehouseId;
+  return (row.warehouseId as any)._id || "";
+};
+
 export default function MissionSupplyAllocationPage() {
   const [loading, setLoading] = useState(true);
-  const [allocatingId, setAllocatingId] = useState<string | null>(null);
+  const [allocatingGroupId, setAllocatingGroupId] = useState<string | null>(null);
   const [missionSupplies, setMissionSupplies] = useState<MissionSupply[]>([]);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [comboMap, setComboMap] = useState<Record<string, ComboSupply>>({});
   const [query, setQuery] = useState("");
-  const [drafts, setDrafts] = useState<Record<string, AllocationDraft>>({});
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [missionSupplyRes, warehouseRes, comboRes] = await Promise.all([
+      const [missionSupplyRes, comboRes] = await Promise.all([
         missionSupplyApi.getMissionSuppliesByQuery({
           status: "REQUESTED",
           page: 1,
           limit: DEFAULT_LIMIT,
         }),
-        warehouseRepository.getWarehouses(),
         comboSupplyApi.getComboSupplies(),
       ]);
 
-      // Build id → combo map để resolve string IDs
       const map: Record<string, ComboSupply> = {};
       (comboRes.data || []).forEach((c) => { map[c._id] = c; });
       setComboMap(map);
 
-      const supplies = missionSupplyRes.data || [];
-      // Debug: log raw fields để kiểm tra tên field số lượng từ backend
-      if (supplies.length > 0) {
-        const sample = supplies[0] as any;
-        console.log("[MissionSupply] sample row fields:", {
-          plannedQty: sample.plannedQty,
-          requestedQty: sample.requestedQty,
-          quantity: sample.quantity,
-          qty: sample.qty,
-          _raw: sample,
-        });
-      }
-      setMissionSupplies(supplies);
-      setWarehouses(warehouseRes.warehouses || []);
+      setMissionSupplies(missionSupplyRes.data || []);
     } catch (error) {
       console.error("Failed to load manager allocation data:", error);
       toast.error("Không thể tải danh sách vật tư chờ phân bổ");
@@ -159,58 +148,37 @@ export default function MissionSupplyAllocationPage() {
     return Object.values(groups);
   }, [filteredRows]);
 
-  const updateDraft = (missionSupplyId: string, patch: Partial<AllocationDraft>) => {
-    setDrafts((prev) => {
-      const current = prev[missionSupplyId] || { warehouseId: "", allocatedQty: "" };
-      return {
-        ...prev,
-        [missionSupplyId]: {
-          ...current,
-          ...patch,
-        },
-      };
-    });
-  };
+  const handleAllocateAll = async (missionGroup: MissionSupply[]) => {
+    const missionId = getMissionId(missionGroup[0]);
 
-  const handleAllocate = async (row: MissionSupply) => {
-    const missionSupplyId = row._id;
-    const draft = drafts[missionSupplyId];
-    const allocatedQty = Number(draft?.allocatedQty || 0);
-
-    if (!draft?.warehouseId) {
-      toast.error("Vui lòng chọn kho trước khi phân bổ");
-      return;
-    }
-    if (!Number.isFinite(allocatedQty) || allocatedQty <= 0) {
-      toast.error("Số lượng phân bổ phải lớn hơn 0");
-      return;
-    }
-    if (allocatedQty > getNeededQty(row)) {
-      toast.error("Số lượng phân bổ không được vượt quá nhu cầu");
+    // Kiểm tra tất cả supply đã có warehouse chưa
+    const missingWarehouse = missionGroup.find((row) => !getWarehouseId(row));
+    if (missingWarehouse) {
+      toast.error(
+        `Vật tư "${getSupplyName(missingWarehouse)}" chưa được đội chỉ định kho. Vui lòng kiểm tra lại.`
+      );
       return;
     }
 
-    setAllocatingId(missionSupplyId);
+    setAllocatingGroupId(missionId);
     try {
-      // Gọi đúng endpoint: PATCH /mission-supplies/:id/allocate
-      await missionSupplyApi.allocateMissionSupply(missionSupplyId, {
-        warehouseId: draft.warehouseId,
-        allocatedQty,
-        status: "ALLOCATED",
-      });
+      await Promise.all(
+        missionGroup.map((row) =>
+          missionSupplyApi.allocateMissionSupply(row._id, {
+            warehouseId: getWarehouseId(row),
+            allocatedQty: getNeededQty(row),
+            status: "ALLOCATED",
+          })
+        )
+      );
 
-      toast.success(`Đã phân bổ ${allocatedQty} ${getSupplyUnit(row)} ${getSupplyName(row)}`);
-      setDrafts((prev) => {
-        const next = { ...prev };
-        delete next[missionSupplyId];
-        return next;
-      });
+      toast.success(`Đã phân bổ tất cả vật tư cho mission ${getMissionLabel(missionGroup[0])}`);
       await fetchData();
     } catch (error: any) {
-      console.error("Allocate failed:", error);
+      console.error("Allocate all failed:", error);
       toast.error(error?.response?.data?.message || "Phân bổ thất bại");
     } finally {
-      setAllocatingId(null);
+      setAllocatingGroupId(null);
     }
   };
 
@@ -219,7 +187,9 @@ export default function MissionSupplyAllocationPage() {
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
         <h1 className="text-2xl font-bold text-gray-900">Phân bổ vật tư theo mission</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Danh sách vật tư ở trạng thái <span className="font-semibold text-amber-600">REQUESTED</span> (từ combo supply đội đã chọn) chờ Manager phân bổ kho.
+          Danh sách vật tư ở trạng thái{" "}
+          <span className="font-semibold text-amber-600">REQUESTED</span> (từ combo supply đội đã
+          chọn) chờ Manager phân bổ kho.
         </p>
       </div>
 
@@ -246,7 +216,7 @@ export default function MissionSupplyAllocationPage() {
           <div className="py-16 text-center text-gray-500">Không có vật tư chờ phân bổ</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px]">
+            <table className="w-full min-w-[900px]">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr className="text-left text-sm text-gray-600">
                   <th className="px-4 py-3 font-semibold">Mission</th>
@@ -262,17 +232,25 @@ export default function MissionSupplyAllocationPage() {
                 {groupedMissions.map((missionGroup) => {
                   const firstRow = missionGroup[0];
                   const comboLabel = getComboLabel(firstRow, comboMap);
+                  const missionId = getMissionId(firstRow);
+                  const isAllocating = allocatingGroupId === missionId;
+                  // Kho chung cho cả group — lấy từ firstRow
+                  const groupWarehouseName = getWarehouseName(firstRow);
 
                   return (
-                    <React.Fragment key={getMissionId(firstRow) || Math.random()}>
+                    <React.Fragment key={missionId || Math.random()}>
                       {missionGroup.map((row, index) => {
-                        const draft = drafts[row._id] || { warehouseId: "", allocatedQty: "" };
                         const planned = getNeededQty(row);
                         const supplyUnit = getSupplyUnit(row);
 
                         return (
-                          <tr key={row._id} className={`${index === 0 ? 'border-t border-gray-200' : ''} hover:bg-gray-50/50 transition-colors`}>
-                            {/* Mission — span toàn bộ supplies trong group */}
+                          <tr
+                            key={row._id}
+                            className={`${
+                              index === 0 ? "border-t border-gray-200" : ""
+                            } hover:bg-gray-50/50 transition-colors`}
+                          >
+                            {/* Mission — rowspan toàn bộ supplies trong group */}
                             {index === 0 && (
                               <td
                                 rowSpan={missionGroup.length}
@@ -282,11 +260,11 @@ export default function MissionSupplyAllocationPage() {
                               </td>
                             )}
 
-                            {/* Combo Supply — chỉ hiển thị ở hàng đầu của group */}
+                            {/* Combo Supply — rowspan, hiển thị ở hàng đầu của group */}
                             {index === 0 && (
                               <td
                                 rowSpan={missionGroup.length}
-                                className="px-4 py-4 align-top border-r border-gray-100 w-[180px]"
+                                className="px-4 py-4 align-top border-r border-gray-100 w-[190px]"
                               >
                                 {comboLabel ? (
                                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
@@ -298,48 +276,57 @@ export default function MissionSupplyAllocationPage() {
                               </td>
                             )}
 
+                            {/* Tên vật tư */}
                             <td className="px-4 py-4 text-sm text-gray-800 align-middle">
                               <span className="font-medium">{getSupplyName(row)}</span>
                               <div className="text-xs text-gray-400 mt-0.5 font-mono">
                                 {getSupplyId(row).slice(-8)}
                               </div>
                             </td>
+
+                            {/* Nhu cầu */}
                             <td className="px-4 py-4 text-sm font-mono text-gray-800 align-middle">
                               {planned} {supplyUnit}
                             </td>
-                            <td className="px-4 py-4 align-middle">
-                              <select
-                                value={draft.warehouseId}
-                                onChange={(e) => updateDraft(row._id, { warehouseId: e.target.value })}
-                                className="w-full min-w-[200px] px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 bg-white"
+
+                            {/* Kho chung cho group — rowspan, chỉ hiện ở hàng đầu */}
+                            {index === 0 && (
+                              <td
+                                rowSpan={missionGroup.length}
+                                className="px-4 py-4 align-middle"
                               >
-                                <option value="">Chọn kho...</option>
-                                {warehouses.map((warehouse) => (
-                                  <option key={warehouse._id} value={warehouse._id}>
-                                    {warehouse.name}
-                                  </option>
-                                ))}
-                              </select>
+                                {groupWarehouseName ? (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">
+                                    🏭 {groupWarehouseName}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-red-400 italic">
+                                    Chưa chỉ định kho
+                                  </span>
+                                )}
+                              </td>
+                            )}
+
+                            {/* Số lượng cấp = nhu cầu (read-only) */}
+                            <td className="px-4 py-4 text-sm font-mono font-semibold text-gray-800 align-middle">
+                              {planned} {supplyUnit}
                             </td>
-                            <td className="px-4 py-4 align-middle">
-                              <input
-                                type="number"
-                                min={1}
-                                max={planned || undefined}
-                                value={draft.allocatedQty}
-                                onChange={(e) => updateDraft(row._id, { allocatedQty: e.target.value })}
-                                className="w-28 px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 bg-white"
-                              />
-                            </td>
-                            <td className="px-4 py-4 align-middle">
-                              <button
-                                onClick={() => handleAllocate(row)}
-                                disabled={allocatingId === row._id}
-                                className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 transition-colors shadow-sm"
+
+                            {/* Nút "Phân bổ tất cả" — rowspan, chỉ hiện ở hàng đầu của group */}
+                            {index === 0 && (
+                              <td
+                                rowSpan={missionGroup.length}
+                                className="px-4 py-4 align-middle"
                               >
-                                {allocatingId === row._id ? "Đang phân bổ..." : "Phân bổ"}
-                              </button>
-                            </td>
+                                <button
+                                  onClick={() => handleAllocateAll(missionGroup)}
+                                  disabled={isAllocating}
+                                  className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 transition-colors shadow-sm whitespace-nowrap"
+                                >
+                                  {isAllocating ? "Đang phân bổ..." : "Phân bổ tất cả"}
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         );
                       })}

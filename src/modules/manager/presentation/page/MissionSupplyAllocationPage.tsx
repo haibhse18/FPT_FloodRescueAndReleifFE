@@ -6,6 +6,8 @@ import { missionSupplyApi } from "@/modules/supplies/infrastructure/missionSuppl
 import type { MissionSupply } from "@/modules/supplies/domain/missionSupply.entity";
 import { warehouseRepository } from "@/modules/warehouse/infrastructure/warehouse.repository.impl";
 import type { Warehouse } from "@/modules/warehouse/domain/warehouse.entity";
+import { comboSupplyApi } from "@/modules/supplies/infrastructure/comboSupply.api";
+import type { ComboSupply } from "@/modules/supplies/domain/comboSupply.entity";
 
 interface AllocationDraft {
   warehouseId: string;
@@ -41,9 +43,23 @@ const getSupplyUnit = (row: MissionSupply): string => {
   return row.supplyId?.unit || "";
 };
 
-const getComboLabel = (row: MissionSupply): string | null => {
+const getComboLabel = (
+  row: MissionSupply,
+  comboMap?: Record<string, ComboSupply>
+): string | null => {
   if (!row.comboSupplyId) return null;
-  if (typeof row.comboSupplyId === "string") return row.comboSupplyId;
+
+  if (typeof row.comboSupplyId === "string") {
+    // Backend trả về raw ID — tra cứu từ comboMap
+    const resolved = comboMap?.[row.comboSupplyId];
+    if (resolved) {
+      const type = resolved.incidentType ? ` (${resolved.incidentType})` : "";
+      return `${resolved.name}${type}`;
+    }
+    return null; // Ẩn nếu chưa resolve được
+  }
+
+  // Backend đã populate object
   const name = row.comboSupplyId.name || "Combo";
   const type = row.comboSupplyId.incidentType ? ` (${row.comboSupplyId.incidentType})` : "";
   return `${name}${type}`;
@@ -69,20 +85,27 @@ export default function MissionSupplyAllocationPage() {
   const [allocatingId, setAllocatingId] = useState<string | null>(null);
   const [missionSupplies, setMissionSupplies] = useState<MissionSupply[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [comboMap, setComboMap] = useState<Record<string, ComboSupply>>({});
   const [query, setQuery] = useState("");
   const [drafts, setDrafts] = useState<Record<string, AllocationDraft>>({});
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [missionSupplyRes, warehouseRes] = await Promise.all([
+      const [missionSupplyRes, warehouseRes, comboRes] = await Promise.all([
         missionSupplyApi.getMissionSuppliesByQuery({
           status: "REQUESTED",
           page: 1,
           limit: DEFAULT_LIMIT,
         }),
         warehouseRepository.getWarehouses(),
+        comboSupplyApi.getComboSupplies(),
       ]);
+
+      // Build id → combo map để resolve string IDs
+      const map: Record<string, ComboSupply> = {};
+      (comboRes.data || []).forEach((c) => { map[c._id] = c; });
+      setComboMap(map);
 
       const supplies = missionSupplyRes.data || [];
       // Debug: log raw fields để kiểm tra tên field số lượng từ backend
@@ -117,14 +140,14 @@ export default function MissionSupplyAllocationPage() {
     return missionSupplies.filter((row) => {
       const missionLabel = getMissionLabel(row).toLowerCase();
       const supplyName = getSupplyName(row).toLowerCase();
-      const comboLabel = (getComboLabel(row) || "").toLowerCase();
+      const comboLabel = (getComboLabel(row, comboMap) || "").toLowerCase();
       return (
         missionLabel.includes(normalized) ||
         supplyName.includes(normalized) ||
         comboLabel.includes(normalized)
       );
     });
-  }, [missionSupplies, query]);
+  }, [missionSupplies, query, comboMap]);
 
   const groupedMissions = useMemo(() => {
     const groups: Record<string, MissionSupply[]> = {};
@@ -238,7 +261,7 @@ export default function MissionSupplyAllocationPage() {
               <tbody className="divide-y divide-gray-100">
                 {groupedMissions.map((missionGroup) => {
                   const firstRow = missionGroup[0];
-                  const comboLabel = getComboLabel(firstRow);
+                  const comboLabel = getComboLabel(firstRow, comboMap);
 
                   return (
                     <React.Fragment key={getMissionId(firstRow) || Math.random()}>

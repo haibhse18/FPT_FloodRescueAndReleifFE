@@ -129,7 +129,38 @@ const normalizeText = (value: string) =>
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
+
+const EXCLUDED_CIVILIAN_COMBO_KEYWORDS = [
+  "bo cuu ho duong thuy chuyen dung",
+  "bo tim kiem cuu nan dem",
+  "bo cuu ho",
+  "tim kiem cuu nan",
+  "den pin led",
+  "den pin",
+  "pin aa",
+  "dao da nang",
+  "ung cao su",
+];
+
+const isAllowedForCitizenRelief = (combo: ComboSupply): boolean => {
+  const comboText = normalizeText(`${combo.name || ""} ${combo.description || ""}`);
+  const supplyText = (combo.supplies || [])
+    .map((item) => {
+      if (typeof item?.supplyId === "string") return item.supplyId;
+      if (item?.supplyId && typeof item.supplyId === "object") {
+        const supply = item.supplyId as unknown as Record<string, unknown>;
+        if (typeof supply.name === "string") return supply.name;
+      }
+      return "";
+    })
+    .join(" ");
+
+  const compositeText = normalizeText(`${comboText} ${supplyText}`);
+  return !EXCLUDED_CIVILIAN_COMBO_KEYWORDS.some((keyword) => compositeText.includes(keyword));
+};
 
 const RESCUE_AUTO_LINE_PREFIXES = ["Tình trạng ưu tiên:", "Thuốc cần yêu cầu:"];
 
@@ -656,7 +687,8 @@ export default function CitizenRequestPage() {
             : []);
         const combos = rawCombos
           .filter((combo): combo is ComboSupply => !!combo && typeof combo === "object")
-          .filter((combo) => combo?.isActive !== false);
+          .filter((combo) => combo?.isActive !== false)
+          .filter(isAllowedForCitizenRelief);
 
         if (cancelled) return;
 

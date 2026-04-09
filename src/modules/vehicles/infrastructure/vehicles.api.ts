@@ -46,4 +46,12 @@ export const vehicleApi = {
     return response.data;
   },
 
+  /**
+   * PATCH /vehicles/:id/assign-mission
+   * Assign a vehicle to a specific mission
+   */
+  assignVehicleToMission: async (vehicleId: string, missionId: string): Promise<void> => {
+    await axiosInstance.patch(`/vehicles/${vehicleId}/assign-mission`, { missionId });
+  },
+
 };

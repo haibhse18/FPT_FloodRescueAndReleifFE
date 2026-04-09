@@ -13,10 +13,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const apiKey = process.env.NEXT_PUBLIC_GOONGMAP_API_KEY;
+  const apiKey =
+    process.env.GOONGMAP_API_KEY || process.env.NEXT_PUBLIC_GOONGMAP_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: "Goong API key not configured" },
+      { error: "Map service is temporarily unavailable" },
       { status: 500 }
     );
   }

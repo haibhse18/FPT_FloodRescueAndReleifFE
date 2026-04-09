@@ -2,21 +2,21 @@
 
 import { useState } from "react";
 import { Modal } from "@/shared/ui/components/Modal";
-import { 
-  PiUserBold, 
-  PiPhoneBold, 
-  PiSirenBold, 
-  PiMapPinBold, 
-  PiUsersBold, 
+import {
+  PiUserBold,
+  PiPhoneBold,
+  PiSirenBold,
+  PiMapPinBold,
+  PiUsersBold,
   PiWarningBold,
   PiNotePencilBold
 } from "react-icons/pi";
 import { FiPackage } from "react-icons/fi";
-import { 
-  RequestType, 
-  IncidentType, 
-  PriorityLevel, 
-  CreateOnBehalfInput 
+import {
+  RequestType,
+  IncidentType,
+  PriorityLevel,
+  CreateOnBehalfInput
 } from "../../domain/request.entity";
 
 interface CreateOnBehalfModalProps {
@@ -89,7 +89,7 @@ export default function CreateOnBehalfModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Tạo yêu cầu hộ Citizen"
+      title="Tạo yêu cầu Citizen"
       icon="🆘"
       size="lg"
     >

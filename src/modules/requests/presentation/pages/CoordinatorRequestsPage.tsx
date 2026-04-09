@@ -118,7 +118,7 @@ export default function CoordinatorRequestsPage() {
 
       const result = await requestRepository.getAllRequests(filters);
       let sortedData = result.data || [];
-      
+
       // Client-side sorting
       if (sortBy === "newest") {
         sortedData = [...sortedData].sort((a, b) => {
@@ -140,7 +140,7 @@ export default function CoordinatorRequestsPage() {
           return aPriority - bPriority;
         });
       }
-      
+
       setRequests(sortedData);
       setTotalPages(result.totalPages || 1);
       setTotal(result.total || 0);
@@ -266,7 +266,7 @@ export default function CoordinatorRequestsPage() {
               className="flex-shrink-0 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap"
             >
               <FiPlus className="text-base" />
-              <span>Tạo hộ</span>
+              <span>Tạo yêu cầu</span>
             </button>
           </div>
         </div>
@@ -293,9 +293,8 @@ export default function CoordinatorRequestsPage() {
         {/* ── Right: Request list (collapsible) ── */}
         <div
           style={{ width: sidebarOpen ? 380 : 0 }}
-          className={`flex-shrink-0 flex flex-col bg-[#0d1e2c] transition-[width] duration-300 ease-in-out overflow-hidden ${
-            sidebarOpen ? "border-l border-white/10 pointer-events-auto" : "pointer-events-none"
-          }`}
+          className={`flex-shrink-0 flex flex-col bg-[#0d1e2c] transition-[width] duration-300 ease-in-out overflow-hidden ${sidebarOpen ? "border-l border-white/10 pointer-events-auto" : "pointer-events-none"
+            }`}
         >
 
           {/* Panel header: sort only */}
@@ -308,11 +307,10 @@ export default function CoordinatorRequestsPage() {
                   <button
                     key={option.value}
                     onClick={() => setSortBy(option.value as typeof sortBy)}
-                    className={`px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
-                      sortBy === option.value
+                    className={`px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${sortBy === option.value
                         ? "bg-[#FF7700] text-white"
                         : "bg-white/5 text-gray-300 hover:bg-white/10"
-                    }`}
+                      }`}
                   >
                     {option.label}
                   </button>
@@ -380,11 +378,10 @@ export default function CoordinatorRequestsPage() {
                       <div
                         key={request._id}
                         ref={(el) => { cardRefs.current[request._id] = el; }}
-                        className={`rounded-xl border transition-all duration-200 overflow-hidden ${
-                          isSelected
+                        className={`rounded-xl border transition-all duration-200 overflow-hidden ${isSelected
                             ? "border-[#FF7700] bg-[#FF7700]/10 shadow-lg shadow-[#FF7700]/20"
                             : "border-white/10 bg-white/5 hover:bg-white/8 hover:border-white/20"
-                        }`}
+                          }`}
                       >
                         {/* Card click area → focus map */}
                         <button
@@ -400,9 +397,8 @@ export default function CoordinatorRequestsPage() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                                 <span
-                                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-bold flex-shrink-0 ${
-                                    PRIORITY_COLORS[request.priority] || PRIORITY_COLORS.Normal
-                                  }`}
+                                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-bold flex-shrink-0 ${PRIORITY_COLORS[request.priority] || PRIORITY_COLORS.Normal
+                                    }`}
                                 >
                                   <span className={`w-1.5 h-1.5 rounded-full ${PRIORITY_DOTS[request.priority] || "bg-blue-500"}`} />
                                   {PRIORITY_LABELS[request.priority] || request.priority}
@@ -422,9 +418,8 @@ export default function CoordinatorRequestsPage() {
                             </div>
                             {/* Status badge */}
                             <span
-                              className={`flex-shrink-0 px-2 py-0.5 rounded text-xs font-bold border ${
-                                STATUS_COLORS[request.status] || STATUS_COLORS.SUBMITTED
-                              }`}
+                              className={`flex-shrink-0 px-2 py-0.5 rounded text-xs font-bold border ${STATUS_COLORS[request.status] || STATUS_COLORS.SUBMITTED
+                                }`}
                             >
                               {request.status}
                             </span>

@@ -69,7 +69,7 @@ const PRIORITY_OPTIONS = [
 const SOURCE_OPTIONS = [
   { label: "Tất cả nguồn", value: "ALL" },
   { label: "Citizen (Dân gửi)", value: "CITIZEN" },
-  { label: "Coordinator (Tạo hộ)", value: "COORDINATOR" },
+  { label: "Coordinator (Tạo yêu cầu)", value: "COORDINATOR" },
 ];
 
 const STATUS_LABEL: Record<string, string> = Object.fromEntries(
@@ -487,9 +487,8 @@ export default function GoongCoordinatorMap({
                 setShowSourceDropdown(false);
                 setShowLayerPanel(false);
               }}
-              className={`flex items-center gap-1.5 bg-[#0d2233]/90 backdrop-blur-sm border text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-lg hover:border-[#FF7700]/60 transition-colors ${
-                filterStatus !== "ALL" ? "border-[#FF7700]" : "border-white/20"
-              }`}
+              className={`flex items-center gap-1.5 bg-[#0d2233]/90 backdrop-blur-sm border text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-lg hover:border-[#FF7700]/60 transition-colors ${filterStatus !== "ALL" ? "border-[#FF7700]" : "border-white/20"
+                }`}
             >
               <FiFilter className="text-sm" />
               <span>Trạng thái{filterStatus !== "ALL" ? `: ${STATUS_LABEL[filterStatus] ?? filterStatus}` : ""}</span>
@@ -506,9 +505,8 @@ export default function GoongCoordinatorMap({
                       setShowStatusDropdown(false);
                       onFilterChange?.(next, filterPriority, filterSource);
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                      filterStatus === opt.value ? "text-[#FF7700] font-bold bg-[#FF7700]/10" : "text-white"
-                    }`}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${filterStatus === opt.value ? "text-[#FF7700] font-bold bg-[#FF7700]/10" : "text-white"
+                      }`}
                   >
                     {opt.label}
                   </button>
@@ -526,9 +524,8 @@ export default function GoongCoordinatorMap({
                 setShowSourceDropdown(false);
                 setShowLayerPanel(false);
               }}
-              className={`flex items-center gap-1.5 bg-[#0d2233]/90 backdrop-blur-sm border text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-lg hover:border-[#FF7700]/60 transition-colors ${
-                filterPriority !== "ALL" ? "border-[#FF7700]" : "border-white/20"
-              }`}
+              className={`flex items-center gap-1.5 bg-[#0d2233]/90 backdrop-blur-sm border text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-lg hover:border-[#FF7700]/60 transition-colors ${filterPriority !== "ALL" ? "border-[#FF7700]" : "border-white/20"
+                }`}
             >
               <PiTargetBold className="text-sm" />
               <span>Ưu tiên{filterPriority !== "ALL" ? `: ${PRIORITY_LABEL[filterPriority] ?? filterPriority}` : ""}</span>
@@ -545,9 +542,8 @@ export default function GoongCoordinatorMap({
                       setShowPriorityDropdown(false);
                       onFilterChange?.(filterStatus, next, filterSource);
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                      filterPriority === opt.value ? "text-[#FF7700] font-bold bg-[#FF7700]/10" : "text-white"
-                    }`}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${filterPriority === opt.value ? "text-[#FF7700] font-bold bg-[#FF7700]/10" : "text-white"
+                      }`}
                   >
                     {opt.label}
                   </button>
@@ -565,9 +561,8 @@ export default function GoongCoordinatorMap({
                 setShowPriorityDropdown(false);
                 setShowLayerPanel(false);
               }}
-              className={`flex items-center gap-1.5 bg-[#0d2233]/90 backdrop-blur-sm border text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-lg hover:border-[#FF7700]/60 transition-colors ${
-                filterSource !== "ALL" ? "border-[#FF7700]" : "border-white/20"
-              }`}
+              className={`flex items-center gap-1.5 bg-[#0d2233]/90 backdrop-blur-sm border text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-lg hover:border-[#FF7700]/60 transition-colors ${filterSource !== "ALL" ? "border-[#FF7700]" : "border-white/20"
+                }`}
             >
               <PiUserBold className="text-sm" />
               <span>Nguồn{filterSource !== "ALL" ? `: ${SOURCE_LABEL[filterSource] ?? filterSource}` : ""}</span>
@@ -584,9 +579,8 @@ export default function GoongCoordinatorMap({
                       setShowSourceDropdown(false);
                       onFilterChange?.(filterStatus, filterPriority, next);
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                      filterSource === opt.value ? "text-[#FF7700] font-bold bg-[#FF7700]/10" : "text-white"
-                    }`}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${filterSource === opt.value ? "text-[#FF7700] font-bold bg-[#FF7700]/10" : "text-white"
+                      }`}
                   >
                     {opt.label}
                   </button>

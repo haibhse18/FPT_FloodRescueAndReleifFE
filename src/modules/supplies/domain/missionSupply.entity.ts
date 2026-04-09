@@ -34,6 +34,12 @@ export interface MissionSupply {
       coordinates: [number, number];
     };
   } | null;
+  /** Combo vật tư được chọn bởi đội khi chấp nhận mission */
+  comboSupplyId?: {
+    _id: string;
+    name: string;
+    incidentType?: string;
+  } | string | null;
   inventoryItemId?: string;
   plannedQty: number;
   allocatedQty: number;

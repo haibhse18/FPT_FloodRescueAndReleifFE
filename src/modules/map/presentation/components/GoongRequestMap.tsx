@@ -22,6 +22,7 @@ export interface GoongRequestMapProps {
   className?: string;
   height?: string;
   allowLocationUpdate?: boolean;
+  showSearchBox?: boolean;
 }
 
 export default function GoongRequestMap({
@@ -31,6 +32,7 @@ export default function GoongRequestMap({
   className = "w-full",
   height = "400px",
   allowLocationUpdate = false,
+  showSearchBox = false,
 }: GoongRequestMapProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
@@ -97,35 +99,61 @@ export default function GoongRequestMap({
 
     // Add request marker
     const priority = (request.priority as Priority) || "Normal";
-    const markerElement = createRequestMarker(priority);
+    const innerElement = createRequestMarker(priority);
+
+    // Wrap in a container - Goong JS manages the wrapper's position.
+    // pointer-events: none on wrapper prevents Goong canvas from receiving
+    // click events (which triggers _update() re-layout on all markers).
+    // pointer-events: all on innerElement allows clicks to be captured.
+    const markerWrapper = document.createElement("div");
+    markerWrapper.style.pointerEvents = "none";
+    innerElement.style.pointerEvents = "all";
+    innerElement.style.cursor = "pointer";
+    markerWrapper.appendChild(innerElement);
+
+    // Create popup completely independent from marker to prevent marker re-layout
+    const popup = new goongjs.Popup({ offset: 25, closeButton: true }).setHTML(
+      createRequestPopupHTML({
+        _id: request._id,
+        priority: request.priority,
+        peopleCount: request.peopleCount,
+        address: request.address,
+        description: request.description,
+        status: request.status,
+      })
+    );
 
     const marker = new goongjs.Marker({
-      element: markerElement,
+      element: markerWrapper,
       anchor: "bottom",
       draggable: allowLocationUpdate,
     })
       .setLngLat([requestLng, requestLat])
-      .setPopup(
-        new goongjs.Popup({ offset: 25 }).setHTML(
-          createRequestPopupHTML({
-            _id: request._id,
-            priority: request.priority,
-            peopleCount: request.peopleCount,
-            address: request.address,
-            description: request.description,
-            status: request.status,
-          })
-        )
-      )
       .addTo(map);
+
+    // Manage popup independently - do NOT use setPopup/togglePopup
+    // to avoid Goong JS triggering _update() on all markers
+    let popupOpen = false;
+    innerElement.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      if (popupOpen) {
+        popup.remove();
+        popupOpen = false;
+      } else {
+        popup.setLngLat([requestLng, requestLat]).addTo(map);
+        popupOpen = true;
+      }
+    });
 
     // Handle drag events if location update is allowed
     if (allowLocationUpdate) {
-      markerElement.addEventListener("mousedown", () => {
+      innerElement.addEventListener("mousedown", () => {
         setIsDragging(true);
       });
 
-      markerElement.addEventListener("mouseup", () => {
+      innerElement.addEventListener("mouseup", () => {
         setTimeout(() => {
           setIsDragging(false);
           const lngLat = marker.getLngLat();
@@ -214,14 +242,12 @@ export default function GoongRequestMap({
 
     const map = mapRef.current;
 
-    // Fly to selected location
     map.flyTo({
       center: [place.lng, place.lat],
       zoom: 15,
       duration: 1500,
     });
 
-    // Update marker position if location update is allowed
     if (allowLocationUpdate && requestMarkerRef.current) {
       requestMarkerRef.current.setLngLat([place.lng, place.lat]);
       if (onLocationUpdate) {
@@ -232,8 +258,8 @@ export default function GoongRequestMap({
 
   return (
     <div className={className}>
-      {/* Search Box */}
-      {allowLocationUpdate && (
+      {/* Search Box - only shown when showSearchBox is explicitly enabled */}
+      {showSearchBox && (
         <div className="mb-4">
           <SearchBox
             onPlaceSelect={handleSearchSelect}

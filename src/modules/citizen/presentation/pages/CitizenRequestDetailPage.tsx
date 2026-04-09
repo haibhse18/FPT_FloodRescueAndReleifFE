@@ -408,13 +408,12 @@ export default function CitizenRequestDetailPage({ id }: Props) {
     const currentStep = meta.step;
 
     const shortId = (request._id || request.requestId || request.id || "").slice(-8).toUpperCase();
-    // Images: backend stores as imageUrls[] or in requestMedia[].url
+    // Images: new Cloudinary architecture uses media[].secureUrl
     const images: string[] =
-        request.imageUrls?.length > 0 ? request.imageUrls :
-            request.images?.length > 0 ? request.images :
-                Array.isArray(request.requestMedia)
-                    ? (request.requestMedia as any[]).map((m) => m?.url || m?.fileUrl || m?.path || (typeof m === "string" ? m : "")).filter(Boolean)
-                    : [];
+        Array.isArray(request.media) && request.media.length > 0
+            ? (request.media as any[]).map((m) => m?.secureUrl || m?.imageUrl || "").filter(Boolean)
+            : request.images?.length > 0 ? request.images
+            : [];
 
     // Parse location: backend trả về GeoJSON { type:"Point", coordinates:[lon,lat] }
     const parsedLoc = (() => {
@@ -596,6 +595,48 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                         </span>
                     </div>
                 </div>
+
+                {/* Combo Supply đã chọn */}
+                {request.comboSupplyId && (
+                    <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl p-5 lg:p-6 space-y-3">
+                        <p className="text-gray-400 text-sm font-bold uppercase tracking-wider inline-flex items-center gap-1.5">
+                            📦 Gói nhu yếu phẩm đã chọn
+                        </p>
+                        {typeof request.comboSupplyId === "object" && request.comboSupplyId !== null ? (
+                            <div className="space-y-2">
+                                <div className="flex flex-wrap gap-2 items-center">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 font-bold text-sm">
+                                        {request.comboSupplyId.name || "Combo"}
+                                    </span>
+                                    {request.comboSupplyId.incidentType && (
+                                        <span className="text-xs text-gray-400 px-2 py-1 rounded-full bg-white/5 border border-white/10">
+                                            {request.comboSupplyId.incidentType}
+                                        </span>
+                                    )}
+                                </div>
+                                {Array.isArray(request.comboSupplyId.supplies) && request.comboSupplyId.supplies.length > 0 && (
+                                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {request.comboSupplyId.supplies.map((item: any, idx: number) => {
+                                            const supplyName = typeof item.supplyId === "object" ? item.supplyId?.name : item.supplyId;
+                                            const supplyUnit = typeof item.supplyId === "object" ? item.supplyId?.unit : "";
+                                            return (
+                                                <div key={idx} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+                                                    <span className="text-lg">🧴</span>
+                                                    <div>
+                                                        <p className="text-white text-sm font-semibold">{supplyName || `Vật tư ${idx + 1}`}</p>
+                                                        <p className="text-gray-400 text-xs">Số lượng: {item.quantity} {supplyUnit}</p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-gray-300 text-sm font-mono">{String(request.comboSupplyId)}</p>
+                        )}
+                    </div>
+                )}
 
                 {/* Description */}
                 {request.description && (

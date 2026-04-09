@@ -64,6 +64,7 @@ export default function CoordinatorRequestDetailPage() {
     "verify" | "reject" | "cancel" | "close" | "set_priority" | null
   >(null);
   const [selectedPriority, setSelectedPriority] = useState<string>("Normal");
+  const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
 
   useEffect(() => {
     if (requestId) {
@@ -71,6 +72,25 @@ export default function CoordinatorRequestDetailPage() {
       fetchWarehouses();
     }
   }, [requestId]);
+
+  // Reverse geocode when request location is available but no address
+  useEffect(() => {
+    if (!request) return;
+    const lat = request.location?.coordinates[1] || request.latitude;
+    const lng = request.location?.coordinates[0] || request.longitude;
+    if (!lat || !lng) return;
+    if (request.address) {
+      setResolvedAddress(request.address);
+      return;
+    }
+    fetch(`/api/goong/reverse-geocode?lat=${lat}&lng=${lng}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const addr = data.results?.[0]?.formatted_address;
+        if (addr) setResolvedAddress(addr);
+      })
+      .catch(() => {});
+  }, [request]);
 
   const fetchRequestDetail = async () => {
     setIsLoading(true);
@@ -432,7 +452,7 @@ export default function CoordinatorRequestDetailPage() {
             <section className="bg-white/5 border border-white/10 rounded-xl p-6">
               <h2 className="text-white font-bold text-xl mb-3">📍 Vị trí & Kho gần nhất</h2>
               <p className="text-gray-300 mb-2">
-                {request.address || "Chưa có địa chỉ"}
+                {resolvedAddress || "Đang lấy địa chỉ..."}
                 {request.isLocationVerified && (
                   <span className="ml-2 text-green-400 text-sm">
                     ✓ Đã xác minh
@@ -474,6 +494,53 @@ export default function CoordinatorRequestDetailPage() {
             </section>
           )}
 
+          {/* Combo Supply Citizen đã chọn */}
+          {(request as any).comboSupplyId && (
+            <section className="bg-white/5 border border-white/10 rounded-xl p-6">
+              <h2 className="text-white font-bold text-xl mb-4 flex items-center gap-2">
+                📦 Gói nhu yếu phẩm (Combo Supply)
+              </h2>
+              {typeof (request as any).comboSupplyId === "object" ? (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <span className="px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 font-bold text-sm">
+                      {(request as any).comboSupplyId.name || "Combo"}
+                    </span>
+                    {(request as any).comboSupplyId.incidentType && (
+                      <span className="text-xs text-gray-400 px-2 py-1 rounded-full bg-white/5 border border-white/10">
+                        Loại sự cố: {(request as any).comboSupplyId.incidentType}
+                      </span>
+                    )}
+                  </div>
+                  {(request as any).comboSupplyId.description && (
+                    <p className="text-gray-300 text-sm">{(request as any).comboSupplyId.description}</p>
+                  )}
+                  {Array.isArray((request as any).comboSupplyId.supplies) && (request as any).comboSupplyId.supplies.length > 0 && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 mt-2">
+                      {(request as any).comboSupplyId.supplies.map((item: any, idx: number) => {
+                        const supplyName = typeof item.supplyId === "object" ? item.supplyId?.name : item.supplyId;
+                        const supplyUnit = typeof item.supplyId === "object" ? item.supplyId?.unit : "";
+                        const supplyCategory = typeof item.supplyId === "object" ? item.supplyId?.category : "";
+                        return (
+                          <div key={idx} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg px-4 py-3">
+                            <span className="text-xl">🧴</span>
+                            <div className="flex-1">
+                              <p className="text-white text-sm font-semibold">{supplyName || `Vật tư ${idx + 1}`}</p>
+                              <p className="text-gray-400 text-xs">Số lượng: <span className="text-yellow-300 font-bold">{item.quantity}</span> {supplyUnit}</p>
+                              {supplyCategory && <p className="text-gray-500 text-xs">Danh mục: {supplyCategory}</p>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-300 font-mono text-sm">{String((request as any).comboSupplyId)}</p>
+              )}
+            </section>
+          )}
+
           {/* Supplies */}
           {request.requestSupplies && request.requestSupplies.length > 0 && (
             <section className="bg-white/5 border border-white/10 rounded-xl p-6">
@@ -498,31 +565,10 @@ export default function CoordinatorRequestDetailPage() {
             </section>
           )}
 
-          {/* Images */}
-          {request.imageUrls && request.imageUrls.length > 0 && (
-            <section className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h2 className="text-white font-bold text-xl mb-4">Hình ảnh</h2>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                {request.imageUrls.map((url, idx) => (
-                  <div
-                    key={idx}
-                    className="aspect-square rounded-lg overflow-hidden border-2 border-white/20"
-                  >
-                    <img
-                      src={url}
-                      alt={`Image ${idx + 1}`}
-                      className="w-full h-full object-cover hover:scale-110 transition-transform"
-                    />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
           {/* Media */}
           {request.media && request.media.length > 0 && (
             <section className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h2 className="text-white font-bold text-xl mb-4">Media</h2>
+              <h2 className="text-white font-bold text-xl mb-4">Hình ảnh</h2>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 {request.media.map((m, idx) => (
                   <div
@@ -530,9 +576,9 @@ export default function CoordinatorRequestDetailPage() {
                     className="rounded-lg overflow-hidden border-2 border-white/20"
                   >
                     <img
-                      src={m.imageUrl}
-                      alt={m.description || `Media ${idx}`}
-                      className="w-full object-cover"
+                      src={m.secureUrl || m.imageUrl}
+                      alt={m.description || `Media ${idx + 1}`}
+                      className="w-full object-cover hover:scale-110 transition-transform"
                     />
                     {m.description && (
                       <p className="text-gray-400 text-xs p-2">

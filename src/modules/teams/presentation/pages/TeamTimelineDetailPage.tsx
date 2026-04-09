@@ -32,6 +32,12 @@ const failTimelineUseCase = new FailTimelineUseCase(timelineRepository);
 const withdrawTimelineUseCase = new WithdrawTimelineUseCase(timelineRepository);
 const updateMissionRequestProgressUseCase = new UpdateMissionRequestProgressUseCase(missionRepository);
 
+import { warehouseApi } from "@/modules/warehouse/infrastructure/warehouse.api";
+import { comboSupplyApi } from "@/modules/supplies/infrastructure/comboSupply.api";
+import { supplyApi } from "@/modules/supplies/infrastructure/supply.api";
+import type { Warehouse } from "@/modules/warehouse/domain/warehouse.entity";
+import type { ComboSupply } from "@/modules/supplies/domain/comboSupply.entity";
+
 interface TeamTimelineDetailPageProps {
   timelineId: string;
 }
@@ -56,6 +62,11 @@ function InternalTeamTimelineDetailPage({
   const [failReason, setFailReason] = useState("");
   const [failNote, setFailNote] = useState("");
   const [isOnline, setIsOnline] = useState(true);
+  
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [combos, setCombos] = useState<ComboSupply[]>([]);
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("");
+  const [selectedComboId, setSelectedComboId] = useState<string>("");
   const lastProcessedNotificationRef = useRef<string | null>(null);
 
   // Confetti animation for COMPLETED status
@@ -129,7 +140,40 @@ function InternalTeamTimelineDetailPage({
 
   useEffect(() => {
     loadData();
+    
+    // Fetch warehouses
+    const fetchWarehouses = async () => {
+      try {
+        const res = await warehouseApi.getWarehouses();
+        if (res && Array.isArray(res.data)) {
+          setWarehouses(res.data);
+          if (res.data.length > 0) setSelectedWarehouseId(res.data[0]._id);
+        }
+      } catch (err) {
+        console.error("Failed to fetch warehouses", err);
+      }
+    };
+    fetchWarehouses();
   }, []); // Empty dependency array - only run once on mount
+
+  // Fetch combos when mission is loaded
+  useEffect(() => {
+    if (!mission) return;
+    const fetchCombos = async () => {
+      try {
+        // Map mission type/tags to incidentType if needed, or use a default
+        // For now, let's assume we fetch all active combos or filter by mission context
+        const res = await comboSupplyApi.getComboSupplies();
+        if (res && Array.isArray(res.data)) {
+          setCombos(res.data);
+          if (res.data.length > 0) setSelectedComboId(res.data[0]._id);
+        }
+      } catch (err) {
+        console.error("Failed to fetch combos", err);
+      }
+    };
+    fetchCombos();
+  }, [mission]);
 
   useEffect(() => {
     if (!timeline) return;
@@ -195,11 +239,42 @@ function InternalTeamTimelineDetailPage({
 
   const handleAccept = async () => {
     if (!timeline || !canAccept) return;
+    
+    if (!selectedWarehouseId || !selectedComboId) {
+      toast.error("Vui lòng chọn kho và gói nhu yếu phẩm.");
+      return;
+    }
+
     setActionLoading("accept");
     try {
+      // 1. Accept the timeline
       const updated = await acceptTimelineUseCase.execute(timeline._id);
+      
+      // 2. Create supply request
+      const combo = combos.find(c => c._id === selectedComboId);
+      if (combo && missionRequests.length > 0) {
+        // Send request for each mission request or one big request
+        // The user said "request Supply se duoc gui qua cho manager"
+        // Let's create a supply request for the first mission request for now, or unified if API supports
+        const items = combo.supplies.map(s => ({
+          name: typeof s.supplyId === 'string' ? 'Vật tư' : (s.supplyId as any).name,
+          category: (typeof s.supplyId === 'string' ? 'OTHER' : (s.supplyId as any).category) as any,
+          quantity: s.quantity,
+          unit: typeof s.supplyId === 'string' ? "đơn vị" : (s.supplyId as any).unit
+        }));
+
+        await supplyApi.createSupplyRequest({
+          requestId: missionRequests[0]._id, // Associate with first request in mission
+          items,
+          priority: mission?.priority?.toLowerCase() as any || 'medium'
+        });
+        
+        toast.success("Đã chấp nhận nhiệm vụ và gửi yêu cầu vật tư tới Manager!");
+      } else {
+        toast.success("Đã chấp nhận nhiệm vụ!");
+      }
+      
       setTimeline(updated);
-      toast.success("Đã chấp nhận nhiệm vụ. Bắt đầu di chuyển!");
     } catch (error: any) {
       toast.error(error?.message || "Không thể chấp nhận nhiệm vụ");
     } finally {
@@ -564,41 +639,106 @@ function InternalTeamTimelineDetailPage({
           </h2>
           <div className="flex flex-wrap gap-2">
             {canAccept && (
-              <>
-                <button
-                  onClick={handleAccept}
-                  disabled={actionLoading === "accept" || !isOnline}
-                  className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-semibold transition-all transform hover:scale-105 disabled:transform-none flex items-center gap-2"
-                  aria-label={actionLoading === "accept" ? "Đang chấp nhận nhiệm vụ" : "Chấp nhận nhiệm vụ"}
-                >
-                  {actionLoading === "accept" ? (
-                    <>
-                      <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin" />
-                      Đang chấp nhận...
-                    </>
-                  ) : (
-                    <>
-                      🚀 Chấp nhận nhiệm vụ
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => setWithdrawModalOpen(true)}
-                  disabled={actionLoading === "withdraw" || !isOnline}
-                  className="px-4 py-2 rounded-lg bg-red-600/70 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-semibold transition-all transform hover:scale-105 disabled:transform-none flex items-center gap-2"
-                >
-                  {actionLoading === "withdraw" ? (
-                    <>
-                      <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin" />
-                      Đang xử lý...
-                    </>
-                  ) : (
-                    <>
-                      🔙 Rút khỏi nhiệm vụ
-                    </>
-                  )}
-                </button>
-              </>
+              <div className="w-full space-y-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-white/70">Chọn Kho hàng lấy vật tư</label>
+                    <select
+                      value={selectedWarehouseId}
+                      onChange={(e) => setSelectedWarehouseId(e.target.value)}
+                      className="w-full h-10 rounded-lg bg-white/5 border border-white/20 px-3 text-sm text-white focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="" disabled className="bg-gray-800">Chọn kho...</option>
+                      {warehouses.map(w => (
+                        <option key={w._id} value={w._id} className="bg-gray-800">🏭 {w.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-white/70">Chọn Gói nhu yếu phẩm (Combo)</label>
+                    <select
+                      value={selectedComboId}
+                      onChange={(e) => setSelectedComboId(e.target.value)}
+                      className="w-full h-10 rounded-lg bg-white/5 border border-white/20 px-3 text-sm text-white focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="" disabled className="bg-gray-800">Chọn combo...</option>
+                      {combos.map(c => (
+                        <option key={c._id} value={c._id} className="bg-gray-800">📦 {c.name} ({c.incidentType})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Hiển thị chi tiết combo đã chọn */}
+                {selectedComboId && (() => {
+                  const selectedCombo = combos.find(c => c._id === selectedComboId);
+                  if (!selectedCombo) return null;
+                  return (
+                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 space-y-2">
+                      <p className="text-blue-300 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                        📦 Chi tiết combo: {selectedCombo.name}
+                      </p>
+                      {selectedCombo.description && (
+                        <p className="text-white/70 text-xs">{selectedCombo.description}</p>
+                      )}
+                      {selectedCombo.supplies && selectedCombo.supplies.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-1">
+                          {selectedCombo.supplies.map((item, idx) => {
+                            const supplyName = typeof item.supplyId === "object" ? (item.supplyId as any)?.name : item.supplyId;
+                            const supplyUnit = typeof item.supplyId === "object" ? (item.supplyId as any)?.unit : "";
+                            return (
+                              <div key={idx} className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-1.5">
+                                <span className="text-sm">🧴</span>
+                                <span className="text-white text-xs font-medium flex-1">{supplyName || `Vật tư ${idx + 1}`}</span>
+                                <span className="text-blue-300 text-xs font-bold">×{item.quantity} {supplyUnit}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <p className="text-white/50 text-xs mt-1">
+                        ⚠️ Yêu cầu vật tư sẽ được gửi tới Manager để phân bổ kho sau khi chấp nhận.
+                      </p>
+                    </div>
+                  );
+                })()}
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={handleAccept}
+                    disabled={actionLoading === "accept" || !isOnline}
+                    className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-semibold transition-all transform hover:scale-105 disabled:transform-none flex items-center gap-2"
+                    aria-label={actionLoading === "accept" ? "Đang chấp nhận nhiệm vụ" : "Chấp nhận nhiệm vụ"}
+                  >
+                    {actionLoading === "accept" ? (
+                      <>
+                        <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin" />
+                        Đang chấp nhận...
+                      </>
+                    ) : (
+                      <>
+                        🚀 Chấp nhận nhiệm vụ
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setWithdrawModalOpen(true)}
+                    disabled={actionLoading === "withdraw" || !isOnline}
+                    className="px-4 py-2 rounded-lg bg-red-600/70 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-semibold transition-all transform hover:scale-105 disabled:transform-none flex items-center gap-2"
+                  >
+                    {actionLoading === "withdraw" ? (
+                      <>
+                        <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin" />
+                        Đang xử lý...
+                      </>
+                    ) : (
+                      <>
+                        🔙 Rút khỏi nhiệm vụ
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             )}
             {canArrive && (
               <button

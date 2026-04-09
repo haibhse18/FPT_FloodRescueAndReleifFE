@@ -29,7 +29,6 @@ export interface CreateRescueRequestDTO {
   latitude?: number;
   longitude?: number;
   description: string;
-  imageUrls?: string[];
   priority?: string;
   peopleCount?: number;
   requestSupply?: unknown[];
@@ -39,7 +38,8 @@ export interface CreateRescueRequestDTO {
   numberOfPeople?: number;
   urgencyLevel?: string;
   images?: string[];
-  scenario?: string | null;
+  comboSupplyId?: string | null;
+  media?: { publicId: string; secureUrl: string; uploadedAt?: Date }[];
 }
 
 export interface EmergencyRequestDTO {
@@ -231,7 +231,7 @@ export const requestsApi = {
     peopleCount?: number;
     priority?: string;
     requestSupplies?: { supplyId: string; requestedQty: number }[];
-    imageUrls?: string[];
+    media?: { publicId: string; secureUrl: string; uploadedAt?: Date }[];
   }): Promise<ApiResponse> => {
     return apiClient.post("/requests/on-behalf", input, {
       headers: authSession.getAuthHeaders(),

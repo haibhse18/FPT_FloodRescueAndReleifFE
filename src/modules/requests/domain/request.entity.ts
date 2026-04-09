@@ -13,7 +13,7 @@ export type RequestStatus =
   | "PARTIALLY_FULFILLED"
   | "CLOSED"
   | "CANCELLED";
-  // Note: FULFILLED status has been removed - backend auto-converts to CLOSED
+// Note: FULFILLED status has been removed - backend auto-converts to CLOSED
 
 export type PriorityLevel = "Critical" | "High" | "Normal";
 
@@ -46,9 +46,18 @@ export interface GeoPoint {
 // ─── Media ───────────────────────────────────────────────
 
 export interface RequestMedia {
-  imageUrl: string;
+  publicId?: string;
+  secureUrl?: string;
+  thumbnailUrl?: string;
+  format?: string;
+  width?: number;
+  height?: number;
+  bytes?: number;
+  resourceType?: string;
   description?: string;
   uploadedAt?: string;
+  uploadedBy?: string;
+  imageUrl?: string;
 }
 
 // ─── Supply Item ─────────────────────────────────────────
@@ -77,12 +86,22 @@ export interface CoordinatorRequest {
   status: RequestStatus | string;
   requestSupplies?: RequestSupplyItem[];
   media?: RequestMedia[];
-  imageUrls?: string[];
   isDuplicated?: boolean;
   duplicatedOfRequestId?: string | null;
   isLocationVerified?: boolean;
   createdAt: string | Date;
   updatedAt?: string | Date;
+  /** Combo vật tư citizen đã chọn khi gửi yêu cầu — có thể được populate bởi backend */
+  comboSupplyId?: {
+    _id: string;
+    name: string;
+    incidentType?: string;
+    description?: string;
+    supplies?: Array<{
+      supplyId: string | { _id: string; name: string; unit?: string; category?: string };
+      quantity: number;
+    }>;
+  } | string | null;
 
   // Legacy fields for backward compat
   requestId?: string;
@@ -155,7 +174,7 @@ export interface CreateOnBehalfInput {
   peopleCount?: number;
   priority?: PriorityLevel;
   requestSupplies?: RequestSupplyItem[];
-  imageUrls?: string[];
+  media?: RequestMedia[];
 }
 
 // ─── Legacy types (kept for existing citizen pages) ──────
@@ -169,6 +188,7 @@ export interface RescueRequest {
   location: string;
   description: string;
   imageUrls: string[];
+  media?: RequestMedia[];
   urgencyLevel: UrgencyLevel;
   numberOfPeople: number;
   status: string;
@@ -183,7 +203,6 @@ export interface CreateRescueRequestData {
   latitude?: number;
   longitude?: number;
   description: string;
-  imageUrls?: string[];
   priority?: string;
   peopleCount?: number;
   requestSupply?: unknown[];
@@ -193,7 +212,8 @@ export interface CreateRescueRequestData {
   numberOfPeople?: number;
   urgencyLevel?: string;
   images?: string[];
-  scenario?: string | null;
+  comboSupplyId?: string | null;
+  media?: { publicId: string; secureUrl: string; uploadedAt?: Date }[];
 }
 
 export interface EmergencyRequestData {

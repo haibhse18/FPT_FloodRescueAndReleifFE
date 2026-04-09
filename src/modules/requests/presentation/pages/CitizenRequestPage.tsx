@@ -8,6 +8,8 @@ import "@openmapvn/openmapvn-gl/dist/maplibre-gl.css";
 import { CreateRescueRequestUseCase } from "@/modules/requests/application/createRescueRequest.usecase";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 import type { Supply } from "@/modules/supplies/domain/supply.entity";
+import { GetComboSuppliesUseCase } from "@/modules/supplies/application/getComboSupplies.usecase";
+import type { ComboSupply, ComboSupplyItem, IncidentType } from "@/modules/supplies/domain/comboSupply.entity";
 import { useToast } from "@/hooks/use-toast";
 import { uploadClient } from "@/services/uploadClient";
 
@@ -15,6 +17,7 @@ import { uploadClient } from "@/services/uploadClient";
 const createRescueRequestUseCase = new CreateRescueRequestUseCase(
   requestRepository,
 );
+const getComboSuppliesUseCase = new GetComboSuppliesUseCase();
 
 // Dynamic import cho OpenMap để tránh SSR issues
 const OpenMap = dynamic(
@@ -41,11 +44,11 @@ const CONTEXT_EXTRA_SUPPLIES: Record<string, string[]> = {
   "Người bị thương": ["Băng gạc", "Thuốc sát trùng"],
 };
 
-const RELIEF_INCIDENT_TYPE_BY_DANGER: Record<string, "Flood" | "Landslide" | "Other"> = {
+const RELIEF_INCIDENT_TYPE_BY_DANGER: Record<string, IncidentType> = {
   flood: "Flood",
+  trapped: "Trapped",
+  injury: "Injured",
   landslide: "Landslide",
-  trapped: "Other",
-  injury: "Other",
   other: "Other",
 };
 
@@ -217,6 +220,80 @@ const buildReliefSupplyPlan = (
   };
 };
 
+const extractComboSupplyInfo = (
+  supplyRef: ComboSupplyItem["supplyId"],
+  index: number,
+): { name: string; supplyId?: string } => {
+  if (typeof supplyRef === "string") {
+    return {
+      name: `Vật phẩm ${index + 1}`,
+      supplyId: supplyRef,
+    };
+  }
+
+  if (supplyRef && typeof supplyRef === "object") {
+    const candidate = supplyRef as Record<string, unknown>;
+    const name = typeof candidate.name === "string"
+      ? candidate.name
+      : `Vật phẩm ${index + 1}`;
+    const supplyId = typeof candidate.id === "string"
+      ? candidate.id
+      : typeof candidate._id === "string"
+        ? candidate._id
+        : undefined;
+
+    return { name, supplyId };
+  }
+
+  return {
+    name: `Vật phẩm ${index + 1}`,
+  };
+};
+
+const getComboItemQty = (item: unknown): number => {
+  if (!item || typeof item !== "object") return 0;
+  const raw = item as Record<string, unknown>;
+  const qtyCandidate = raw.quantity ?? raw.qty ?? raw.requestedQty ?? raw.allocatedQty;
+  const qty = Number(qtyCandidate);
+  return Number.isFinite(qty) && qty > 0 ? qty : 0;
+};
+
+const getComboItemDisplayName = (item: unknown, index: number): { name: string; supplyId?: string } => {
+  if (!item || typeof item !== "object") {
+    return { name: `Vật phẩm ${index + 1}` };
+  }
+
+  const raw = item as Record<string, unknown>;
+  const directName = typeof raw.name === "string" ? raw.name : "";
+  if (directName) {
+    const supplyId = typeof raw.supplyId === "string"
+      ? raw.supplyId
+      : typeof raw.id === "string"
+        ? raw.id
+        : typeof raw._id === "string"
+          ? raw._id
+          : undefined;
+    return { name: directName, supplyId };
+  }
+
+  if (raw.supplyId !== undefined) {
+    return extractComboSupplyInfo(raw.supplyId as ComboSupplyItem["supplyId"], index);
+  }
+
+  if (raw.supply && typeof raw.supply === "object") {
+    const supply = raw.supply as Record<string, unknown>;
+    const name = typeof supply.name === "string" ? supply.name : `Vật phẩm ${index + 1}`;
+    const supplyId = typeof supply.id === "string"
+      ? supply.id
+      : typeof supply._id === "string"
+        ? supply._id
+        : undefined;
+    return { name, supplyId };
+  }
+
+  return { name: `Vật phẩm ${index + 1}` };
+};
+
 const getCreatedRequestId = (request: unknown): string | null => {
   if (!request || typeof request !== "object") {
     return null;
@@ -286,6 +363,10 @@ export default function CitizenRequestPage() {
   const [reliefInjuredCount, setReliefInjuredCount] = useState(0);
   const [isReliefComboModalOpen, setIsReliefComboModalOpen] = useState(false);
   const [reliefMedicineDetails, setReliefMedicineDetails] = useState("");
+  const [reliefCombos, setReliefCombos] = useState<ComboSupply[]>([]);
+  const [isLoadingReliefCombos, setIsLoadingReliefCombos] = useState(false);
+  const [reliefComboError, setReliefComboError] = useState<string | null>(null);
+  const [selectedReliefComboId, setSelectedReliefComboId] = useState("");
   const [isScenarioPickerOpen, setIsScenarioPickerOpen] = useState(false);
   const [desktopMapHeight, setDesktopMapHeight] = useState(520);
   const [isCheckingActiveRequest, setIsCheckingActiveRequest] = useState(true);
@@ -354,6 +435,35 @@ export default function CitizenRequestPage() {
     reliefNeedMedicine,
     reliefMedicineDetails,
   );
+  const selectedReliefCombo = reliefCombos.find((combo) => combo._id === selectedReliefComboId) || null;
+  const selectedReliefComboItems = selectedReliefCombo
+    ? (selectedReliefCombo.supplies || [])
+      .reduce<Array<{ name: string; supplyId?: string; requestedQty: number }>>((acc, rawItem, index) => {
+        const qty = getComboItemQty(rawItem);
+        if (qty <= 0) return acc;
+
+        const { name, supplyId } = getComboItemDisplayName(rawItem, index);
+        const normalizedName = normalizeText(name);
+        const existing = acc.find((entry) => normalizeText(entry.name) === normalizedName);
+        if (existing) {
+          existing.requestedQty += qty;
+          if (!existing.supplyId && supplyId) {
+            existing.supplyId = supplyId;
+          }
+          return acc;
+        }
+
+        acc.push({
+          name,
+          supplyId,
+          requestedQty: qty,
+        });
+        return acc;
+      }, [])
+    : [];
+  const reliefSupplySummaryLines = selectedReliefCombo
+    ? selectedReliefComboItems.map((item) => `${item.name}: ${item.requestedQty}`)
+    : reliefSupplyPlan.totalLines;
 
   const findActiveRequestId = useCallback(async (): Promise<string | null> => {
     try {
@@ -518,6 +628,66 @@ export default function CitizenRequestPage() {
     setReliefFamilySize(0);
   }, [needRelief]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadReliefCombos = async () => {
+      if (!needRelief) {
+        setReliefCombos([]);
+        setSelectedReliefComboId("");
+        setReliefComboError(null);
+        setIsLoadingReliefCombos(false);
+        return;
+      }
+
+      setIsLoadingReliefCombos(true);
+      setReliefComboError(null);
+
+      try {
+        const incidentType = sharedDangerType
+          ? (RELIEF_INCIDENT_TYPE_BY_DANGER[sharedDangerType] || "Other")
+          : undefined;
+        const response = await getComboSuppliesUseCase.execute(incidentType);
+        const responseData = (response as { data?: unknown })?.data;
+        const rawCombos = Array.isArray(responseData)
+          ? responseData
+          : (responseData && typeof responseData === "object" && Array.isArray((responseData as { data?: unknown }).data)
+            ? (responseData as { data: unknown[] }).data
+            : []);
+        const combos = rawCombos
+          .filter((combo): combo is ComboSupply => !!combo && typeof combo === "object")
+          .filter((combo) => combo?.isActive !== false);
+
+        if (cancelled) return;
+
+        setReliefCombos(combos);
+        setSelectedReliefComboId((prev) => {
+          if (combos.some((combo) => combo._id === prev)) {
+            return prev;
+          }
+          return combos[0]?._id || "";
+        });
+      } catch (error) {
+        console.error("Cannot load combo supplies:", error);
+        if (!cancelled) {
+          setReliefCombos([]);
+          setSelectedReliefComboId("");
+          setReliefComboError("Không tải được combo từ hệ thống, đang dùng chế độ tính thủ công.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingReliefCombos(false);
+        }
+      }
+    };
+
+    void loadReliefCombos();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [needRelief, sharedDangerType]);
+
   const handleNeedRescueToggle = (checked: boolean) => {
     setNeedRescue(checked);
     setRescueRequest((prev) => ({
@@ -552,6 +722,9 @@ export default function CitizenRequestPage() {
     setReliefNeedMedicine(false);
     setReliefMedicineDetails("");
     setReliefDangerType("");
+    setReliefCombos([]);
+    setSelectedReliefComboId("");
+    setReliefComboError(null);
   };
 
   const handleGoHome = useCallback(() => {
@@ -858,7 +1031,10 @@ export default function CitizenRequestPage() {
         `Tình huống: ${quickRescueActions.find((item) => item.id === sharedDangerType)?.label || sharedDangerType}`,
         `Số người cần cứu trợ: ${reliefFamilySize}`,
         `Cơ cấu: Trưởng thành ${reliefComposition.adult}, Trẻ em ${reliefComposition.child}, Người già ${reliefComposition.elderly}, Bị thương ${reliefComposition.injured}`,
-        `Combo 3 ngày: ${reliefSupplyPlan.totalLines.join(", ")}`,
+        selectedReliefCombo
+          ? `Combo đã chọn: ${selectedReliefCombo.name}`
+          : "Chưa chọn combo hệ thống, đang dùng ước tính nhu yếu phẩm mặc định.",
+        `Nhu yếu phẩm 3 ngày: ${reliefSupplySummaryLines.join(", ")}`,
         reliefNeedMedicine && reliefMedicineDetails.trim() ? `Thuốc cần hỗ trợ: ${reliefMedicineDetails.trim()}` : "",
       ].filter(Boolean)
       : [];
@@ -881,12 +1057,18 @@ export default function CitizenRequestPage() {
     setIsSubmitting(true);
     try {
       const requestSupplies = needRelief
-        ? reliefSupplyPlan.totalItems
-          .filter((item) => (Number(item.qty) || 0) > 0)
-          .map((item) => ({
-            name: item.label,
-            requestedQty: Number(item.qty) || 0,
+        ? selectedReliefCombo
+          ? selectedReliefComboItems.map((item) => ({
+            name: item.name,
+            supplyId: item.supplyId,
+            requestedQty: item.requestedQty,
           }))
+          : reliefSupplyPlan.totalItems
+            .filter((item) => (Number(item.qty) || 0) > 0)
+            .map((item) => ({
+              name: item.label,
+              requestedQty: Number(item.qty) || 0,
+            }))
         : [];
 
       const requestType = needRescue
@@ -913,6 +1095,7 @@ export default function CitizenRequestPage() {
 
       if (needRelief) {
         payload.requestSupplies = requestSupplies;
+        payload.comboSupplyId = selectedReliefCombo ? selectedReliefCombo._id : null;
       }
 
       if (uploadedImages.length > 0) {
@@ -954,6 +1137,9 @@ export default function CitizenRequestPage() {
       setReliefElderlyCount(0);
       setReliefInjuredCount(0);
       setReliefMedicineDetails("");
+      setReliefCombos([]);
+      setSelectedReliefComboId("");
+      setReliefComboError(null);
       setUploadedImages([]);
       setSelectedQuickAction(null);
     } catch (error: unknown) {
@@ -1453,8 +1639,8 @@ export default function CitizenRequestPage() {
                       <div className="rounded-none border border-white/20 bg-[#0f2f44]/70 p-3 space-y-2">
                         <p className="text-xs text-white font-semibold">Tổng nhu cầu thiết yếu</p>
                         <p className="text-[11px] text-white/70 leading-relaxed">
-                          {reliefSupplyPlan.totalLines.length > 0
-                            ? reliefSupplyPlan.totalLines.join(", ")
+                          {reliefSupplySummaryLines.length > 0
+                            ? reliefSupplySummaryLines.join(", ")
                             : "Chưa có nhu cầu được tính"}
                         </p>
                       </div>
@@ -1583,7 +1769,7 @@ export default function CitizenRequestPage() {
       </main>
 
       {isReliefComboModalOpen && (
-        <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-[2px] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[520] bg-black/70 backdrop-blur-[2px] flex items-center justify-center p-4">
           <div className="w-full max-w-3xl max-h-[88vh] overflow-hidden rounded-2xl border border-white/20 bg-[#0f2f44]/80 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
               <div>
@@ -1599,21 +1785,29 @@ export default function CitizenRequestPage() {
             </div>
 
             <div className="overflow-y-auto max-h-[calc(88vh-64px)] p-4 space-y-3">
-              {Object.values(RELIEF_GROUP_COMBO_TEMPLATES).map((combo) => (
-                <div key={combo.key} className="rounded-xl border border-white/20 bg-[#0f2f44]/70 p-3 space-y-2">
+              {reliefCombos.length > 0 ? reliefCombos.map((combo) => (
+                <div key={combo._id} className="rounded-xl border border-white/20 bg-[#0f2f44]/70 p-3 space-y-2">
                   <div>
-                    <p className="text-white font-semibold text-sm">{combo.label}</p>
+                    <p className="text-white font-semibold text-sm">{combo.name}</p>
                     <p className="text-white/65 text-xs">{combo.description}</p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    {combo.items.map((item) => (
-                      <div key={`${combo.key}-${item.label}`} className="rounded-md border border-white/20 bg-[#0f2f44]/70 px-2.5 py-2 text-white/90">
-                        {item.label}: <span className="font-semibold text-[#FF7700]">{item.qtyPerPerson3Days}</span>
-                      </div>
-                    ))}
+                    {combo.supplies.map((item, index) => {
+                      const { name } = extractComboSupplyInfo(item.supplyId, index);
+                      return (
+                        <div key={`${combo._id}-${index}`} className="rounded-md border border-white/20 bg-[#0f2f44]/70 px-2.5 py-2 text-white/90">
+                          {name}: <span className="font-semibold text-[#FF7700]">{item.quantity}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="rounded-xl border border-white/20 bg-[#0f2f44]/70 p-3 space-y-1.5">
+                  <p className="text-white text-sm font-semibold">Chưa có combo từ hệ thống</p>
+                  <p className="text-white/70 text-xs">Vui lòng chọn tình huống khác hoặc tiếp tục gửi yêu cầu với chế độ tính mặc định.</p>
+                </div>
+              )}
 
               <div className="rounded-xl border border-[#FF7700]/35 bg-[#FF7700]/10 p-3 space-y-1.5">
                 <p className="text-[#FF7700] text-sm font-semibold">Tổng nhu cầu theo gia đình hiện tại của bạn</p>
@@ -1621,8 +1815,8 @@ export default function CitizenRequestPage() {
                   Trưởng thành {reliefComposition.adult}, Trẻ em {reliefComposition.child}, Người già {reliefComposition.elderly}, Bị thương {reliefComposition.injured}
                 </p>
                 <p className="text-white text-xs leading-relaxed">
-                  {reliefSupplyPlan.totalLines.length > 0
-                    ? reliefSupplyPlan.totalLines.join(", ")
+                  {reliefSupplySummaryLines.length > 0
+                    ? reliefSupplySummaryLines.join(", ")
                     : "Chưa có dữ liệu để tính"}
                 </p>
               </div>

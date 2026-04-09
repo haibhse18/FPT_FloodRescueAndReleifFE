@@ -38,6 +38,7 @@ export interface CreateRescueRequestDTO {
   numberOfPeople?: number;
   urgencyLevel?: string;
   images?: string[];
+  comboSupplyId?: string | null;
   media?: { publicId: string; secureUrl: string; uploadedAt?: Date }[];
 }
 

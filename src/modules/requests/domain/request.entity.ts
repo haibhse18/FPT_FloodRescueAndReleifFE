@@ -13,7 +13,7 @@ export type RequestStatus =
   | "PARTIALLY_FULFILLED"
   | "CLOSED"
   | "CANCELLED";
-  // Note: FULFILLED status has been removed - backend auto-converts to CLOSED
+// Note: FULFILLED status has been removed - backend auto-converts to CLOSED
 
 export type PriorityLevel = "Critical" | "High" | "Normal";
 
@@ -201,6 +201,7 @@ export interface CreateRescueRequestData {
   numberOfPeople?: number;
   urgencyLevel?: string;
   images?: string[];
+  comboSupplyId?: string | null;
   media?: { publicId: string; secureUrl: string; uploadedAt?: Date }[];
 }
 

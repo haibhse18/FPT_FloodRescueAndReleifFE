@@ -30,6 +30,8 @@ export interface Mission {
 }
 
 export interface Vehicle {
+  _id: string;
+  name: string;
   licensePlate: string;
   type: VehicleType;
   brand: string;
@@ -42,9 +44,7 @@ export interface Vehicle {
   assignedTo?: Team | string; // có thể là ID hoặc object team
   currentMission?: Mission | string; // có thể là ID hoặc object mission
   lastMaintenanceDate?: Date;
-
   location?: GeoPoint; // sửa ở đây
-
   description: string;
   isActive: boolean;
   createdBy: string;

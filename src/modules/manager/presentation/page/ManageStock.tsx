@@ -35,6 +35,8 @@ export default function StockPage() {
 
   const [activeTab, setActiveTab] = useState<Tab>("supply");
 
+
+
   // ---------- SUPPLY STATE ----------
   const [supplyItems, setSupplyItems]             = useState<InventoryItem[]>([]);
   const [supplyLoading, setSupplyLoading]         = useState(true);
@@ -100,38 +102,7 @@ export default function StockPage() {
   };
   
 
-  const handleUseSupply = async (item: any) => {
-  const quantity = Number(prompt("Nhập số lượng cần dùng:"));
-
-  if (!quantity || quantity <= 0) return;
-
-  if (quantity > item.quantity) {
-    alert("Số lượng xuất vượt quá số lượng trong kho");
-    return;
-  }
-
-  const supplyID = typeof item.supplyID === 'string' ? item.supplyID : item.supplyID?._id;
-  const warehouseId = typeof item.warehouse === 'string' ? item.warehouse : item.warehouse?._id;
-
-  console.log("SEND:", { supplyID, warehouseId, quantity });
-
-  try {
-    await inventoryApi.useSupply(
-      supplyID,
-      warehouseId,
-      quantity
-    );
-
-    alert("Dùng vật tư thành công");
-
-    fetchSupplyItems(supplyKeyword, supplyPage);
-    fetchSupplyStats();
-
-  } catch (err: any) {
-    alert(err?.response?.data?.message || "Lỗi khi dùng vật tư");
-  }
-};
-
+ 
   // ===============================
   // FETCH VEHICLE
   // ===============================
@@ -230,18 +201,7 @@ export default function StockPage() {
           : row.status;
       }
     },
-    {
-      key: "action",
-      header: "Hành động",
-      render: (row: any) => (
-        <button
-          onClick={() => handleUseSupply(row)}
-          className="px-3 py-1 bg-red-500 text-white rounded-lg text-xs"
-        >
-          Dùng
-        </button>
-      )
-    }
+    
   ];
 
   const supplyTableData = supplyItems.map((item) => ({
@@ -346,11 +306,14 @@ export default function StockPage() {
     <div className="p-4 lg:p-6 space-y-6">
 
       {/* HEADER */}
+      {/* HEADER */}
       <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 leading-tight">Quản lý kho</h1>
           <p className="text-sm text-gray-500 mt-1">Quản lý vật tư và phương tiện cứu hộ</p>
         </div>
+        
+       
       </div>
 
       {/* TABS */}

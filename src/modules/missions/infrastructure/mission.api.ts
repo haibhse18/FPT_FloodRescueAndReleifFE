@@ -181,4 +181,15 @@ export const missionApi = {
       headers: authSession.getAuthHeaders(),
     });
   },
+
+  // ────────────────────────────────────────────────────────
+  // ACCEPT INFO
+  // ────────────────────────────────────────────────────────
+
+  /** GET /missions/:id/accept-info — get data for team to accept timeline */
+  getAcceptInfo: async (missionId: string): Promise<ApiResponse> => {
+    return apiClient.get(`/missions/${missionId}/accept-info`, {
+      headers: authSession.getAuthHeaders(),
+    });
+  },
 };

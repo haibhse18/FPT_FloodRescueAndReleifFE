@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import GoongTeamMissionMap from "@/modules/map/presentation/components/GoongTeamMissionMap";
 import SupplyClaimCard from "./SupplyClaimCard";
 import ClaimConfirmModal from "./ClaimConfirmModal";
+import PendingApprovalView from "./PendingApprovalView";
 import { warehouseRepository } from "@/modules/warehouse/infrastructure/warehouse.repository.impl";
 import { missionSupplyApi } from "@/modules/supplies/infrastructure/missionSupply.api";
 import { timelineSupplyApi } from "@/modules/supplies/infrastructure/timelineSupply.api";
@@ -41,6 +42,11 @@ export default function ClaimStepView({
   loading = false,
   disabled = false,
 }: ClaimStepViewProps) {
+  // If timeline is PENDING_APPROVAL, show approval tracking view
+  if (timeline.status === "PENDING_APPROVAL") {
+    return <PendingApprovalView timelineId={timeline._id} />;
+  }
+
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [missionSupplies, setMissionSupplies] = useState<MissionSupply[]>([]);
   const [timelineSupplies, setTimelineSupplies] = useState<TimelineSupply[]>([]);
@@ -112,13 +118,19 @@ export default function ClaimStepView({
   const handleConfirmClaimSupply = async () => {
     if (!modalData) return;
 
+    // Find the corresponding TimelineSupply
+    const timelineSupply = timelineSupplies.find(
+      ts => ts.missionSupplyId === modalData.missionSupplyId && ts.status === "APPROVED"
+    );
+
+    if (!timelineSupply) {
+      toast.error("Không tìm thấy vật tư đã được duyệt");
+      return;
+    }
+
     setClaimingSupplyId(modalData.missionSupplyId);
     try {
-      await timelineSupplyApi.claimSupply({
-        timelineId: timeline._id,
-        missionSupplyId: modalData.missionSupplyId,
-        carriedQty: modalData.allocatedQty,
-      });
+      await timelineSupplyApi.claimSupply(timelineSupply._id);
 
       toast.success(`✅ Đã nhận ${modalData.allocatedQty} ${modalData.unit} ${modalData.supplyName}`);
       setModalData(null);

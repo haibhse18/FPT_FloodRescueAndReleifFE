@@ -596,6 +596,48 @@ export default function CitizenRequestDetailPage({ id }: Props) {
                     </div>
                 </div>
 
+                {/* Combo Supply đã chọn */}
+                {request.comboSupplyId && (
+                    <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl p-5 lg:p-6 space-y-3">
+                        <p className="text-gray-400 text-sm font-bold uppercase tracking-wider inline-flex items-center gap-1.5">
+                            📦 Gói nhu yếu phẩm đã chọn
+                        </p>
+                        {typeof request.comboSupplyId === "object" && request.comboSupplyId !== null ? (
+                            <div className="space-y-2">
+                                <div className="flex flex-wrap gap-2 items-center">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 font-bold text-sm">
+                                        {request.comboSupplyId.name || "Combo"}
+                                    </span>
+                                    {request.comboSupplyId.incidentType && (
+                                        <span className="text-xs text-gray-400 px-2 py-1 rounded-full bg-white/5 border border-white/10">
+                                            {request.comboSupplyId.incidentType}
+                                        </span>
+                                    )}
+                                </div>
+                                {Array.isArray(request.comboSupplyId.supplies) && request.comboSupplyId.supplies.length > 0 && (
+                                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {request.comboSupplyId.supplies.map((item: any, idx: number) => {
+                                            const supplyName = typeof item.supplyId === "object" ? item.supplyId?.name : item.supplyId;
+                                            const supplyUnit = typeof item.supplyId === "object" ? item.supplyId?.unit : "";
+                                            return (
+                                                <div key={idx} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+                                                    <span className="text-lg">🧴</span>
+                                                    <div>
+                                                        <p className="text-white text-sm font-semibold">{supplyName || `Vật tư ${idx + 1}`}</p>
+                                                        <p className="text-gray-400 text-xs">Số lượng: {item.quantity} {supplyUnit}</p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-gray-300 text-sm font-mono">{String(request.comboSupplyId)}</p>
+                        )}
+                    </div>
+                )}
+
                 {/* Description */}
                 {request.description && (
                     <div className="bg-[#0f2f44]/70 border border-white/20 rounded-xl p-5 lg:p-6 space-y-3">

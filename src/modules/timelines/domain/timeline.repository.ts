@@ -11,6 +11,7 @@ import {
   TimelineCompleteInput,
   TimelineFailInput,
   TimelineWithdrawInput,
+  AcceptTimelineInput,
 } from "./timeline.entity";
 
 export interface ITimelineRepository {
@@ -20,7 +21,7 @@ export interface ITimelineRepository {
     timelineId: string,
     input?: TimelineCancelInput,
   ): Promise<void>;
-  acceptTimeline(timelineId: string): Promise<Timeline>;
+  acceptTimeline(timelineId: string, input?: AcceptTimelineInput): Promise<Timeline>;
   confirmSupplyClaim(timelineId: string, note?: string): Promise<Timeline>;
   arriveTimeline(timelineId: string): Promise<Timeline>;
   completeTimeline(

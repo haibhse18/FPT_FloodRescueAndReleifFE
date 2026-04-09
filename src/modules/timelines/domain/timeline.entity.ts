@@ -7,6 +7,7 @@
 
 export type TimelineStatus =
   | "ASSIGNED"
+  | "PENDING_APPROVAL"
   | "CLAIMING_SUPPLIES"
   | "EN_ROUTE"
   | "ON_SITE"
@@ -86,4 +87,22 @@ export interface TimelineFailInput {
 export interface TimelineWithdrawInput {
   withdrawalReason: string;
   note?: string;
+}
+
+// ─── Accept Timeline Input ───────────────────────────────
+
+export interface AcceptTimelineInput {
+  warehouseId: string;
+  citizenCombos: {
+    missionRequestId: string;
+    comboSupplyId: string;
+    quantity: number;
+  }[];
+  teamCombos: {
+    comboSupplyId: string;
+    quantity: number;
+  }[];
+  vehicles: {
+    vehicleId: string;
+  }[];
 }

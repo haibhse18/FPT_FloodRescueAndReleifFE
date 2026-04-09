@@ -152,13 +152,14 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
     }
   }, [notifications, timeline, refetchData]);
 
-  const handleAccept = async () => {
+  const handleAccept = async (payload?: any) => {
     if (!timeline) return;
     setActionLoading("accept");
     try {
-      const updated = await acceptTimelineUseCase.execute(timeline._id);
+      const updated = await acceptTimelineUseCase.execute(timeline._id, payload);
       setTimeline(updated);
-      toast.success("Đã chấp nhận nhiệm vụ. Bắt đầu di chuyển!");
+      toast.success("Đã chấp nhận nhiệm vụ!");
+      await refetchData();
     } catch (error: any) {
       toast.error(error?.message || "Không thể chấp nhận nhiệm vụ");
     } finally {
@@ -310,6 +311,7 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
   // Step navigation logic
   const getCurrentStepIndex = () => {
     if (timeline.status === "ASSIGNED") return 0;
+    if (timeline.status === "PENDING_APPROVAL") return 1;
     if (timeline.status === "CLAIMING_SUPPLIES") return 1;
     if (timeline.status === "EN_ROUTE") return 2;
     if (timeline.status === "ON_SITE") return 3;

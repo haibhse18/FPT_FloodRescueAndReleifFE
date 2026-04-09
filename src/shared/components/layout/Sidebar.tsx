@@ -23,6 +23,7 @@ interface SidebarProps {
   };
   title?: string;
   subtitle?: string;
+  profileHref?: string;
 }
 
 /**
@@ -257,15 +258,16 @@ function SidebarNavItem({
  * Sub-component: SidebarFooter                                       *
  * ================================================================== */
 function SidebarFooter({
-  user, isExpanded, showTexts,
+  user, isExpanded, showTexts, profileHref,
 }: {
   user: { name: string; role: string; avatar?: string };
   isExpanded: boolean; showTexts: boolean;
+  profileHref?: string;
 }) {
   const visible = isExpanded && showTexts;
 
   // Route to profile page based on user role
-  const profileRoute = user.role === "Rescue Team" ? "/team-profile" : "/profile";
+  const profileRoute = profileHref || (user.role === "Rescue Team" ? "/team-profile" : "/profile");
 
   return (
     <div className="shrink-0 px-2 py-2 bg-gradient-to-br from-white/5 to-transparent">
@@ -308,6 +310,7 @@ export default function Sidebar({
   user = { name: "User Account", role: "Member" },
   title = "Cứu hộ Lũ lụt",
   subtitle = "FPT Flood Rescue",
+  profileHref,
 }: SidebarProps) {
   const pathname = usePathname();
   const {
@@ -366,7 +369,7 @@ export default function Sidebar({
 
         <div className="h-px w-full bg-white/10 shrink-0" aria-hidden="true" />
 
-        <SidebarFooter user={user} isExpanded={isExpanded} showTexts={showTexts} />
+        <SidebarFooter user={user} isExpanded={isExpanded} showTexts={showTexts} profileHref={profileHref} />
       </div>
     </aside>
   );

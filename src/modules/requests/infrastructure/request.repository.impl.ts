@@ -90,22 +90,24 @@ export class RequestRepositoryImpl implements IRequestRepository {
     const response = await requestsApi.getAllRequests(filters);
     const result = response as any;
 
-    // If response already matches PaginatedRequests structure
-    if (
-      result &&
-      "total" in result &&
-      "totalPages" in result &&
-      !("meta" in result)
-    ) {
-      return result as PaginatedRequests;
-    }
+    // Handle variety of response structures
+    const items = Array.isArray(result)
+      ? result
+      : Array.isArray(result.data)
+        ? result.data
+        : [];
+
+    const total = result.total ?? result.meta?.total ?? items.length;
+    const page = result.page ?? result.meta?.page ?? filters?.page ?? 1;
+    const limit = result.limit ?? result.meta?.limit ?? (filters?.limit || items.length || 10);
+    const totalPages = result.totalPages ?? result.meta?.totalPages ?? Math.max(1, Math.ceil(total / Number(limit)));
 
     return {
-      data: result.data ?? [],
-      total: result.meta?.total ?? 0,
-      page: result.meta?.page ?? 1,
-      limit: result.meta?.limit ?? 10,
-      totalPages: result.meta?.totalPages ?? 1,
+      data: items,
+      total,
+      page,
+      limit: Number(limit),
+      totalPages,
     };
   }
 

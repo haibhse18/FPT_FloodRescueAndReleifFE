@@ -58,13 +58,13 @@ const getComboLabel = (
   if (typeof row.comboSupplyId === "string") {
     const resolved = comboMap?.[row.comboSupplyId];
     if (resolved) {
-      const type = resolved.incidentType ? ` (${resolved.incidentType})` : "";
+      const type = resolved.type ? ` (${resolved.type})` : "";
       return `${resolved.name}${type}`;
     }
     return `Combo #${row.comboSupplyId.slice(-6)}`;
   }
   const name = row.comboSupplyId.name || "Combo";
-  const type = row.comboSupplyId.incidentType ? ` (${row.comboSupplyId.incidentType})` : "";
+  const type = row.comboSupplyId.type ? ` (${row.comboSupplyId.type})` : "";
   return `${name}${type}`;
 };
 

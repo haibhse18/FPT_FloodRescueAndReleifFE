@@ -459,10 +459,6 @@ export default function CoordinatorRequestDetailPage() {
                   </span>
                 )}
               </p>
-              <p className="text-gray-400 text-xs mb-4 font-mono">
-                Lat: {getLat(request).toFixed(6)} • Long:{" "}
-                {getLng(request).toFixed(6)}
-              </p>
               <GoongRequestMap
                 request={request}
                 warehouses={warehouses}
@@ -506,11 +502,6 @@ export default function CoordinatorRequestDetailPage() {
                     <span className="px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 font-bold text-sm">
                       {(request as any).comboSupplyId.name || "Combo"}
                     </span>
-                    {(request as any).comboSupplyId.incidentType && (
-                      <span className="text-xs text-gray-400 px-2 py-1 rounded-full bg-white/5 border border-white/10">
-                        Loại sự cố: {(request as any).comboSupplyId.incidentType}
-                      </span>
-                    )}
                   </div>
                   {(request as any).comboSupplyId.description && (
                     <p className="text-gray-300 text-sm">{(request as any).comboSupplyId.description}</p>

@@ -8,6 +8,7 @@ import {
   PiCaretUpBold,
   PiCaretDownBold,
   PiTargetBold,
+  PiUserBold,
 } from "react-icons/pi";
 import {
   FiFilter,
@@ -40,7 +41,8 @@ export interface GoongCoordinatorMapProps {
   onRequestSelect?: (id: string) => void;
   filterStatuses?: string[];
   filterPriority?: string;
-  onFilterChange?: (statuses: string[], priority: string) => void;
+  filterSource?: string;
+  onFilterChange?: (statuses: string[], priority: string, source: string) => void;
   className?: string;
 }
 
@@ -65,8 +67,16 @@ const PRIORITY_OPTIONS = [
   { label: "Bình thường", value: "Normal" },
 ];
 
+const SOURCE_OPTIONS = [
+  { label: "Tất cả nguồn", value: "ALL" },
+  { label: "Citizen (Dân gửi)", value: "CITIZEN" },
+  { label: "Coordinator (Tạo yêu cầu)", value: "COORDINATOR" },
+];
 const PRIORITY_LABEL: Record<string, string> = Object.fromEntries(
   PRIORITY_OPTIONS.map((o) => [o.value, o.label])
+);
+const SOURCE_LABEL: Record<string, string> = Object.fromEntries(
+  SOURCE_OPTIONS.map((o) => [o.value, o.label])
 );
 
 // Vietnam center default
@@ -85,6 +95,7 @@ export default function GoongCoordinatorMap({
   onRequestSelect,
   filterStatuses: filterStatusesProp = DEFAULT_FILTER_STATUSES,
   filterPriority: filterPriorityProp = "ALL",
+  filterSource: filterSourceProp = "ALL",
   onFilterChange,
   className = "w-full h-full",
 }: GoongCoordinatorMapProps) {
@@ -102,10 +113,12 @@ export default function GoongCoordinatorMap({
   // Toolbar state — controlled by parent when onFilterChange is provided
   const [filterStatuses, setFilterStatuses] = useState<string[]>(filterStatusesProp);
   const [filterPriority, setFilterPriority] = useState<string>(filterPriorityProp);
+  const [filterSource, setFilterSource] = useState<string>(filterSourceProp);
 
   // Sync controlled props → internal state
   useEffect(() => { setFilterStatuses(filterStatusesProp); }, [filterStatusesProp]);
   useEffect(() => { setFilterPriority(filterPriorityProp); }, [filterPriorityProp]);
+  useEffect(() => { setFilterSource(filterSourceProp); }, [filterSourceProp]);
   const [layerVisibility, setLayerVisibility] = useState<LayerVisibility>({
     requests: true,
     warehouses: true,
@@ -113,6 +126,7 @@ export default function GoongCoordinatorMap({
   const [showLayerPanel, setShowLayerPanel] = useState(false);
   const [showStatusPanel, setShowStatusPanel] = useState(false);
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
+  const [showSourceDropdown, setShowSourceDropdown] = useState(false);
 
   // ─── Initialize map ──────────────────────────────────────
 
@@ -144,6 +158,7 @@ export default function GoongCoordinatorMap({
     map.on("click", () => {
       setShowStatusPanel(false);
       setShowPriorityDropdown(false);
+      setShowSourceDropdown(false);
       setShowLayerPanel(false);
     });
 
@@ -187,7 +202,8 @@ export default function GoongCoordinatorMap({
         .filter((r) => {
           const statusOk = filterStatuses.length === 0 ? false : filterStatuses.includes(r.status);
           const priorityOk = filterPriority === "ALL" || r.priority === filterPriority;
-          return statusOk && priorityOk;
+          const sourceOk = filterSource === "ALL" || r.source === filterSource;
+          return statusOk && priorityOk && sourceOk;
         })
         .map((r) => r._id)
     );
@@ -279,7 +295,7 @@ export default function GoongCoordinatorMap({
 
       requestMarkersRef.current.set(req._id, { marker, popup, innerEl });
     });
-  }, [requests, mapLoaded, filterStatuses, filterPriority, layerVisibility.requests, getRequestCoords, onRequestSelect]);
+  }, [requests, mapLoaded, filterStatuses, filterPriority, filterSource, layerVisibility.requests, getRequestCoords, onRequestSelect]);
 
   // ─── Update warehouse markers ─────────────────────────────
 
@@ -410,13 +426,14 @@ export default function GoongCoordinatorMap({
       ? filterStatuses.filter((s) => s !== value)
       : [...filterStatuses, value];
     setFilterStatuses(next);
-    onFilterChange?.(next, filterPriority);
+    onFilterChange?.(next, filterPriority, filterSource);
   };
 
   const visibleRequestCount = requests.filter((r) => {
     const statusOk = filterStatuses.length === 0 ? false : filterStatuses.includes(r.status);
     const priorityOk = filterPriority === "ALL" || r.priority === filterPriority;
-    return statusOk && priorityOk && !!getRequestCoords(r);
+    const sourceOk = filterSource === "ALL" || r.source === filterSource;
+    return statusOk && priorityOk && sourceOk && !!getRequestCoords(r);
   }).length;
 
   return (
@@ -435,6 +452,7 @@ export default function GoongCoordinatorMap({
                 setShowLayerPanel((v) => !v);
                 setShowStatusPanel(false);
                 setShowPriorityDropdown(false);
+                setShowSourceDropdown(false);
               }}
               className="flex items-center gap-1.5 bg-[#0d2233]/90 backdrop-blur-sm border border-white/20 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-lg hover:border-[#FF7700]/60 transition-colors"
             >
@@ -473,6 +491,7 @@ export default function GoongCoordinatorMap({
               onClick={() => {
                 setShowStatusPanel((v) => !v);
                 setShowPriorityDropdown(false);
+                setShowSourceDropdown(false);
                 setShowLayerPanel(false);
               }}
               className={`flex items-center gap-1.5 bg-[#0d2233]/90 backdrop-blur-sm border text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-lg hover:border-[#FF7700]/60 transition-colors ${
@@ -507,11 +526,11 @@ export default function GoongCoordinatorMap({
               onClick={() => {
                 setShowPriorityDropdown((v) => !v);
                 setShowStatusPanel(false);
+                setShowSourceDropdown(false);
                 setShowLayerPanel(false);
               }}
-              className={`flex items-center gap-1.5 bg-[#0d2233]/90 backdrop-blur-sm border text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-lg hover:border-[#FF7700]/60 transition-colors ${
-                filterPriority !== "ALL" ? "border-[#FF7700]" : "border-white/20"
-              }`}
+              className={`flex items-center gap-1.5 bg-[#0d2233]/90 backdrop-blur-sm border text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-lg hover:border-[#FF7700]/60 transition-colors ${filterPriority !== "ALL" ? "border-[#FF7700]" : "border-white/20"
+                }`}
             >
               <PiTargetBold className="text-sm" />
               <span>Ưu tiên{filterPriority !== "ALL" ? `: ${PRIORITY_LABEL[filterPriority] ?? filterPriority}` : ""}</span>
@@ -526,11 +545,47 @@ export default function GoongCoordinatorMap({
                       const next = opt.value;
                       setFilterPriority(next);
                       setShowPriorityDropdown(false);
-                      onFilterChange?.(filterStatuses, next);
+                      onFilterChange?.(filterStatuses, next, filterSource);
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${
-                      filterPriority === opt.value ? "text-[#FF7700] font-bold bg-[#FF7700]/10" : "text-white"
-                    }`}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${filterSource === opt.value ? "text-[#FF7700] font-bold bg-[#FF7700]/10" : "text-white"
+                      }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Source Filter */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setShowSourceDropdown((v) => !v);
+                setShowStatusPanel(false);
+                setShowPriorityDropdown(false);
+                setShowLayerPanel(false);
+              }}
+              className={`flex items-center gap-1.5 bg-[#0d2233]/90 backdrop-blur-sm border text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-lg hover:border-[#FF7700]/60 transition-colors ${filterSource !== "ALL" ? "border-[#FF7700]" : "border-white/20"
+                }`}
+            >
+              <PiUserBold className="text-sm" />
+              <span>Nguồn{filterSource !== "ALL" ? `: ${SOURCE_LABEL[filterSource] ?? filterSource}` : ""}</span>
+              {showSourceDropdown ? <PiCaretUpBold className="text-xs text-gray-400" /> : <PiCaretDownBold className="text-xs text-gray-400" />}
+            </button>
+            {showSourceDropdown && (
+              <div className="absolute top-full left-0 mt-1 bg-[#0d2233]/95 backdrop-blur-sm border border-white/20 rounded-lg shadow-xl overflow-hidden min-w-[170px]">
+                {SOURCE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => {
+                      const next = opt.value;
+                      setFilterSource(next);
+                      setShowSourceDropdown(false);
+                      onFilterChange?.(filterStatuses, filterPriority, next);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${filterSource === opt.value ? "text-[#FF7700] font-bold bg-[#FF7700]/10" : "text-white"
+                      }`}
                   >
                     {opt.label}
                   </button>
@@ -540,16 +595,18 @@ export default function GoongCoordinatorMap({
           </div>
 
           {/* Reset filters */}
-          {(!isDefaultStatuses || filterPriority !== "ALL") && (
+          {(!isDefaultStatuses || filterPriority !== "ALL" || filterSource !== "ALL") && (
             <button
               className="flex items-center gap-1 bg-[#FF7700]/80 backdrop-blur-sm border border-[#FF7700] text-white text-xs font-semibold px-2 py-2 rounded-lg shadow-lg hover:bg-[#FF7700] transition-colors"
               title="Xóa bộ lọc"
               onClick={() => {
                 setFilterStatuses(DEFAULT_FILTER_STATUSES);
                 setFilterPriority("ALL");
+                setFilterSource("ALL");
                 setShowStatusPanel(false);
                 setShowPriorityDropdown(false);
-                onFilterChange?.(DEFAULT_FILTER_STATUSES, "ALL");
+                setShowSourceDropdown(false);
+                onFilterChange?.(DEFAULT_FILTER_STATUSES, "ALL", "ALL");
               }}
             >
               <FiX className="text-sm" />

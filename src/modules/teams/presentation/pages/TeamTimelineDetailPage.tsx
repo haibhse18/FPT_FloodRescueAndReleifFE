@@ -161,8 +161,6 @@ function InternalTeamTimelineDetailPage({
     if (!mission) return;
     const fetchCombos = async () => {
       try {
-        // Map mission type/tags to incidentType if needed, or use a default
-        // For now, let's assume we fetch all active combos or filter by mission context
         const res = await comboSupplyApi.getComboSupplies();
         if (res && Array.isArray(res.data)) {
           setCombos(res.data);
@@ -663,7 +661,7 @@ function InternalTeamTimelineDetailPage({
                     >
                       <option value="" disabled className="bg-gray-800">Chọn combo...</option>
                       {combos.map(c => (
-                        <option key={c._id} value={c._id} className="bg-gray-800">📦 {c.name} ({c.incidentType})</option>
+                        <option key={c._id} value={c._id} className="bg-gray-800">📦 {c.name} ({c.type})</option>
                       ))}
                     </select>
                   </div>

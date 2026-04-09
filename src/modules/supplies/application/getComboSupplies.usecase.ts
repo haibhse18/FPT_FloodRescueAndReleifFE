@@ -1,7 +1,7 @@
 import { comboSupplyApi } from "../infrastructure/comboSupply.api";
 
 export class GetComboSuppliesUseCase {
-  async execute(incidentType?: string) {
-    return comboSupplyApi.getComboSupplies({ incidentType });
+  async execute(type?: string) {
+    return comboSupplyApi.getComboSupplies({ type });
   }
 }

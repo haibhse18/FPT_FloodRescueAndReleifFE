@@ -4,14 +4,16 @@ import { useState, useEffect } from "react";
 import { FaCheckCircle, FaTimes, FaUsers, FaBoxOpen, FaMapMarkerAlt, FaBell } from "react-icons/fa";
 import GoongTeamMissionMap from "@/modules/map/presentation/components/GoongTeamMissionMap";
 import { warehouseRepository } from "@/modules/warehouse/infrastructure/warehouse.repository.impl";
+import AcceptMissionForm from "./AcceptMissionForm";
 import type { Mission } from "@/modules/missions/domain/mission.entity";
 import type { MissionRequest } from "@/modules/missions/domain/missionRequest.entity";
 import type { Warehouse } from "@/modules/warehouse/domain/warehouse.entity";
+import type { AcceptTimelineInput } from "@/modules/timelines/domain/timeline.entity";
 
 interface AssignedStepViewProps {
   mission: Mission;
   missionRequests: MissionRequest[];
-  onAccept: () => void;
+  onAccept: (payload?: AcceptTimelineInput) => void;
   onReject: () => void;
   loading?: boolean;
   disabled?: boolean;
@@ -27,6 +29,7 @@ export default function AssignedStepView({
 }: AssignedStepViewProps) {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     const fetchWarehouses = async () => {
@@ -46,6 +49,25 @@ export default function AssignedStepView({
   const totalRequests = missionRequests.length;
 
   const totalSupplies = Number(mission.totalSupply) || 0;
+
+  const missionId = typeof mission._id === 'string' ? mission._id : (mission._id as any);
+
+  const handleFormSubmit = (payload: AcceptTimelineInput) => {
+    onAccept(payload);
+  };
+
+  if (showForm) {
+    return (
+      <div className="h-full">
+        <AcceptMissionForm
+          missionId={missionId}
+          onSubmit={handleFormSubmit}
+          onBack={() => setShowForm(false)}
+          loading={loading}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
@@ -123,21 +145,12 @@ export default function AssignedStepView({
         {/* Action Buttons */}
         <div className="space-y-3 pt-2">
           <button
-            onClick={onAccept}
+            onClick={() => setShowForm(true)}
             disabled={loading || disabled}
             className="w-full px-6 py-4 rounded-xl bg-mission-action-accept hover:bg-mission-action-accept-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base transition-all transform hover:scale-105 disabled:transform-none flex items-center justify-center gap-2 shadow-lg"
           >
-            {loading ? (
-              <>
-                <div className="h-5 w-5 rounded-full border-2 border-t-transparent border-white animate-spin" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <FaCheckCircle className="text-lg" />
-                Accept Mission
-              </>
-            )}
+            <FaCheckCircle className="text-lg" />
+            Accept Mission
           </button>
 
           <button

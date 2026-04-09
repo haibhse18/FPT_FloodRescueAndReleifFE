@@ -5,10 +5,10 @@ import { ComboSupply } from "../domain/comboSupply.entity";
 
 export const comboSupplyApi = {
   /** GET /combo-supplies — list all active combo supplies */
-  getComboSupplies: async (params?: { incidentType?: string }): Promise<ApiResponse<ComboSupply[]>> => {
+  getComboSupplies: async (params?: { type?: string }): Promise<ApiResponse<ComboSupply[]>> => {
     const queryParams = new URLSearchParams();
-    if (params?.incidentType) {
-      queryParams.append("incidentType", params.incidentType);
+    if (params?.type) {
+      queryParams.append("type", params.type);
     }
     const query = queryParams.toString();
     const endpoint = query ? `/combo-supplies?${query}` : `/combo-supplies`;

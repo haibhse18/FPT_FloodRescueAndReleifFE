@@ -38,7 +38,7 @@ export interface MissionSupply {
   comboSupplyId?: {
     _id: string;
     name: string;
-    incidentType?: string;
+    type?: string;
   } | string | null;
   inventoryItemId?: string;
   plannedQty: number;

@@ -5,12 +5,12 @@ export interface ComboSupplyItem {
   quantity: number;
 }
 
-export type IncidentType = "Flood" | "Trapped" | "Injured" | "Landslide" | "Other";
+export type ComboSupplyType = "Citizen" | "Rescue Team";
 
 export interface ComboSupply {
   _id: string;
   name: string;
-  incidentType: IncidentType;
+  type: ComboSupplyType;
   description: string;
   supplies: ComboSupplyItem[];
   isActive: boolean;

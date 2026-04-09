@@ -53,11 +53,16 @@ export const timelineApi = {
     });
   },
 
-  /** PATCH /timelines/{id}/accept — team accept assignment */
-  acceptTimeline: async (timelineId: string): Promise<ApiResponse> => {
+  /** PATCH /timelines/{id}/accept — team accept assignment with supply/vehicle selection */
+  acceptTimeline: async (timelineId: string, payload?: {
+    warehouseId: string;
+    citizenCombos: { missionRequestId: string; comboSupplyId: string; quantity: number }[];
+    teamCombos: { comboSupplyId: string; quantity: number }[];
+    vehicles: { vehicleId: string }[];
+  }): Promise<ApiResponse> => {
     return apiClient.patch(
       `/timelines/${timelineId}/accept`,
-      {},
+      payload || {},
       {
         headers: authSession.getAuthHeaders(),
       },

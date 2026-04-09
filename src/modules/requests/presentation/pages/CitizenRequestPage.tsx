@@ -554,6 +554,11 @@ export default function CitizenRequestPage() {
     setReliefDangerType("");
   };
 
+  const handleGoHome = useCallback(() => {
+    // Use hard navigation to avoid any client-side interception from map/overlays.
+    window.location.assign("/home");
+  }, []);
+
   // Hàm lấy vị trí hiện tại
   const getCurrentLocation = () => {
     setIsLoadingLocation(true);
@@ -1045,11 +1050,11 @@ export default function CitizenRequestPage() {
 
   return (
     <div className="min-h-[100dvh] bg-transparent flex flex-col overflow-x-hidden">
-      <header className="sticky top-0 z-50 px-4 py-3 lg:px-5 lg:py-4 border-b border-white/15 bg-[#0b2233]/82 backdrop-blur-md">
+      <header className="sticky top-0 z-[200] px-4 py-3 lg:px-5 lg:py-4 border-b border-white/15 bg-[#0b2233]/82 backdrop-blur-md pointer-events-auto">
         <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() => router.push("/home")}
+            onClick={handleGoHome}
             className="inline-flex items-center rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/15 transition-colors"
           >
             Về trang chủ

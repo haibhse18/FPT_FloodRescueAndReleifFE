@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type MouseEvent } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Heart, ShieldCheck, MapPin, Crosshair } from "phosphor-react";
+import { Heart, ShieldCheck, MapPin, Crosshair, Phone } from "phosphor-react";
 import { GetCurrentUserUseCase } from "@/modules/auth/application/getCurrentUser.usecase";
 import { authRepository } from "@/modules/auth/infrastructure/auth.repository.impl";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
@@ -32,6 +32,23 @@ const ACTIVE_REQUEST_STATUSES = new Set([
 ]);
 
 const HOME_BACKGROUND_URL = "/images/flood-rescue2.jpg";
+const COORDINATOR_TELEGRAM_HANDLE =
+  process.env.NEXT_PUBLIC_COORDINATOR_TELEGRAM_HANDLE || "";
+const COORDINATOR_PHONE_NUMBER =
+  process.env.NEXT_PUBLIC_COORDINATOR_PHONE_NUMBER || "";
+const FALLBACK_EMERGENCY_PHONE_NUMBER = "115";
+
+const EMERGENCY_TELEGRAM_URL = COORDINATOR_TELEGRAM_HANDLE
+  ? `https://t.me/${COORDINATOR_TELEGRAM_HANDLE.replace(/^@/, "")}`
+  : COORDINATOR_PHONE_NUMBER
+    ? `https://t.me/+${COORDINATOR_PHONE_NUMBER.replace(/\D/g, "")}`
+    : "https://t.me";
+
+const EMERGENCY_PHONE_URL = `tel:${(COORDINATOR_PHONE_NUMBER || FALLBACK_EMERGENCY_PHONE_NUMBER).replace(/[^\d+]/g, "")
+  }`;
+
+const EMERGENCY_CONTACT_LABEL =
+  COORDINATOR_TELEGRAM_HANDLE || COORDINATOR_PHONE_NUMBER || "Telegram";
 
 function normalizeStatus(status: unknown): string {
   return String(status ?? "")
@@ -56,6 +73,12 @@ export default function CitizenHomePage() {
     id: string;
     status: string;
   } | null>(null);
+
+  const handleEmergencyContactClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    const targetUrl = navigator.onLine ? EMERGENCY_TELEGRAM_URL : EMERGENCY_PHONE_URL;
+    window.location.href = targetUrl;
+  };
 
   const requestCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -161,11 +184,20 @@ export default function CitizenHomePage() {
 
   const quickActions = [
     {
+      id: "emergency-call",
+      title: "Gọi điện khẩn cấp",
+      subtitle: `Liên hệ ${EMERGENCY_CONTACT_LABEL}`,
+      href: EMERGENCY_TELEGRAM_URL,
+      icon: <Phone weight="bold" size={18} />,
+      isExternal: true,
+    },
+    {
       id: "danger",
       title: "Đăng ký tình nguyện",
       subtitle: "Tham gia hỗ trợ",
       href: "/volunteer",
       icon: <Heart weight="bold" size={18} />,
+      isExternal: false,
     },
     {
       id: "guide",
@@ -173,6 +205,7 @@ export default function CitizenHomePage() {
       subtitle: "Kỹ năng sinh tồn",
       href: "/guide",
       icon: <ShieldCheck weight="bold" size={18} />,
+      isExternal: false,
     },
   ];
 
@@ -279,27 +312,50 @@ export default function CitizenHomePage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 w-full mt-auto">
+                <div className="grid grid-cols-3 gap-3 w-full mt-auto">
                   {quickActions.map((action) => (
-                    <Link
-                      key={action.id}
-                      href={action.href}
-                      className="w-full px-3 py-3 rounded-lg border border-white/15 bg-[#0f2f44]/70 hover:bg-[#1a3a52]/80 transition-all flex flex-col items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 group"
-                      aria-label={`${action.title}: ${action.subtitle}`}
-                      title={`${action.title} - ${action.subtitle}`}
-                    >
-                      <span className="w-10 h-10 rounded-lg bg-[#FF7700]/20 text-[#FFD1A0] flex items-center justify-center group-hover:bg-[#FF7700]/30 transition-colors flex-shrink-0">
-                        {action.icon}
-                      </span>
-                      <div className="text-center min-w-0">
-                        <span className="block text-white text-xs lg:text-sm font-semibold leading-tight truncate">
-                          {action.title}
+                    action.isExternal ? (
+                      <a
+                        key={action.id}
+                        href={action.href}
+                        onClick={action.id === "emergency-call" ? handleEmergencyContactClick : undefined}
+                        className="w-full px-3 py-3 rounded-lg border border-white/15 bg-[#0f2f44]/70 hover:bg-[#1a3a52]/80 transition-all flex flex-col items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 group"
+                        aria-label={`${action.title}: ${action.subtitle}`}
+                        title={`${action.title} - ${action.subtitle}`}
+                      >
+                        <span className="w-10 h-10 rounded-lg bg-[#FF7700]/20 text-[#FFD1A0] flex items-center justify-center group-hover:bg-[#FF7700]/30 transition-colors flex-shrink-0">
+                          {action.icon}
                         </span>
-                        <span className="block text-white/60 text-[10px] lg:text-xs leading-tight truncate">
-                          {action.subtitle}
+                        <div className="text-center min-w-0">
+                          <span className="block text-white text-xs lg:text-sm font-semibold leading-tight truncate">
+                            {action.title}
+                          </span>
+                          <span className="block text-white/60 text-[10px] lg:text-xs leading-tight truncate">
+                            {action.subtitle}
+                          </span>
+                        </div>
+                      </a>
+                    ) : (
+                      <Link
+                        key={action.id}
+                        href={action.href}
+                        className="w-full px-3 py-3 rounded-lg border border-white/15 bg-[#0f2f44]/70 hover:bg-[#1a3a52]/80 transition-all flex flex-col items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50 group"
+                        aria-label={`${action.title}: ${action.subtitle}`}
+                        title={`${action.title} - ${action.subtitle}`}
+                      >
+                        <span className="w-10 h-10 rounded-lg bg-[#FF7700]/20 text-[#FFD1A0] flex items-center justify-center group-hover:bg-[#FF7700]/30 transition-colors flex-shrink-0">
+                          {action.icon}
                         </span>
-                      </div>
-                    </Link>
+                        <div className="text-center min-w-0">
+                          <span className="block text-white text-xs lg:text-sm font-semibold leading-tight truncate">
+                            {action.title}
+                          </span>
+                          <span className="block text-white/60 text-[10px] lg:text-xs leading-tight truncate">
+                            {action.subtitle}
+                          </span>
+                        </div>
+                      </Link>
+                    )
                   ))}
                 </div>
               </section>

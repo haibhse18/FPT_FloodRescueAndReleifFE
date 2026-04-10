@@ -78,8 +78,13 @@ export default function CreateOnBehalfModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.userName && formData.phoneNumber && formData.description && formData.type && formData.location) {
-      await onSubmit(formData as CreateOnBehalfInput);
+    if (formData.userName && formData.phoneNumber && formData.description && formData.location) {
+      // Luôn gửi type="Rescue" cho mọi request
+      const payload = {
+        ...formData,
+        type: "Rescue" as const,
+      };
+      await onSubmit(payload as CreateOnBehalfInput);
     } else {
       alert("Vui lòng điền đầy đủ thông tin bắt buộc.");
     }

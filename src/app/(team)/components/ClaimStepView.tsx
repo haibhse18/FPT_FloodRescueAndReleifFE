@@ -48,9 +48,11 @@ export default function ClaimStepView({
   }
 
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("");
   const [missionSupplies, setMissionSupplies] = useState<MissionSupply[]>([]);
   const [timelineSupplies, setTimelineSupplies] = useState<TimelineSupply[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingWarehouses, setLoadingWarehouses] = useState(false);
   const [claimingSupplyId, setClaimingSupplyId] = useState<string | null>(null);
   const [modalData, setModalData] = useState<ClaimModalData | null>(null);
 
@@ -76,11 +78,19 @@ export default function ClaimStepView({
 
   useEffect(() => {
     const fetchWarehouses = async () => {
+      setLoadingWarehouses(true);
       try {
         const data = await warehouseRepository.getWarehouses();
-        setWarehouses(data.warehouses || []);
+        const list = data.warehouses || [];
+        setWarehouses(list);
+        if (list.length > 0) {
+          setSelectedWarehouseId((prev) => prev || list[0]._id);
+        }
       } catch (err) {
         console.error("Error fetching warehouses:", err);
+        toast.error("Không thể tải danh sách kho vật tư");
+      } finally {
+        setLoadingWarehouses(false);
       }
     };
     fetchWarehouses();
@@ -143,10 +153,21 @@ export default function ClaimStepView({
     }
   };
 
-  const allocatedSupplies = missionSupplies.filter(ms => 
-    ms.status === "ALLOCATED" || ms.status === "FULLY_CLAIMED"
+  const filteredMissionSupplies = selectedWarehouseId
+    ? missionSupplies.filter((ms) => {
+        const warehouseId =
+          ms.warehouseId && typeof ms.warehouseId === "object"
+            ? ms.warehouseId._id
+            : "";
+        return warehouseId === selectedWarehouseId;
+      })
+    : missionSupplies;
+
+  const allocatedSupplies = filteredMissionSupplies.filter(
+    (ms) => ms.status === "ALLOCATED" || ms.status === "FULLY_CLAIMED",
   );
-  const requestedSupplies = missionSupplies.filter(ms => ms.status === "REQUESTED");
+  const requestedSupplies = filteredMissionSupplies.filter((ms) => ms.status === "REQUESTED");
+  const selectedWarehouseName = warehouses.find((wh) => wh._id === selectedWarehouseId)?.name || "";
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
@@ -178,6 +199,34 @@ export default function ClaimStepView({
           >
             <FaSync className={`text-sm ${refreshing ? 'animate-spin' : ''}`} />
           </button>
+        </div>
+
+        {/* Warehouse Selection */}
+        <div className="bg-mission-bg-secondary border border-mission-border rounded-xl p-4">
+          <label className="block text-xs uppercase tracking-wide text-mission-text-muted font-semibold mb-2">
+            Chọn kho vật tư
+          </label>
+          <select
+            value={selectedWarehouseId}
+            onChange={(e) => setSelectedWarehouseId(e.target.value)}
+            disabled={loadingWarehouses || warehouses.length === 0}
+            className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-mission-text-primary text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50 [&>option]:bg-white [&>option]:text-slate-900"
+          >
+            {warehouses.length === 0 ? (
+              <option value="">Không có kho khả dụng</option>
+            ) : (
+              warehouses.map((wh) => (
+                <option key={wh._id} value={wh._id}>
+                  {wh.name}
+                </option>
+              ))
+            )}
+          </select>
+          {selectedWarehouseName && (
+            <p className="mt-2 text-xs text-mission-text-subtle">
+              Đang hiển thị vật tư từ kho: <span className="text-mission-text-primary font-medium">{selectedWarehouseName}</span>
+            </p>
+          )}
         </div>
 
         {/* Supplies List */}

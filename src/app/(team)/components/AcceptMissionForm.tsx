@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { FaArrowLeft, FaCheckCircle, FaTruck, FaBoxOpen } from "react-icons/fa";
 import { toast } from "sonner";
 import { missionApi } from "@/modules/missions/infrastructure/mission.api";
+import { warehouseRepository } from "@/modules/warehouse/infrastructure/warehouse.repository.impl";
 import type { AcceptInfo } from "@/modules/missions/domain/acceptInfo.entity";
 import type { AcceptTimelineInput } from "@/modules/timelines/domain/timeline.entity";
+import type { Warehouse } from "@/modules/warehouse/domain/warehouse.entity";
 
 interface AcceptMissionFormProps {
   missionId: string;
@@ -22,10 +24,10 @@ export default function AcceptMissionForm({
 }: AcceptMissionFormProps) {
   const [acceptInfo, setAcceptInfo] = useState<AcceptInfo | null>(null);
   const [loadingInfo, setLoadingInfo] = useState(true);
+  const [warehouseOptions, setWarehouseOptions] = useState<Warehouse[]>([]);
   
   // Form state
   const [selectedWarehouseId, setSelectedWarehouseId] = useState("");
-  const [citizenComboSelections, setCitizenComboSelections] = useState<Record<string, { comboId: string; quantity: number }>>({});
   const [teamCombos, setTeamCombos] = useState<{ comboId: string; quantity: number }[]>([]);
   const [selectedVehicles, setSelectedVehicles] = useState<Set<string>>(new Set());
 
@@ -33,13 +35,20 @@ export default function AcceptMissionForm({
     const fetchAcceptInfo = async () => {
       setLoadingInfo(true);
       try {
-        const response = await missionApi.getAcceptInfo(missionId);
+        const [response, warehouseResponse] = await Promise.all([
+          missionApi.getAcceptInfo(missionId),
+          warehouseRepository.getWarehouses(),
+        ]);
+
         const data = (response as any).data as AcceptInfo;
         setAcceptInfo(data);
+        setWarehouseOptions(warehouseResponse.warehouses || []);
+
+        const defaultWarehouseId = warehouseResponse.warehouses?.[0]?._id || data.warehouses?.[0]?._id;
         
         // Auto-select first warehouse if available
-        if (data.warehouses.length > 0) {
-          setSelectedWarehouseId(data.warehouses[0]._id);
+        if (defaultWarehouseId) {
+          setSelectedWarehouseId(defaultWarehouseId);
         }
       } catch (error: any) {
         toast.error(error?.message || "Không thể tải thông tin");
@@ -51,21 +60,46 @@ export default function AcceptMissionForm({
     fetchAcceptInfo();
   }, [missionId]);
 
+  const buildCitizenCombosFromRequests = () => {
+    if (!acceptInfo) return [] as AcceptTimelineInput["citizenCombos"];
+
+    return acceptInfo.missionRequests.flatMap((request) => {
+      const requestCombos =
+        request.request?.requestCombos ||
+        request.requestCombosSnapshot ||
+        [];
+
+      return requestCombos
+        .map((combo) => {
+          const comboSupplyId =
+            typeof combo.comboSupplyId === "object"
+              ? combo.comboSupplyId._id
+              : combo.comboSupplyId;
+
+          const quantity = Number(combo.quantity) || 0;
+          if (!comboSupplyId || quantity <= 0) return null;
+
+          return {
+            missionRequestId: request._id,
+            comboSupplyId,
+            quantity,
+          };
+        })
+        .filter((item): item is { missionRequestId: string; comboSupplyId: string; quantity: number } => item !== null);
+    });
+  };
+
   const handleSubmit = () => {
     if (!selectedWarehouseId) {
       toast.error("Vui lòng chọn kho");
       return;
     }
 
+    const citizenCombos = buildCitizenCombosFromRequests();
+
     const payload: AcceptTimelineInput = {
       warehouseId: selectedWarehouseId,
-      citizenCombos: Object.entries(citizenComboSelections)
-        .filter(([_, selection]) => selection.comboId && selection.quantity > 0)
-        .map(([requestId, selection]) => ({
-          missionRequestId: requestId,
-          comboSupplyId: selection.comboId,
-          quantity: selection.quantity,
-        })),
+      citizenCombos,
       teamCombos: teamCombos
         .filter(tc => tc.comboId && tc.quantity > 0)
         .map(tc => ({
@@ -81,20 +115,6 @@ export default function AcceptMissionForm({
     }
 
     onSubmit(payload);
-  };
-
-  const handleCitizenComboChange = (requestId: string, comboId: string) => {
-    setCitizenComboSelections(prev => ({
-      ...prev,
-      [requestId]: { comboId, quantity: prev[requestId]?.quantity || 1 },
-    }));
-  };
-
-  const handleCitizenQuantityChange = (requestId: string, quantity: number) => {
-    setCitizenComboSelections(prev => ({
-      ...prev,
-      [requestId]: { ...prev[requestId], quantity: Math.max(1, quantity) },
-    }));
   };
 
   const handleAddTeamCombo = () => {
@@ -144,9 +164,11 @@ export default function AcceptMissionForm({
     );
   }
 
-  const citizenCombos = acceptInfo.citizenCombos || [];
   const teamCombosAvailable = acceptInfo.teamCombos || [];
   const vehicles = acceptInfo.vehicles || [];
+  const selectableWarehouses = warehouseOptions.length > 0
+    ? warehouseOptions.map((wh) => ({ _id: wh._id, name: wh.name }))
+    : acceptInfo.warehouses.map((wh) => ({ _id: wh._id, name: wh.name }));
 
   return (
     <div className="h-full flex flex-col">
@@ -173,10 +195,10 @@ export default function AcceptMissionForm({
             value={selectedWarehouseId}
             onChange={(e) => setSelectedWarehouseId(e.target.value)}
             disabled={loading}
-            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/20 text-white focus:outline-none focus:border-blue-500 disabled:opacity-50"
+            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/20 text-mission-text-primary focus:outline-none focus:border-blue-500 disabled:opacity-50 [&>option]:bg-white [&>option]:text-slate-900"
           >
             <option value="">Chọn kho...</option>
-            {acceptInfo.warehouses.map(wh => (
+            {selectableWarehouses.map((wh) => (
               <option key={wh._id} value={wh._id}>{wh.name}</option>
             ))}
           </select>
@@ -187,36 +209,40 @@ export default function AcceptMissionForm({
           <div className="bg-mission-bg-secondary border border-mission-border rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <FaBoxOpen className="text-mission-icon-supplies" />
-              <h4 className="text-sm font-bold text-mission-text-primary uppercase">Vật tư cho dân</h4>
+              <h4 className="text-sm font-bold text-mission-text-primary uppercase">Vật tư cho dân (từ request)</h4>
             </div>
             <div className="space-y-3">
-              {acceptInfo.missionRequests.map(request => (
-                <div key={request._id} className="bg-white/5 rounded-lg p-3 space-y-2">
-                  <p className="text-xs text-white/70">Yêu cầu #{request._id.slice(-6)}</p>
-                  <select
-                    value={citizenComboSelections[request._id]?.comboId || ""}
-                    onChange={(e) => handleCitizenComboChange(request._id, e.target.value)}
-                    disabled={loading}
-                    className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50"
-                  >
-                    <option value="">Chọn combo...</option>
-                    {citizenCombos.map(combo => (
-                      <option key={combo._id} value={combo._id}>{combo.name}</option>
-                    ))}
-                  </select>
-                  {citizenComboSelections[request._id]?.comboId && (
-                    <input
-                      type="number"
-                      min="1"
-                      value={citizenComboSelections[request._id]?.quantity || 1}
-                      onChange={(e) => handleCitizenQuantityChange(request._id, parseInt(e.target.value) || 1)}
-                      disabled={loading}
-                      className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50"
-                      placeholder="Số lượng"
-                    />
-                  )}
-                </div>
-              ))}
+              {acceptInfo.missionRequests.map(request => {
+                const requestCombos = request.request?.requestCombos || request.requestCombosSnapshot || [];
+                
+                return (
+                  <div key={request._id} className="bg-white/5 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-white/70">Yêu cầu #{request._id.slice(-6)}</p>
+                      {requestCombos.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {requestCombos.map((combo, idx) => {
+                            const comboName = typeof combo.comboSupplyId === "object" 
+                              ? combo.comboSupplyId.name 
+                              : "Combo đã chọn";
+                            return (
+                              <span 
+                                key={idx}
+                                className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                              >
+                                {comboName} x{combo.quantity}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    {requestCombos.length === 0 && (
+                      <p className="text-xs text-white/60">Request này không có combo vật tư cho dân.</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -244,7 +270,7 @@ export default function AcceptMissionForm({
                     value={tc.comboId}
                     onChange={(e) => handleTeamComboChange(index, e.target.value)}
                     disabled={loading}
-                    className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50"
+                    className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-mission-text-primary text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50 [&>option]:bg-white [&>option]:text-slate-900"
                   >
                     <option value="">Chọn combo...</option>
                     {teamCombosAvailable.map(combo => (

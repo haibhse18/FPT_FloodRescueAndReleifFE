@@ -33,7 +33,34 @@ export interface MissionRequest {
   createdAt: string;
   updatedAt: string;
 
+  // Snapshot từ Request gốc
+  requestSuppliesSnapshot?: Array<{
+    supplyId: string;
+    name: string;
+    unit?: string;
+    requestedQty: number;
+  }>;
+  requestCombosSnapshot?: Array<{
+    comboSupplyId: string;
+    quantity: number;
+  }>;
+
   // Populated fields (optional, depend on API response)
+  request?: {
+    _id: string;
+    userName?: string;
+    phoneNumber?: string;
+    location?: any;
+    peopleCount?: number;
+    priority?: string;
+    requestSupplies?: any[];
+    requestCombos?: Array<{
+      comboSupplyId: string | { _id: string; name: string; groupKey?: string };
+      quantity: number;
+    }>;
+    media?: any[];
+    comboSupplyId?: any;
+  };
   requestDetails?: any; // Có thể liên kết với Request entity sau
 }
 

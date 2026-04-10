@@ -496,7 +496,8 @@ export default function CoordinatorCreateRequestPage() {
       setIsLoadingReliefCombos(true);
       setReliefComboError(null);
       try {
-        const response = await getComboSuppliesUseCase.execute(formData.incidentType);
+        // Load combo type "Citizen" cho relief (không phải incidentType)
+        const response = await getComboSuppliesUseCase.execute("Citizen");
         const responseData = (response as { data?: unknown })?.data;
         const rawCombos = Array.isArray(responseData)
           ? responseData
@@ -540,7 +541,7 @@ export default function CoordinatorCreateRequestPage() {
     return () => {
       cancelled = true;
     };
-  }, [needRelief, formData.incidentType]);
+  }, [needRelief]);
 
   const applyBalancedReliefCounts = (nextCounts: {
     child: number;
@@ -842,16 +843,40 @@ export default function CoordinatorCreateRequestPage() {
     try {
       setIsSubmitting(true);
 
-      const reliefSupplies = needRelief
-        ? selectedReliefComboItems
-          .filter((item) => !!item.supplyId && item.requestedQty > 0)
-          .map((item) => ({
-            supplyId: item.supplyId as string,
-            requestedQty: item.requestedQty,
-          }))
-        : [];
+      // Tự động chọn combo theo groupKey từ reliefCombos
+      const autoSelectedCombos: Array<{ comboId: string; groupKey: string; quantity: number }> = [];
+      
+      if (needRelief && reliefCombos.length > 0) {
+        // Map số lượng người theo nhóm
+        const groupCounts = [
+          { key: "adult" as const, count: reliefAdultCount },
+          { key: "child" as const, count: selectedChildCount },
+          { key: "elderly" as const, count: selectedElderlyCount },
+          { key: "injured" as const, count: selectedInjuredCount },
+        ];
+        
+        for (const { key, count } of groupCounts) {
+          if (count > 0) {
+            // Tìm combo phù hợp với groupKey từ reliefCombos
+            const matchedCombo = reliefCombos.find((combo) => combo.groupKey === key);
+            if (matchedCombo) {
+              autoSelectedCombos.push({
+                comboId: matchedCombo._id,
+                groupKey: key,
+                quantity: count,
+              });
+            }
+          }
+        }
+      }
 
-      if (needRelief && reliefSupplies.length === 0) {
+      // Build requestCombos từ combo đã chọn
+      const requestCombos = autoSelectedCombos.map(({ comboId, quantity }) => ({
+        comboSupplyId: comboId,
+        quantity,
+      }));
+
+      if (needRelief && requestCombos.length === 0) {
         toast.error("Chưa có combo cứu trợ hợp lệ. Vui lòng kiểm tra danh sách combo.");
         setIsSubmitting(false);
         return;
@@ -862,8 +887,8 @@ export default function CoordinatorCreateRequestPage() {
           "Phần cứu trợ nhu yếu phẩm:",
           `Số người cần cứu trợ: ${reliefFamilySize}`,
           `Cơ cấu: Trưởng thành ${reliefComposition.adult}, Trẻ em ${reliefComposition.child}, Người già ${reliefComposition.elderly}, Bị thương ${reliefComposition.injured}`,
-          selectedReliefCombo
-            ? `Combo đã chọn: ${selectedReliefCombo.name}`
+          autoSelectedCombos.length > 0
+            ? `Combo đã chọn: ${autoSelectedCombos.map(c => `${c.groupKey} x${c.quantity}`).join(", ")}`
             : "Chưa có combo hệ thống, dùng tính thủ công.",
           `Nhu yếu phẩm 3 ngày: ${reliefSupplySummaryLines.join(", ")}`,
           reliefNeedMedicine && reliefMedicineDetails.trim() ? `Thuốc cần hỗ trợ: ${reliefMedicineDetails.trim()}` : "",
@@ -884,9 +909,9 @@ export default function CoordinatorCreateRequestPage() {
 
       const fullDescription = descriptionSections.join("\n");
 
-      // Explicitly construct payload to avoid extra fields
+      // Explicitly construct payload - hardcode type = "Rescue" cho mọi request
       const payload: CreateOnBehalfInput = {
-        type: needRescue ? "Rescue" : "Relief",
+        type: "Rescue",
         incidentType: (formData.incidentType as any) || "Flood",
         priority: "Normal",
         peopleCount: needRescue
@@ -901,7 +926,8 @@ export default function CoordinatorCreateRequestPage() {
           type: "Point",
           coordinates: formData.location?.coordinates || [105.7801, 21.0285]
         },
-        requestSupplies: needRelief ? reliefSupplies : undefined,
+        // Chỉ gửi requestCombos, BE sẽ tự tính requestSupplies từ combo data
+        requestCombos: needRelief ? requestCombos : undefined,
       };
 
       await createOnBehalfUseCase.execute(payload);

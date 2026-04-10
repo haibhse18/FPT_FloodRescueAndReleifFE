@@ -1121,27 +1121,90 @@ export default function CitizenRequestPage() {
 
     setIsSubmitting(true);
     try {
-      const requestSupplies = needRelief
-        ? selectedReliefCombo
-          ? selectedReliefComboItems.map((item) => ({
-            name: item.name,
-            supplyId: item.supplyId,
-            requestedQty: item.requestedQty,
-          }))
-          : reliefSupplyPlan.totalItems
+      // Tự động chọn combo theo groupKey từ reliefCombos
+      const autoSelectedCombos: Array<{ comboId: string; groupKey: string; quantity: number }> = [];
+      
+      if (needRelief && reliefCombos.length > 0) {
+        // Map số lượng người theo nhóm
+        const groupCounts = [
+          { key: "adult", count: reliefAdultCount },
+          { key: "child", count: selectedChildCount },
+          { key: "elderly", count: selectedElderlyCount },
+          { key: "injured", count: selectedInjuredCount },
+        ] as const;
+        
+        for (const { key, count } of groupCounts) {
+          if (count > 0) {
+            // Tìm combo phù hợp với groupKey từ reliefCombos
+            const matchedCombo = reliefCombos.find((combo) => combo.groupKey === key);
+            if (matchedCombo) {
+              autoSelectedCombos.push({
+                comboId: matchedCombo._id,
+                groupKey: key,
+                quantity: count,
+              });
+            }
+          }
+        }
+      }
+
+      // Build requestCombos từ combo đã chọn
+      const requestCombos = autoSelectedCombos.map(({ comboId, quantity }) => ({
+        comboSupplyId: comboId,
+        quantity,
+      }));
+
+      // Tính requestSupplies: ưu tiên từ combo DB, fallback về hardcoded template
+      let requestSupplies: Array<{ name: string; supplyId?: string; requestedQty: number }> = [];
+      
+      if (needRelief) {
+        if (autoSelectedCombos.length > 0) {
+          // Merge supplies từ tất cả combo đã chọn
+          const suppliesMap = new Map<string, { name: string; supplyId?: string; qty: number }>();
+          
+          for (const { comboId, quantity } of autoSelectedCombos) {
+            const combo = reliefCombos.find((c) => c._id === comboId);
+            if (!combo) continue;
+            
+            for (const item of combo.supplies || []) {
+              const supplyName = typeof item.supplyId === "object" && item.supplyId?.name
+                ? item.supplyId.name
+                : `Vật phẩm`;
+              const supplyId = typeof item.supplyId === "object" && item.supplyId?.id
+                ? item.supplyId.id
+                : typeof item.supplyId === "string"
+                  ? item.supplyId
+                  : undefined;
+              const effectiveQty = item.quantity * quantity;
+              
+              const existing = suppliesMap.get(supplyName);
+              if (existing) {
+                existing.qty += effectiveQty;
+              } else {
+                suppliesMap.set(supplyName, { name: supplyName, supplyId, qty: effectiveQty });
+              }
+            }
+          }
+          
+          requestSupplies = Array.from(suppliesMap.values()).map(({ name, supplyId, qty }) => ({
+            name,
+            supplyId,
+            requestedQty: qty,
+          }));
+        } else {
+          // Fallback: dùng hardcoded reliefSupplyPlan
+          requestSupplies = reliefSupplyPlan.totalItems
             .filter((item) => (Number(item.qty) || 0) > 0)
             .map((item) => ({
               name: item.label,
               requestedQty: Number(item.qty) || 0,
-            }))
-        : [];
+            }));
+        }
+      }
 
-      const requestType = needRescue
-        ? "Rescue"
-        : "Relief";
-
+      // Hardcode type = "Rescue" cho mọi request
       const payload: Record<string, unknown> = {
-        type: requestType,
+        type: "Rescue",
         incidentType: {
           flood: "Flood",
           trapped: "Trapped",
@@ -1156,12 +1219,12 @@ export default function CitizenRequestPage() {
           type: "Point",
           coordinates: [coordinates.lon, coordinates.lat] as [number, number],
         },
-        comboSupplyId: selectedComboId,
+        comboSupplyId: selectedComboId || "", // Deprecated, giữ để backward compat
       };
 
       if (needRelief) {
-        payload.requestSupplies = requestSupplies;
-        payload.comboSupplyId = selectedReliefCombo ? selectedReliefCombo._id : null;
+        // Chỉ gửi requestCombos, BE sẽ tự tính requestSupplies từ combo data
+        payload.requestCombos = requestCombos;
       }
 
       if (uploadedImages.length > 0) {
@@ -1704,8 +1767,8 @@ export default function CitizenRequestPage() {
                       <div className="rounded-none border border-white/20 bg-[#0f2f44]/70 p-3 space-y-2">
                         <p className="text-xs text-white font-semibold">Tổng nhu cầu thiết yếu</p>
                         <p className="text-[11px] text-white/70 leading-relaxed">
-                          {reliefSupplySummaryLines.length > 0
-                            ? reliefSupplySummaryLines.join(", ")
+                          {reliefSupplyPlan.totalLines.length > 0
+                            ? reliefSupplyPlan.totalLines.join(", ")
                             : "Chưa có nhu cầu được tính"}
                         </p>
                       </div>
@@ -1880,8 +1943,8 @@ export default function CitizenRequestPage() {
                   Trưởng thành {reliefComposition.adult}, Trẻ em {reliefComposition.child}, Người già {reliefComposition.elderly}, Bị thương {reliefComposition.injured}
                 </p>
                 <p className="text-white text-xs leading-relaxed">
-                  {reliefSupplySummaryLines.length > 0
-                    ? reliefSupplySummaryLines.join(", ")
+                  {reliefSupplyPlan.totalLines.length > 0
+                    ? reliefSupplyPlan.totalLines.join(", ")
                     : "Chưa có dữ liệu để tính"}
                 </p>
               </div>

@@ -1,25 +1,37 @@
 /**
  * TimelineSupply Entity - Domain layer
- * Represents supplies claimed by a team for a specific timeline
+ * Represents supplies reserved/claimed by a team for a specific timeline
  */
+
+export type TimelineSupplyStatus =
+  | "RESERVED"
+  | "APPROVED"
+  | "REJECTED"
+  | "CLAIMED"
+  | "RETURNED";
 
 export interface TimelineSupply {
   _id: string;
   timelineId: string;
-  missionSupplyId: string;
-  supplyId: string;
-  carriedQty: number;
+  missionSupplyId?: string;
+  comboSupplyId?: string;
+  warehouseId: string;
+  inventoryItemId: string;
+  supplyId: {
+    _id: string;
+    name: string;
+    unit: string;
+  } | string;
+  requestedQty: number;
+  approvedQty?: number;
+  carriedQty?: number;
   returnedQty?: number;
-  claimedAt: string;
+  status: TimelineSupplyStatus;
+  claimedAt?: string;
   returnedAt?: string;
+  note?: string;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface ClaimSupplyInput {
-  timelineId: string;
-  missionSupplyId: string;
-  carriedQty: number;
 }
 
 export interface GetTimelineSuppliesFilter {

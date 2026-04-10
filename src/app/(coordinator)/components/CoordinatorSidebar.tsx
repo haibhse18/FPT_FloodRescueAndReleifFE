@@ -8,7 +8,6 @@ import {
   PiCrosshairSimpleBold,
   PiHouseLineBold,
   PiSirenBold,
-  PiUserCircleBold,
   PiUsersThreeBold,
 } from "react-icons/pi";
 
@@ -43,7 +42,6 @@ export default function CoordinatorSidebar() {
     { icon: <PiSirenBold />, label: "Yêu cầu", href: "/requests" },
     { icon: <PiCrosshairSimpleBold />, label: "Nhiệm vụ", href: "/mission-control" },
     { icon: <PiUsersThreeBold />, label: "Quản lí team", href: "/team-control" },
-    { icon: <PiUserCircleBold />, label: "Cá nhân", href: "/coordinator/profile" },
   ];
 
   return (
@@ -52,6 +50,7 @@ export default function CoordinatorSidebar() {
       user={user}
       title="Điều phối viên"
       subtitle="FPT Flood Rescue"
+      profileHref="/coordinator/profile"
     />
   );
 }

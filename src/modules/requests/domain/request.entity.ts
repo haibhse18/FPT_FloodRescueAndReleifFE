@@ -13,7 +13,7 @@ export type RequestStatus =
   | "PARTIALLY_FULFILLED"
   | "CLOSED"
   | "CANCELLED";
-  // Note: FULFILLED status has been removed - backend auto-converts to CLOSED
+// Note: FULFILLED status has been removed - backend auto-converts to CLOSED
 
 export type PriorityLevel = "Critical" | "High" | "Normal";
 
@@ -68,6 +68,13 @@ export interface RequestSupplyItem {
   supplyName?: string;
 }
 
+// ─── Combo Item ──────────────────────────────────────────
+
+export interface RequestComboItem {
+  comboSupplyId: string;
+  quantity: number;
+}
+
 // ─── Main Request Entity ─────────────────────────────────
 
 export interface CoordinatorRequest {
@@ -85,12 +92,25 @@ export interface CoordinatorRequest {
   priority: PriorityLevel | string;
   status: RequestStatus | string;
   requestSupplies?: RequestSupplyItem[];
+  /** Danh sách combo đã chọn với số lượng (thay thế comboSupplyId đơn) */
+  requestCombos?: RequestComboItem[];
   media?: RequestMedia[];
   isDuplicated?: boolean;
   duplicatedOfRequestId?: string | null;
   isLocationVerified?: boolean;
   createdAt: string | Date;
   updatedAt?: string | Date;
+  /** @deprecated Use requestCombos instead — Combo vật tư citizen đã chọn */
+  comboSupplyId?: {
+    _id: string;
+    name: string;
+    incidentType?: string;
+    description?: string;
+    supplies?: Array<{
+      supplyId: string | { _id: string; name: string; unit?: string; category?: string };
+      quantity: number;
+    }>;
+  } | string | null;
 
   // Legacy fields for backward compat
   requestId?: string;
@@ -162,7 +182,10 @@ export interface CreateOnBehalfInput {
   description: string;
   peopleCount?: number;
   priority?: PriorityLevel;
+  /** @deprecated Use requestCombos instead */
   requestSupplies?: RequestSupplyItem[];
+  /** Danh sách combo đã chọn với số lượng */
+  requestCombos?: RequestComboItem[];
   media?: RequestMedia[];
 }
 
@@ -201,6 +224,10 @@ export interface CreateRescueRequestData {
   numberOfPeople?: number;
   urgencyLevel?: string;
   images?: string[];
+  /** @deprecated Use requestCombos instead */
+  comboSupplyId?: string | null;
+  /** Danh sách combo đã chọn với số lượng */
+  requestCombos?: { comboSupplyId: string; quantity: number }[];
   media?: { publicId: string; secureUrl: string; uploadedAt?: Date }[];
 }
 

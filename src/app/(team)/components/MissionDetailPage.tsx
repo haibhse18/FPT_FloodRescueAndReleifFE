@@ -41,6 +41,20 @@ interface MissionDetailPageProps {
   timelineId: string;
 }
 
+const normalizeTimelineStatus = (status: string): string => {
+  const normalized = status?.trim().toUpperCase();
+
+  if (normalized === "PENDING_APPROVAL" || normalized === "CLAIMING_SUPPLIES") {
+    return normalized;
+  }
+
+  if (normalized.includes("APPROVAL") || (normalized.includes("CLAIM") && normalized.includes("SUPPL"))) {
+    return "CLAIMING_SUPPLIES";
+  }
+
+  return normalized;
+};
+
 export default function MissionDetailPage({ timelineId }: MissionDetailPageProps) {
   const router = useRouter();
   const notifications = useNotificationStore(state => state.notifications);
@@ -152,13 +166,14 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
     }
   }, [notifications, timeline, refetchData]);
 
-  const handleAccept = async () => {
+  const handleAccept = async (payload?: any) => {
     if (!timeline) return;
     setActionLoading("accept");
     try {
-      const updated = await acceptTimelineUseCase.execute(timeline._id);
+      const updated = await acceptTimelineUseCase.execute(timeline._id, payload);
       setTimeline(updated);
-      toast.success("Đã chấp nhận nhiệm vụ. Bắt đầu di chuyển!");
+      toast.success("Đã chấp nhận nhiệm vụ!");
+      await refetchData();
     } catch (error: any) {
       toast.error(error?.message || "Không thể chấp nhận nhiệm vụ");
     } finally {
@@ -305,14 +320,16 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
 
   const missionCode = mission.code || "N/A";
   const missionTypeLabel = mission.type === "RELIEF" ? "📦 Cứu trợ" : "🚨 Cứu hộ";
-  const isTerminal = ["COMPLETED", "PARTIAL", "FAILED", "WITHDRAWN", "CANCELLED"].includes(timeline.status);
+  const normalizedStatus = normalizeTimelineStatus(String(timeline.status || ""));
+  const isTerminal = ["COMPLETED", "PARTIAL", "FAILED", "WITHDRAWN", "CANCELLED"].includes(normalizedStatus);
 
   // Step navigation logic
   const getCurrentStepIndex = () => {
-    if (timeline.status === "ASSIGNED") return 0;
-    if (timeline.status === "CLAIMING_SUPPLIES") return 1;
-    if (timeline.status === "EN_ROUTE") return 2;
-    if (timeline.status === "ON_SITE") return 3;
+    if (normalizedStatus === "ASSIGNED") return 0;
+    if (normalizedStatus === "PENDING_APPROVAL") return 1;
+    if (normalizedStatus === "CLAIMING_SUPPLIES") return 1;
+    if (normalizedStatus === "EN_ROUTE") return 2;
+    if (normalizedStatus === "ON_SITE") return 3;
     if (isTerminal) return 4;
     return 0;
   };
@@ -366,7 +383,7 @@ export default function MissionDetailPage({ timelineId }: MissionDetailPageProps
           <div className="flex-1 flex justify-center min-w-0">
             <div className="max-w-2xl w-full">
               <MissionProgressStepper 
-                currentStatus={timeline.status}
+                currentStatus={normalizedStatus}
                 onStepClick={handleStepClick}
                 viewingStep={displayStepIndex}
                 compact={true}

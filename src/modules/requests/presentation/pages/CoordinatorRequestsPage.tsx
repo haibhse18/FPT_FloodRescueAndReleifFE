@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   PiSirenBold,
   PiMapPinBold,
@@ -22,6 +22,7 @@ import {
   FiPackage,
   FiWifiOff,
   FiLink,
+  FiPlus,
 } from "react-icons/fi";
 import { requestRepository } from "@/modules/requests/infrastructure/request.repository.impl";
 import { warehouseRepository } from "@/modules/warehouse/infrastructure/warehouse.repository.impl";
@@ -29,7 +30,9 @@ import type {
   CoordinatorRequest,
   RequestStatus,
   GetRequestsFilter,
+  CreateOnBehalfInput,
 } from "@/modules/requests/domain/request.entity";
+import { toast } from "sonner";
 import type { Warehouse } from "@/modules/warehouse/domain/warehouse.entity";
 
 const GoongCoordinatorMap = dynamic(
@@ -83,9 +86,12 @@ const SORT_OPTIONS = [
   { label: "Ưu tiên cao", value: "priority" },
 ];
 
+const DEFAULT_FILTER_STATUSES = ["SUBMITTED", "VERIFIED", "IN_PROGRESS", "PARTIALLY_FULFILLED"];
+
 // ─── Component ────────────────────────────────────────────
 
 export default function CoordinatorRequestsPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [requests, setRequests] = useState<CoordinatorRequest[]>([]);
@@ -98,8 +104,10 @@ export default function CoordinatorRequestsPage() {
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "priority">("newest");
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mapFilterStatuses, setMapFilterStatuses] = useState<string[]>(DEFAULT_FILTER_STATUSES);
   const [mapFilterStatus, setMapFilterStatus] = useState<string>("ALL");
   const [mapFilterPriority, setMapFilterPriority] = useState<string>("ALL");
+  const [mapFilterSource, setMapFilterSource] = useState<string>("ALL");
 
   // Refs for scrolling to selected card
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -113,16 +121,20 @@ export default function CoordinatorRequestsPage() {
 
       const result = await requestRepository.getAllRequests(filters);
       let sortedData = result.data || [];
-      
+
       // Client-side sorting
       if (sortBy === "newest") {
-        sortedData = [...sortedData].sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+        sortedData = [...sortedData].sort((a, b) => {
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return timeB - timeA;
+        });
       } else if (sortBy === "oldest") {
-        sortedData = [...sortedData].sort((a, b) => 
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
+        sortedData = [...sortedData].sort((a, b) => {
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : Infinity;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : Infinity;
+          return timeA - timeB;
+        });
       } else if (sortBy === "priority") {
         const priorityOrder = { Critical: 0, High: 1, Normal: 2 };
         sortedData = [...sortedData].sort((a, b) => {
@@ -131,7 +143,7 @@ export default function CoordinatorRequestsPage() {
           return aPriority - bPriority;
         });
       }
-      
+
       setRequests(sortedData);
       setTotalPages(result.totalPages || 1);
       setTotal(result.total || 0);
@@ -161,9 +173,18 @@ export default function CoordinatorRequestsPage() {
   }, [fetchWarehouses]);
 
   // When map filters change → update sidebar
-  const handleFilterChange = useCallback((status: string, priority: string) => {
-    setMapFilterStatus(status);
+  const handleFilterChange = useCallback((statuses: string[], priority: string, source: string = "ALL") => {
+    setMapFilterStatuses(statuses);
+
+    // Incoming branch treats status as a single value. Keep that behavior here.
+    if (statuses.length === 1) {
+      setMapFilterStatus(statuses[0]);
+    } else {
+      setMapFilterStatus("ALL");
+    }
+
     setMapFilterPriority(priority);
+    setMapFilterSource(source);
     setSelectedRequestId(null);
   }, []);
 
@@ -178,8 +199,9 @@ export default function CoordinatorRequestsPage() {
 
   // When card is clicked → set selected (map will flyTo via prop change)
   const handleCardClick = (id: string) => {
-    setSelectedRequestId((prev) => (prev === id ? null : id));
+    router.push(`/requests/${id}`);
   };
+
 
   const formatDate = (date: string | Date | undefined) => {
     if (!date) return "N/A";
@@ -212,10 +234,15 @@ export default function CoordinatorRequestsPage() {
 
   // Apply map filters to sidebar list
   const filteredRequests = requests.filter((r) => {
-    const statusOk = mapFilterStatus === "ALL" || r.status === mapFilterStatus;
+    const statusOk = mapFilterStatus === "ALL"
+      ? (mapFilterStatuses.length === 0 ? false : mapFilterStatuses.includes(r.status))
+      : r.status === mapFilterStatus;
     const priorityOk = mapFilterPriority === "ALL" || r.priority === mapFilterPriority;
-    return statusOk && priorityOk;
+    const sourceOk = mapFilterSource === "ALL" || r.source === mapFilterSource;
+    return statusOk && priorityOk && sourceOk;
   });
+
+  const isDefaultStatuses = mapFilterStatuses.length === DEFAULT_FILTER_STATUSES.length && DEFAULT_FILTER_STATUSES.every((s) => mapFilterStatuses.includes(s));
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -249,6 +276,13 @@ export default function CoordinatorRequestsPage() {
               <FiRefreshCw className={`text-base ${isLoading ? "animate-spin" : ""}`} />
               <span>{isLoading ? "Đang tải..." : "Làm mới"}</span>
             </button>
+            <button
+              onClick={() => router.push("/requests/create")}
+              className="flex-shrink-0 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <FiPlus className="text-base" />
+              <span>Tạo yêu cầu</span>
+            </button>
           </div>
         </div>
       </header>
@@ -263,8 +297,9 @@ export default function CoordinatorRequestsPage() {
             warehouses={warehouses}
             selectedRequestId={selectedRequestId}
             onRequestSelect={handleMapRequestSelect}
-            filterStatus={mapFilterStatus}
+            filterStatuses={mapFilterStatuses}
             filterPriority={mapFilterPriority}
+            filterSource={mapFilterSource}
             onFilterChange={handleFilterChange}
             className="w-full h-full"
           />
@@ -273,9 +308,8 @@ export default function CoordinatorRequestsPage() {
         {/* ── Right: Request list (collapsible) ── */}
         <div
           style={{ width: sidebarOpen ? 380 : 0 }}
-          className={`flex-shrink-0 flex flex-col bg-[#0d1e2c] transition-[width] duration-300 ease-in-out overflow-hidden ${
-            sidebarOpen ? "border-l border-white/10 pointer-events-auto" : "pointer-events-none"
-          }`}
+          className={`flex-shrink-0 flex flex-col bg-[#0d1e2c] transition-[width] duration-300 ease-in-out overflow-hidden ${sidebarOpen ? "border-l border-white/10 pointer-events-auto" : "pointer-events-none"
+            }`}
         >
 
           {/* Panel header: sort only */}
@@ -288,11 +322,10 @@ export default function CoordinatorRequestsPage() {
                   <button
                     key={option.value}
                     onClick={() => setSortBy(option.value as typeof sortBy)}
-                    className={`px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
-                      sortBy === option.value
+                    className={`px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${sortBy === option.value
                         ? "bg-[#FF7700] text-white"
                         : "bg-white/5 text-gray-300 hover:bg-white/10"
-                    }`}
+                      }`}
                   >
                     {option.label}
                   </button>
@@ -327,7 +360,7 @@ export default function CoordinatorRequestsPage() {
             <>
               <div className="flex-shrink-0 px-3 pt-2 pb-1 flex items-center justify-between">
                 <span className="text-gray-400 text-xs font-medium">
-                  {filteredRequests.length}{mapFilterStatus !== "ALL" || mapFilterPriority !== "ALL" ? ` / ${requests.length}` : ""} yêu cầu
+                  {filteredRequests.length}{mapFilterStatus !== "ALL" || mapFilterPriority !== "ALL" || mapFilterSource !== "ALL" ? ` / ${requests.length}` : ""} yêu cầu
                   {selectedRequestId && (
                     <button
                       onClick={() => setSelectedRequestId(null)}
@@ -360,11 +393,10 @@ export default function CoordinatorRequestsPage() {
                       <div
                         key={request._id}
                         ref={(el) => { cardRefs.current[request._id] = el; }}
-                        className={`rounded-xl border transition-all duration-200 overflow-hidden ${
-                          isSelected
+                        className={`rounded-xl border transition-all duration-200 overflow-hidden ${isSelected
                             ? "border-[#FF7700] bg-[#FF7700]/10 shadow-lg shadow-[#FF7700]/20"
                             : "border-white/10 bg-white/5 hover:bg-white/8 hover:border-white/20"
-                        }`}
+                          }`}
                       >
                         {/* Card click area → focus map */}
                         <button
@@ -380,9 +412,8 @@ export default function CoordinatorRequestsPage() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                                 <span
-                                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-bold flex-shrink-0 ${
-                                    PRIORITY_COLORS[request.priority] || PRIORITY_COLORS.Normal
-                                  }`}
+                                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-bold flex-shrink-0 ${PRIORITY_COLORS[request.priority] || PRIORITY_COLORS.Normal
+                                    }`}
                                 >
                                   <span className={`w-1.5 h-1.5 rounded-full ${PRIORITY_DOTS[request.priority] || "bg-blue-500"}`} />
                                   {PRIORITY_LABELS[request.priority] || request.priority}
@@ -402,9 +433,8 @@ export default function CoordinatorRequestsPage() {
                             </div>
                             {/* Status badge */}
                             <span
-                              className={`flex-shrink-0 px-2 py-0.5 rounded text-xs font-bold border ${
-                                STATUS_COLORS[request.status] || STATUS_COLORS.SUBMITTED
-                              }`}
+                              className={`flex-shrink-0 px-2 py-0.5 rounded text-xs font-bold border ${STATUS_COLORS[request.status] || STATUS_COLORS.SUBMITTED
+                                }`}
                             >
                               {request.status}
                             </span>
@@ -475,6 +505,7 @@ export default function CoordinatorRequestsPage() {
           )}
         </div>
       </div>
+
     </div>
   );
 }

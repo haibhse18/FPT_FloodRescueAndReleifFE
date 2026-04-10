@@ -12,6 +12,7 @@ import {
   TimelineCompleteInput,
   TimelineFailInput,
   TimelineWithdrawInput,
+  AcceptTimelineInput,
 } from "../domain/timeline.entity";
 import { timelineApi } from "./timeline.api";
 
@@ -42,8 +43,8 @@ export class TimelineRepositoryImpl implements ITimelineRepository {
     await timelineApi.cancelTimeline(timelineId, input);
   }
 
-  async acceptTimeline(timelineId: string): Promise<Timeline> {
-    const response = await timelineApi.acceptTimeline(timelineId);
+  async acceptTimeline(timelineId: string, input?: AcceptTimelineInput): Promise<Timeline> {
+    const response = await timelineApi.acceptTimeline(timelineId, input);
     return ((response as any).data ?? response) as Timeline;
   }
 
